@@ -117,7 +117,7 @@ class LM(ProbMapModel):
     :param basis: basis function 
     :param type: function"""
 
-    def __init__(self, X, y, basis, num_basis, **kwargs):
+    def __init__(self, X, y, basis):
         "Initialise"
         ProbModel.__init__(self)
         self.y = y
@@ -125,10 +125,8 @@ class LM(ProbMapModel):
         self.X = X
         self.sigma2 = 1.
         self.basis = basis
-        self.num_basis = num_basis
-        self.basis_args = kwargs
-        self.Phi = basis(X, num_basis=num_basis, **kwargs)
-        self.name = 'LM_'+basis.__name__
+        self.Phi = self.basis.Phi(X)
+        self.name = 'LM_'+self.basis.function.__name__
         self.objective_name = 'Sum of Square Training Error'
 
     def update_QR(self):
@@ -144,7 +142,7 @@ class LM(ProbMapModel):
 
     def predict(self, X):
         """Return the result of the prediction function."""
-        return np.dot(self.basis(X, self.num_basis, **self.basis_args), self.w_star), None
+        return np.dot(self.basis.Phi(X), self.w_star), None
         
     def update_f(self):
         """Update values at the prediction points."""
@@ -166,6 +164,24 @@ class LM(ProbMapModel):
         return -self.num_data/2.*np.log(np.pi*2.)-self.num_data/2.*np.log(self.sigma2)-self.sum_squares/(2.*self.sigma2)
     
 
+class basis():
+    """Basis function
+    :param function: basis function
+    :type function: function
+    :param \**kwargs:
+        See below
+
+    :Keyword Arguments:
+        * """
+    def __init__(self, function, number, **kwargs):
+        """"""
+        self.arguments=kwargs
+        self.number=number
+        self.function=function
+
+    def Phi(self, X):
+        return self.function(X, num_basis=self.number, **self.arguments)
+    
 def polynomial(x, num_basis=4, data_limits=[-1., 1.]):
     "Polynomial basis"
     centre = data_limits[0]/2. + data_limits[1]/2.
@@ -230,10 +246,12 @@ def tanh(x, num_basis=4, data_limits=[-1., 1.], gain=None):
     """Hyperbolic tangents"""
     if num_basis>2:
         centres=np.linspace(data_limits[0], data_limits[1], num_basis)
+        width = (centres[1]-centres[0])/2.
     else:
         centres = np.asarray([data_limits[0]/2. + data_limits[1]/2.])
+        width = (data_limits[1]-data_limits[0])/2.
     if gain is None:
-        gain = np.ones(num_basis-1)
+        gain = np.ones(num_basis-1)/width
     Phi = np.zeros((x.shape[0], num_basis))
     # Create the bias
     Phi[:, 0] = 1.0
@@ -384,21 +402,19 @@ class BLM(ProbMapModel):
     :param basis: basis function 
     :param type: function"""
 
-    def __init__(self, X, y, alpha, sigma2, basis, num_basis, **kwargs):
+    def __init__(self, X, y, alpha, sigma2, basis):
         "Initialise"
         ProbMapModel.__init__(self, X, y)
         self.sigma2 = sigma2
         self.alpha = alpha
         self.basis = basis
-        self.num_basis = num_basis
-        self.basis_args = kwargs
-        self.Phi = basis(X, num_basis=num_basis, **kwargs)
-        self.name = 'BLM_'+basis.__name__
+        self.Phi = self.basis.Phi(X)
+        self.name = 'BLM_'+self.basis.function.__name__
         self.objective_name = 'Negative Marginal Likelihood'
         
     def update_QR(self):
         "Perform the QR decomposition on the basis matrix."
-        self.Q, self.R = np.linalg.qr(np.vstack([self.Phi, np.sqrt(self.sigma2/self.alpha)*np.eye(self.num_basis)]))
+        self.Q, self.R = np.linalg.qr(np.vstack([self.Phi, np.sqrt(self.sigma2/self.alpha)*np.eye(self.basis.number)]))
 
     def fit(self):
         """Minimize the objective function with respect to the parameters"""
@@ -411,7 +427,7 @@ class BLM(ProbMapModel):
 
     def predict(self, X, full_cov=False):
         """Return the result of the prediction function."""
-        Phi = self.basis(X, self.num_basis, **self.basis_args)
+        Phi = self.basis.Phi(X)
         # A= R^-T Phi.T
         A = sp.linalg.solve_triangular(self.R, Phi.T, trans='T')
         mu = np.dot(A.T, self.QTy)
@@ -496,17 +512,15 @@ class LR(ProbMapModel):
     :param basis: basis function 
     :param type: function"""
 
-    def __init__(self, X, y, basis, num_basis, **kwargs):
+    def __init__(self, X, y, basis):
         ProbMapModel.__init__(self, X, y)
         self.basis = basis
-        self.num_basis = num_basis
-        self.basis_args = kwargs
-        self.Phi = basis(X, num_basis=num_basis, **kwargs)
-        self.w_star = np.zeros(num_basis)
+        self.Phi = self.basis.Phi(X)
+        self.w_star = np.zeros(self.basis.number)
         
-    def predict(self, x, **kwargs):
+    def predict(self, X):
         "Generates the prediction function and the basis matrix."
-        Phi = self.basis(x, **kwargs)
+        Phi = self.basis.Phi(X)
         f = np.dot(Phi, self.w_star)
         return 1./(1+np.exp(-f)), Phi
 
@@ -550,15 +564,23 @@ class LR(ProbMapModel):
     
 ##########          Week 12          ##########
 class GP(ProbMapModel):
-    def __init__(self, X, y, sigma2, kernel, **kwargs):
-        self.K = compute_kernel(X, X, kernel, **kwargs)
-        self.X = X
-        self.y = y
+    """Gaussian Process
+    :param X: input values
+    :type X: numpy.ndarray
+    :param y: target values
+    :type y: numpy.ndarray
+    :param sigma2: Noise variance
+    :type sigma2: float
+    :param kernel: covariance function 
+    :param type: kernel"""
+    def __init__(self, X, y, sigma2, kernel):
         self.sigma2 = sigma2
         self.kernel = kernel
-        self.kernel_args = kwargs
+        self.K = kernel.K(X, X)
+        self.X = X
+        self.y = y
         self.update_inverse()
-        self.name = 'GP_'+kernel.__name__
+        self.name = 'GP_'+kernel.function.__name__
         self.objective_name = 'Negative Marginal Likelihood'
 
     def update_inverse(self):
@@ -594,19 +616,19 @@ class GP(ProbMapModel):
 
     def predict(self, X_test, full_cov=False):
         "Give a mean and a variance of the prediction."
-        K_star = compute_kernel(self.X, X_test, self.kernel, **self.kernel_args)
+        K_star = self.kernel.K(self.X, X_test)
         A = np.dot(self.Kinv, K_star)
         mu_f = np.dot(A.T, self.y)
-        k_starstar = compute_diag(X_test, self.kernel, **self.kernel_args)
+        k_starstar = self.kernel.diag(X_test)
         c_f = k_starstar - (A*K_star).sum(0)[:, None]
         return mu_f, c_f
         
 def posterior_f(self, X_test):
     """Compute the posterior distribution for f in the GP"""
-    K_star = compute_kernel(self.X, X_test, self.kernel, **self.kernel_args)
+    K_star = self.kernel.K(self.X, X_test)
     A = np.dot(self.Kinv, K_star)
     mu_f = np.dot(A.T, self.y)
-    K_starstar = compute_kernel(X_test, X_test, self.kernel, **self.kernel_args)
+    K_starstar = self.kernel.K(X_test, X_test)
     C_f = K_starstar - np.dot(A.T, K_star)
     return mu_f, C_f
 
@@ -623,24 +645,39 @@ def update_inverse(self):
     # compute the inverse of the upper triangular Cholesky factor
     self.Rinv = sp.linalg.solve_triangular(self.R, np.eye(self.K.shape[0]))
     self.Kinv = np.dot(self.Rinv, self.Rinv.T)
-    
-def compute_kernel(X, X2=None, kernel=None, **kwargs):
-    """Compute the full covariance function given a kernel function for two data points."""
-    if X2 is None:
-        X2 = X
-    K = np.zeros((X.shape[0], X2.shape[0]))
-    for i in np.arange(X.shape[0]):
-        for j in np.arange(X2.shape[0]):
-            K[i, j] = kernel(X[i, :], X2[j, :], **kwargs)
-        
-    return K
 
-def compute_diag(X, kernel=None, **kwargs):
-    """Compute the fuletrl covariance function given a kernel function for two data points."""
-    diagK = np.zeros((X.shape[0], 1))
-    for i in range(X.shape[0]):            
-        diagK[i] = kernel(X[i, :], X[i, :], **kwargs)
-    return diagK
+
+class kernel():
+    """Covariance function
+    :param function: covariance function
+    :type function: function
+    :param \**kwargs:
+        See below
+
+    :Keyword Arguments:
+        * """
+
+    def __init__(self, function, **kwargs):        
+        self.function=function
+        self.parameters=kwargs
+        
+    def K(self, X, X2=None):
+        """Compute the full covariance function given a kernel function for two data points."""
+        if X2 is None:
+            X2 = X
+        K = np.zeros((X.shape[0], X2.shape[0]))
+        for i in np.arange(X.shape[0]):
+            for j in np.arange(X2.shape[0]):
+                K[i, j] = self.function(X[i, :], X2[j, :], **self.parameters)
+
+        return K
+
+    def diag(self, X):
+        """Compute the diagonal of the covariance function"""
+        diagK = np.zeros((X.shape[0], 1))
+        for i in range(X.shape[0]):            
+            diagK[i] = self.function(X[i, :], X[i, :], **self.parameters)
+        return diagK
 
 def exponentiated_quadratic(x, x_prime, variance=1., lengthscale=1.):
     """Exponentiated quadratic covariance function."""
@@ -771,6 +808,6 @@ def add_cov(x, x_prime, kerns, kern_args):
         k+=kern(x, x_prime, **kern_arg)
     return k
 
-def basis_cov(x, x_prime, basis, **kwargs):
+def basis_cov(x, x_prime, basis):
     """Basis function covariance."""
-    return (basis(x, **kwargs)*basis(x_prime, **kwargs)).sum()
+    return (basis.Phi(x)*basis.Phi(x_prime)).sum()

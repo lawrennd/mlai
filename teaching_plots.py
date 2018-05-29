@@ -658,9 +658,8 @@ def rmse_fit(x, y, param_name, param_range,
     count = 0
     obj = {}
     for param in params:
-        kwargs[param_name] = param
+        kwargs[param_name] = param        
         m = model(x, y, **kwargs)
-        m.fit()
         # compute appropriate objective. 
         #for name, plot_objective in plot_objectives.items():
         obj=m.rmse()#[name][count] = plot_objective(m)
@@ -1120,11 +1119,12 @@ def output_augment_x(x, num_outputs):
     index = index[:, np.newaxis]
     return np.hstack((index, x))
 
-def basis(basis, x_min, x_max, fig, ax, loc, text, diagrams='./diagrams', fontsize=20, num_basis=3, num_plots=3):
+def basis(function, x_min, x_max, fig, ax, loc, text, diagrams='./diagrams', fontsize=20, num_basis=3, num_plots=3):
     """Plot examples of the basis vectors."""
     x = np.linspace(x_min, x_max, 100)[:, None]
 
-    Phi = basis(x, num_basis=num_basis)
+    basis = mlai.basis(function, num_basis)
+    Phi = basis.Phi(x)
     diag=(Phi*Phi).sum(1)
 
     colors = []
@@ -1142,36 +1142,36 @@ def basis(basis, x_min, x_max, fig, ax, loc, text, diagrams='./diagrams', fontsi
     plt.sca(ax)
     ax.set_xlabel('$x$', fontsize=fontsize)
     ax.set_ylabel('$\phi(x)$', fontsize=fontsize)
-    for i in range(num_basis):
+    for i in range(basis.number):
         ax.plot(x, Phi[:, i], '-', color=colors[i], linewidth=3)
         ax.text(loc[i][0], loc[i][1], text[i], horizontalalignment='center', fontsize=fontsize, color=colors[i])
-        mlai.write_figure(os.path.join(diagrams, basis.__name__ + '_basis{num:0>3}.svg'.format(num=i)), transparent=True)
+        mlai.write_figure(os.path.join(diagrams, basis.function.__name__ + '_basis{num:0>3}.svg'.format(num=i)), transparent=True)
 
     # Set ylim according to max standard deviation of basis
     ylim = 3*np.asarray([-1, 1])*np.sqrt(diag.max())
 
-    f = np.dot(Phi, np.zeros((num_basis, 1)))
+    f = np.dot(Phi, np.zeros((basis.number, 1)))
     ax.cla()
     a, = ax.plot(x, f, color=[0, 0, 0], linewidth=3)
     
-    for i in range(num_basis):
+    for i in range(basis.number):
         ax.plot(x, Phi[:, i], colors[i], linewidth=1) 
     ax.set_ylim(ylim)
     plt.sca(ax)
     ax.set_xlabel('$x$', fontsize=fontsize) 
     ax.set_ylabel('$f(x)$', fontsize=fontsize)
     t = []
-    for i in range(num_basis):
+    for i in range(basis.number):
         t.append(ax.text(loc[i][0], loc[i][1], '$w_' + str(i) + ' = 0$',
                          horizontalalignment='center', fontsize=fontsize,
                          verticalalignment='center', color=colors[i]))
 
     for j in range(num_plots):
         # Sample a function
-        w = np.random.normal(size=(num_basis, 1))    
+        w = np.random.normal(size=(basis.number, 1))    
         f = np.dot(Phi,w)
         a.set_ydata(f)
-        for i in range(num_basis):
+        for i in range(basis.number):
             t[i].set_text('$w_{ind} = {w:3.3}$'.format(ind=i, w=w[i,0]))
 
         mlai.write_figure(os.path.join(diagrams, basis.__name__ + '_function{plot_num:0>3}.svg'.format(plot_num=j)), transparent=True)
