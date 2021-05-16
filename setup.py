@@ -32,7 +32,7 @@ EXTRAS = {
     # 'fancy feature': ['django'],
 }
 
-PACKAGE_DATA = {'cmtutils': ['defaults.cfg']}
+PACKAGE_DATA = {}
 
 DEPENDENCY_LINKS = [
     'git+ssh://git@github.com/lawrennd/ods.git#egg=pods-0.0.21a0',
