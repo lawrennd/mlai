@@ -12,8 +12,8 @@ from matplotlib import animation
 from IPython.display import display, HTML
 from pylab import cm
 
-import teaching_plots as plot
-import mlai
+import mlai.plot as plot
+import mlai.mlai as ma
 
 N_STEPS_MAX = 500
 
@@ -304,7 +304,7 @@ def emu_sim_comparison(env, control_params, emulator, fidelity='single', max_ste
     plt.tight_layout()
     plt.show()
     file_name = 'emu-sim-comparison.svg'
-    mlai.write_figure(file_name,
+    ma.write_figure(file_name,
                       directory=diagrams,
                       figure=fig,
                       transparent=True)
@@ -328,4 +328,4 @@ def save_frames(frames, filename, diagrams='../diagrams', inverted=True):
     if inverted:
         frames = invert_frames(frames)
     anim=animate_frames(frames)
-    mlai.write_animation_html(anim, filename, diagrams)
+    ma.write_animation_html(anim, filename, diagrams)

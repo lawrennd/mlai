@@ -5,8 +5,8 @@ from matplotlib import pyplot as plt
 
 import GPy
 
-from gp_tutorial import gpplot
-import teaching_plots as plot
+from mlai.gp_tutorial import gpplot
+import mlai.plot as plot
 
 
 def initialize(self, noise_factor=0.01, linear_factor=1):

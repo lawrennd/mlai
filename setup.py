@@ -29,7 +29,8 @@ REQUIRED = [
 
 # What packages are optional?
 EXTRAS = {
-    # 'fancy feature': ['django'],
+    'mountain car demo': ['GPy'],
+    'GP Tutorials': ['GPy'],
 }
 
 PACKAGE_DATA = {}
