@@ -1,13 +1,13 @@
-from . import mlai
+from mlai import *
 from . import plot
 
-gpy_available=True
+GPY_AVAILABLE=True
 try:
     import GPy
 except ImportError:
-    gpy_available=False
+    GPY_AVAILABLE=False
 
-if gpy_available:
+if GPY_AVAILABLE:
     from . import mountain_car
     from . import gp_tutorial
     from . import deepgp_tutorial
