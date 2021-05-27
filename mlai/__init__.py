@@ -1,4 +1,4 @@
-from mlai import *
+from .mlai import *
 from . import plot
 
 GPY_AVAILABLE=True
