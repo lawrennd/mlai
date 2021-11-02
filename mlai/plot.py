@@ -10,7 +10,7 @@ try:
 except ImportError:
     pass
 
-import mlai.mlai as ma
+import mlai as ma
 import mlai.gp_tutorial as gpt
 
 
