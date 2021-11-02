@@ -6,8 +6,8 @@ from matplotlib import pyplot as plt
 import GPy
 
 from mlai.gp_tutorial import gpplot
+from mlai import write_figure
 import mlai.plot as plot
-
 
 def initialize(self, noise_factor=0.01, linear_factor=1):
     """Helper function for deep model initialization."""
@@ -80,7 +80,7 @@ def visualize(self, scale=1.0, offset=0.0, xlabel='input', ylabel='output',
             plt.xlabel(last_name, fontsize=fontsize)
             plt.ylabel(name, fontsize=fontsize)
             last_name=name
-            mlai.write_figure(filename=filename + '-' + str(i-1) + '.svg', 
+            write_figure(filename=filename + '-' + str(i-1) + '.svg', 
                               transparent=True, frameon=True)
             
         if i==0 and xlim is not None:
@@ -105,7 +105,7 @@ def visualize(self, scale=1.0, offset=0.0, xlabel='input', ylabel='output',
     plt.plot(last_x, self.Y*scale + offset, 'r.',markersize=10)
     plt.xlabel(last_name, fontsize=fontsize)
     plt.ylabel(ylabel, fontsize=fontsize)
-    mlai.write_figure(filename=filename + '-' + str(i) + '.svg', 
+    write_figure(filename=filename + '-' + str(i) + '.svg', 
                       transparent=True, frameon=True)
 
     if ylim is not None:
