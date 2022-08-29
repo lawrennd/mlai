@@ -266,7 +266,7 @@ def covariance_capacity(rotate_angle=np.pi/4,
 
     counter = 0
 
-    fig, ax = plt.subplots(figsize=plot.big_figsize)
+    fig, ax = plt.subplots(figsize=big_figsize)
     ax.set_axis_off()
     cax = fig.add_axes([0., 0., 1., 1.])
     cax.set_axis_off()
@@ -369,24 +369,24 @@ def covariance_capacity(rotate_angle=np.pi/4,
     matrix_ax.set_aspect('equal')
     matrix_ax.set_axis_off()
     eigenvals = [['$\lambda_1$', '$0$'],['$0$', '$\lambda_2$']]
-    plot.matrix(eigenvals, 
-                matrix_ax, 
-                bracket_style='square', 
-                type='entries', 
-                bracket_color=black_color)
+    matrix(eigenvals, 
+           matrix_ax, 
+           bracket_style='square', 
+           type='entries', 
+           bracket_color=black_color)
 
 
     # First arrow
     matrix_ax.cla()
-    plot.matrix(eigenvals, 
-                matrix_ax, 
-                bracket_style='square', 
-                type='entries',
-                highlight=True,
-                highlight_row=[0, 0],
-                highlight_col=':',
-                highlight_color=magenta_color,
-                bracket_color=black_color)
+    matrix(eigenvals, 
+           matrix_ax, 
+           bracket_style='square', 
+           type='entries',
+           highlight=True,
+           highlight_row=[0, 0],
+           highlight_col=':',
+           highlight_color=magenta_color,
+           bracket_color=black_color)
 
     ar_one.set(visible=True)
     ar_one_text.set(visible=True)
@@ -397,15 +397,15 @@ def covariance_capacity(rotate_angle=np.pi/4,
 
     # Second arrow
     matrix_ax.cla()
-    plot.matrix(eigenvals, 
-                matrix_ax, 
-                bracket_style='square', 
-                type='entries', 
-                highlight=True,
-                highlight_row=[1,1],
-                highlight_col=':',
-                highlight_color=magenta_color,
-                bracket_color=black_color)
+    matrix(eigenvals, 
+           matrix_ax, 
+           bracket_style='square', 
+           type='entries', 
+           highlight=True,
+           highlight_row=[1,1],
+           highlight_col=':',
+           highlight_color=magenta_color,
+           bracket_color=black_color)
 
     ar_two.set(visible=True)
     ar_two_text.set(visible=True)
@@ -415,10 +415,10 @@ def covariance_capacity(rotate_angle=np.pi/4,
     counter += 1
 
     matrix_ax.cla()
-    plot.matrix(eigenvals, matrix_ax, 
-                bracket_style='square', 
-                type='entries', 
-                bracket_color=black_color)
+    matrix(eigenvals, matrix_ax, 
+           bracket_style='square', 
+           type='entries', 
+           bracket_color=black_color)
 
     file_name = 'gp-optimise-determinant{counter:0>3}.svg'.format(counter=counter)
     ma.write_figure(file_name, directory=diagrams)
@@ -457,13 +457,13 @@ def covariance_capacity(rotate_angle=np.pi/4,
                   ['$0$', '$0$', '$\lambda_3$']]
 
     matrix_ax.cla()
-    plot.matrix(eigenvals2, matrix_ax, 
-                bracket_style='square', 
-                type='entries',
-                highlight=True,
-                highlight_row=[2,2],
-                highlight_col=':',
-                highlight_color=magenta_color)
+    matrix(eigenvals2, matrix_ax, 
+           bracket_style='square', 
+           type='entries',
+           highlight=True,
+           highlight_row=[2,2],
+           highlight_col=':',
+           highlight_color=magenta_color)
 
     file_name = 'gp-optimise-determinant{counter:0>3}.svg'.format(counter=counter)
     ma.write_figure(file_name, directory=diagrams)
@@ -483,11 +483,11 @@ def covariance_capacity(rotate_angle=np.pi/4,
     counter += 1
 
     matrix_ax.cla()
-    plot.matrix(eigenvals, 
-                matrix_ax, 
-                bracket_style='square', 
-                type='entries', 
-                bracket_color=black_color)
+    matrix(eigenvals, 
+           matrix_ax, 
+           bracket_style='square', 
+           type='entries', 
+           bracket_color=black_color)
 
     ar_three.set(visible=False)
     ar_three_text.set(visible=False)
@@ -521,11 +521,11 @@ def covariance_capacity(rotate_angle=np.pi/4,
     pat_hand.set(visible=False)
 
     W = [['$w_{1, 1}$', '$w_{1, 2}$'],[ '$w_{2, 1}$', '$w_{2, 2}$']]
-    plot.matrix(W, 
-                matrix_ax, 
-                bracket_style='square', 
-                type='entries', 
-                bracket_color=black_color)
+    matrix(W, 
+           matrix_ax, 
+           bracket_style='square', 
+           type='entries', 
+           bracket_color=black_color)
 
 
     file_name = 'gp-optimise-determinant{counter:0>3}.svg'.format(counter=counter)
