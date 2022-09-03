@@ -3231,10 +3231,12 @@ def multiple_optima(ax=None, gene_number=937, resolution=80, model_restarts=10, 
 def google_trends(terms, initials, diagrams='./diagrams'):
     """Plot google trends data for a number of different terms."""
     import pods
+    import matplotlib.dates as mdates
     data = pods.datasets.google_trends(terms)
     data['data frame'].set_index('Date', inplace=True)
     fig, ax = plt.subplots(figsize=wide_figsize)
     data['data frame'].plot(ax=ax, rot=45)
+    ax.xaxis.set_major_locator(mdates.YearLocator())
     ma.write_figure(initials+'-google-trends.svg',
                       directory=diagrams,
                       transparent=True)
