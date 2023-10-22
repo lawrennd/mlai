@@ -3236,7 +3236,6 @@ def google_trends(terms, initials, diagrams='./diagrams'):
     data['data frame'].set_index('Date', inplace=True)
     fig, ax = plt.subplots(figsize=wide_figsize)
     data['data frame'].plot(ax=ax, rot=45)
-    ax.xaxis.set_major_locator(mdates.YearLocator())
     ma.write_figure(initials+'-google-trends.svg',
                       directory=diagrams,
                       transparent=True)
@@ -3249,6 +3248,7 @@ def google_trends(terms, initials, diagrams='./diagrams'):
         ma.write_figure('{initials}-google-trends{sample:0>3}.svg'.format(initials=initials,sample=i),
                           directory=diagrams,
                           transparent=True)
+    return ax
                          
 
 
