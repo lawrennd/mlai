@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "mlai"
+version = "0.1.2"
+description = "Package of simple models and plotting routines for teaching and lecturing about machine learning."
+authors = ["Neil D. Lawrence <lawrennd@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/lawrennd/mlai"
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy"
+]
+
+[tool.poetry.dependencies]
+python = ">=3.11,<4.0"
+pods = "*"
+pandas = "*"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.dev-dependencies]
+
+[tool.poetry.extras]
+"mountain car demo" = ["GPy"]
+"GP Tutorials" = ["GPy"]
+

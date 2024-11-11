@@ -32,7 +32,7 @@ def write_animation_html(anim, filename, directory=None):
     f.write(anim.to_jshtml())
     f.close()
 
-def write_figure(filename, figure=None, directory=None, **kwargs):
+def write_figure(filename, figure=None, directory=None, frameon=None, **kwargs):
     """Write figure in correct formating"""
     savename = filename_join(filename, directory)
     if 'transparent' not in kwargs:
