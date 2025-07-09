@@ -49,9 +49,10 @@ jobs:
       if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
       run: poetry install --with dev
       
-    - name: Install Sphinx extensions
+    - name: Install Sphinx extensions and dependencies
       run: |
         poetry run pip install sphinx sphinx-rtd-theme sphinx-autodoc-typehints myst-parser
+        poetry install --with dev
         
     - name: Build documentation
       run: |
