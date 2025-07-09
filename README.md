@@ -1,5 +1,11 @@
 # MLAI: Machine Learning and Adaptive Intelligence Teaching Library
 
+[![CI](https://github.com/lawrennd/mlai/workflows/CI/badge.svg)](https://github.com/lawrennd/mlai/actions/workflows/ci.yml)
+[![Documentation](https://github.com/lawrennd/mlai/workflows/Build%20and%20Deploy%20Documentation/badge.svg)](https://github.com/lawrennd/mlai/actions/workflows/docs.yml)
+[![Tests](https://github.com/lawrennd/mlai/workflows/Tests%20and%20Linting/badge.svg)](https://github.com/lawrennd/mlai/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+
 MLAI is a Python package of simple models, tutorials, and plotting routines designed for teaching and lecturing on machine learning fundamentals. The project prioritizes clarity, mathematical transparency, and educational value, making it ideal for students, educators, and anyone seeking to understand the core ideas of machine learning.
 
 ---
@@ -81,7 +87,7 @@ A comprehensive test framework is being developed (see [CIP-0002](cip/cip0002.md
 ---
 
 ## 📖 Documentation
-- Sphinx documentation (coming soon)
+- [Sphinx documentation](https://inverseprobability.com/mlai/) (hosted on GitHub Pages)
 - [CIPs](cip/) for major improvements and design decisions
 - [Tenets](tenets/vibesafe-mlai-tenets.md) for project philosophy
 
