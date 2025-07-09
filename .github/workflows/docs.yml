@@ -58,6 +58,10 @@ jobs:
         cd docs
         poetry run make html
         
+    - name: Create .nojekyll file
+      run: |
+        touch docs/_build/html/.nojekyll
+        
     - name: Upload documentation artifacts
       uses: actions/upload-artifact@v4
       with:
