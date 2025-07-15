@@ -607,10 +607,12 @@ def covariance_capacity(rotate_angle=np.pi/4,
     ma.write_figure(file_name, directory=diagrams)
 
 def prob_diagram(fontsize=20, diagrams='../diagrams'):
-    """Plot a diagram demonstrating marginal and joint probabilities.
-    :param fontsize: the fontsize to use in the plot
-    :param diagrams: the folder to place the plots in."""
+    """
+    Plot a diagram demonstrating marginal and joint probabilities.
 
+    :param fontsize: Font size to use in the plot (default: 20).
+    :param diagrams: Directory to save the plot (default: '../diagrams').
+    """
     marg = 0.05 # Distance between lines and boxes
     indent = 0.1 # indent of n indicators
     axis_indent = 0.3 # Axis indent.
@@ -658,12 +660,12 @@ def prob_diagram(fontsize=20, diagrams='../diagrams'):
 
 
 def bernoulli_urn(ax, diagrams='../diagrams'):
-    """Plot the urn of Jacob Bernoulli's analogy for the Bernoulli distribution.
-
-    :param ax: axis to draw plot on.
-    :param diagrams: the folder to store the diagram in.
     """
+    Plot the urn of Jacob Bernoulli's analogy for the Bernoulli distribution.
 
+    :param ax: Matplotlib axis to draw the plot on.
+    :param diagrams: Directory to save the diagram (default: '../diagrams').
+    """
     black_prob = 0.3
     ball_radius = 0.1
 
@@ -697,12 +699,12 @@ def bernoulli_urn(ax, diagrams='../diagrams'):
     ma.write_figure('bernoulli-urn.svg', directory=diagrams, transparent=True)
 
 def bayes_billiard(ax, diagrams='../diagrams'):
-    """Plot a series of figures representing Thomas Bayes' billiard table for the Bernoulli distribution representation.
-
-    :param ax: axis to draw plot on.
-    :param diagrams: the folder to store the diagram in.
     """
-    
+    Plot a series of figures representing Thomas Bayes' billiard table for the Bernoulli distribution representation.
+
+    :param ax: Matplotlib axis to draw the plot on.
+    :param diagrams: Directory to save the diagrams (default: '../diagrams').
+    """
     black_prob = 0.3
     ball_radius = 0.1
 
@@ -742,13 +744,15 @@ def bayes_billiard(ax, diagrams='../diagrams'):
         circle.remove()
         
 
-            
 def hyperplane_coordinates(w, b, plot_limits):
-    """Helper function for plotting the decision boundary of the perceptron.
+    """
+    Helper function for plotting the decision boundary of the perceptron.
 
-    :param w: the weight vector for the perceptron.
-    :param b: the bias parameter for the perdeptron."""
-
+    :param w: The weight vector for the perceptron.
+    :param b: The bias parameter for the perceptron.
+    :param plot_limits: Dictionary containing 'x' and 'y' plot limits.
+    :returns: Tuple of (x0, x1) coordinates for the hyperplane line.
+    """
     if abs(w[1])>abs(w[0]):
         # If w[1]>w[0] in absolute value, plane is likely to be leaving tops of plot.
         x0 = plot_limits['x']
@@ -760,16 +764,18 @@ def hyperplane_coordinates(w, b, plot_limits):
     return x0, x1
 
 def init_perceptron(f, ax, x_plus, x_minus, w, b, fontsize=18):
-    """Initialise a plot for showing the perceptron decision boundary.
+    """
+    Initialize a plot for showing the perceptron decision boundary.
 
-    :param f: 
-    :param ax:
-    :param x_plus:
-    :param x_minus:
-    :param w:
-    :param b:
-    :param fontsize: """
-
+    :param f: Matplotlib figure object.
+    :param ax: Array of matplotlib axes (should have 2 axes).
+    :param x_plus: Positive class data points (numpy array).
+    :param x_minus: Negative class data points (numpy array).
+    :param w: Weight vector for the perceptron.
+    :param b: Bias parameter for the perceptron.
+    :param fontsize: Font size for labels and titles (default: 18).
+    :returns: Dictionary containing plot handles for updating.
+    """
     h = {}
 
     ax[0].set_aspect('equal')
@@ -803,8 +809,18 @@ def init_perceptron(f, ax, x_plus, x_minus, w, b, fontsize=18):
     return h
 
 def update_perceptron(h, f, ax, x_plus, x_minus, i, w, b):
-    """Update plots after decision boundary has changed."""
+    """
+    Update plots after decision boundary has changed.
 
+    :param h: Dictionary containing plot handles from init_perceptron.
+    :param f: Matplotlib figure object.
+    :param ax: Array of matplotlib axes.
+    :param x_plus: Positive class data points.
+    :param x_minus: Negative class data points.
+    :param i: Current iteration number.
+    :param w: Updated weight vector.
+    :param b: Updated bias parameter.
+    """
     # Re-plot the hyper plane 
     plot_limits = {}
     plot_limits['x'] = np.asarray(ax[0].get_xlim())
@@ -837,8 +853,17 @@ def update_perceptron(h, f, ax, x_plus, x_minus, i, w, b):
     return h
 
 def contour_error(x, y, m_center, c_center, samps=100, width=6.):
-    """Compute the error on a grid as a function of m and c."""
+    """
+    Generate error contour data for regression visualization.
 
+    :param x: Input data points.
+    :param y: Target values.
+    :param m_center: Center value for slope parameter.
+    :param c_center: Center value for intercept parameter.
+    :param samps: Number of samples for contour generation (default: 100).
+    :param width: Width of the parameter range (default: 6.0).
+    :returns: Tuple of (m_vals, c_vals, E_grid) for contour plotting.
+    """
     # create an array of linearly separated values around m_true
     m_vals = np.linspace(m_center-width/2., m_center+width/2., samps) 
     # create an array of linearly separated values ae
@@ -851,8 +876,16 @@ def contour_error(x, y, m_center, c_center, samps=100, width=6.):
     return m_vals, c_vals, E_grid
     
 def regression_contour(f, ax, m_vals, c_vals, E_grid, fontsize=30):
-    """Regression contour plot."""
-    
+    """
+    Plot regression error contours.
+
+    :param f: Matplotlib figure object.
+    :param ax: Matplotlib axis object.
+    :param m_vals: Slope parameter values.
+    :param c_vals: Intercept parameter values.
+    :param E_grid: Error values grid.
+    :param fontsize: Font size for labels (default: 30).
+    """
     hcont = ax.contour(m_vals, c_vals, E_grid, levels=[0, 0.5, 1, 2, 4, 8, 16, 32, 64]) # this makes the contour plot 
     plt.clabel(hcont, inline=1, fontsize=fontsize/2) # this labels the contours.
 
@@ -860,8 +893,21 @@ def regression_contour(f, ax, m_vals, c_vals, E_grid, fontsize=30):
     ax.set_ylabel('$c$', fontsize=fontsize)
 
 def init_regression(f, ax, x, y, m_vals, c_vals, E_grid, m_star, c_star, fontsize=20):
-    """Function to plot the initial regression fit and the error surface."""
+    """
+    Initialize regression visualization plots.
 
+    :param f: Matplotlib figure object.
+    :param ax: Array of matplotlib axes.
+    :param x: Input data points.
+    :param y: Target values.
+    :param m_vals: Slope parameter values.
+    :param c_vals: Intercept parameter values.
+    :param E_grid: Error values grid.
+    :param m_star: Optimal slope value.
+    :param c_star: Optimal intercept value.
+    :param fontsize: Font size for labels (default: 20).
+    :returns: Dictionary containing plot handles for updating.
+    """
     h = {}
     levels=[0, 0.5, 1, 2, 4, 8, 16, 32, 64]
     h['cont'] = ax[0].contour(m_vals, c_vals, E_grid, levels=levels) # this makes the contour plot on axes 0.
@@ -884,7 +930,16 @@ def init_regression(f, ax, x, y, m_vals, c_vals, E_grid, m_star, c_star, fontsiz
     return h
 
 def update_regression(h, f, ax, m_star, c_star, iteration):
-    """Update the regression plot with the latest fit and position in error space."""
+    """
+    Update regression plots during optimization.
+
+    :param h: Dictionary containing plot handles from init_regression.
+    :param f: Matplotlib figure object.
+    :param ax: Array of matplotlib axes.
+    :param m_star: Current optimal slope value.
+    :param c_star: Current optimal intercept value.
+    :param iteration: Current iteration number.
+    """
     ax[0].plot(m_star, c_star, 'g*')
     x_plot = np.asarray(ax[1].get_xlim()) # get the x limits of the plot for plo
     y_plot = m_star*x_plot + c_star
@@ -897,8 +952,20 @@ def update_regression(h, f, ax, m_star, c_star, iteration):
     return h
 
 def regression_contour_fit(x, y, learn_rate=0.01, m_center=1.4, c_center=-3.1, m_star = 0.0, c_star = -5.0, max_iters=1000, diagrams='../diagrams'):
-    """Plot an evolving contour plot of regression optimisation."""
+    """
+    Plot an evolving contour plot of regression optimisation.
 
+    :param x: Input data points.
+    :param y: Target values.
+    :param learn_rate: Learning rate for optimization (default: 0.01).
+    :param m_center: Center value for slope parameter (default: 1.4).
+    :param c_center: Center value for intercept parameter (default: -3.1).
+    :param m_star: Initial slope value (default: 0.0).
+    :param c_star: Initial intercept value (default: -5.0).
+    :param max_iters: Maximum number of iterations (default: 1000).
+    :param diagrams: Directory to save the plots (default: '../diagrams').
+    :returns: Number of frames generated.
+    """
     m_vals, c_vals, E_grid = contour_error(x, y, m_center, c_center, samps=100)
 
     f, ax = plt.subplots(1, 2, figsize=two_figsize) # this is to create 'side by side axes'
@@ -924,8 +991,20 @@ def regression_contour_fit(x, y, learn_rate=0.01, m_center=1.4, c_center=-3.1, m
     return count
 
 def regression_contour_sgd(x, y, learn_rate=0.01, m_center=1.4, c_center=-3.1, m_star = 0.0, c_star = -5.0, max_iters=4000, diagrams='../diagrams'):
-    """Plot evolution of the solution of linear regression via SGD."""
+    """
+    Plot evolution of the solution of linear regression via SGD.
 
+    :param x: Input data points.
+    :param y: Target values.
+    :param learn_rate: Learning rate for SGD (default: 0.01).
+    :param m_center: Center value for slope parameter (default: 1.4).
+    :param c_center: Center value for intercept parameter (default: -3.1).
+    :param m_star: Initial slope value (default: 0.0).
+    :param c_star: Initial intercept value (default: -5.0).
+    :param max_iters: Maximum number of iterations (default: 4000).
+    :param diagrams: Directory to save the plots (default: '../diagrams').
+    :returns: Number of frames generated.
+    """
     m_vals, c_vals, E_grid = contour_error(x, y, m_center, c_center, samps=100)
 
     f, ax = plt.subplots(1, 2, figsize=two_figsize) # this is to create 'side by side axes'
@@ -949,9 +1028,12 @@ def regression_contour_sgd(x, y, learn_rate=0.01, m_center=1.4, c_center=-3.1, m
                               directory=diagrams)
     return count
 
-#################### Session 3 ####################
 def over_determined_system(diagrams='../diagrams'):
-    """Visualize what happens in an over determined system with linear regression."""
+    """
+    Visualize what happens in an over determined system with linear regression.
+
+    :param diagrams: Directory to save the plots (default: '../diagrams').
+    """
     x = np.array([1, 3])
     y = np.array([3, 1])
 
@@ -1033,6 +1115,11 @@ def over_determined_system(diagrams='../diagrams'):
     ma.write_figure('over_determined_system007.svg', directory=diagrams, transparent=True)
 
 def gaussian_of_height(diagrams='../diagrams'):
+    """
+    Plot a Gaussian density representing heights.
+
+    :param diagrams: Directory to save the plot (default: '../diagrams').
+    """
     "Gaussian density representing heights."
     h = np.linspace(0, 2.5, 1000)
     sigma2 = 0.0225
@@ -1048,13 +1135,31 @@ def gaussian_of_height(diagrams='../diagrams'):
     ax2.set_ylabel('$p(h|\mu, \sigma^2)$', fontsize = 20)
     ma.write_figure(figure=f2, filename='gaussian_of_height.svg', directory=diagrams, transparent=True)
     
-#################### Session 5 ####################
-
 def marathon_fit(model, value, param_name, param_range,
                  xlim, fig, ax, x_val=None, y_val=None, objective=None,
                  diagrams='../diagrams', fontsize=20, objective_ylim=None,
                  prefix='olympic', title=None, png_plot=False, samps=130):
-    """Plot fit of the olympic marathon data alongside error."""
+    """
+    Plot fit of the olympic marathon data alongside error.
+
+    :param model: Model object with a predict method and data attributes.
+    :param value: Value to fit.
+    :param param_name: Name of the parameter being varied.
+    :param param_range: Range of parameter values.
+    :param xlim: Limits for the x-axis.
+    :param fig: Matplotlib figure object.
+    :param ax: Array of matplotlib axes.
+    :param x_val: Optional x value for highlighting (default: None).
+    :param y_val: Optional y value for highlighting (default: None).
+    :param objective: Objective function (optional).
+    :param diagrams: Directory to save the plot (default: '../diagrams').
+    :param fontsize: Font size for labels (default: 20).
+    :param objective_ylim: Y-axis limits for the objective plot (optional).
+    :param prefix: Prefix for saved plot filenames (default: 'olympic').
+    :param title: Title for the plot (optional).
+    :param png_plot: Whether to save as PNG (default: False).
+    :param samps: Number of samples for prediction (default: 130).
+    """
     if title is None:
         title = model.objective_name
         
