@@ -19,6 +19,9 @@ classifiers = [
 python = ">=3.11,<4.0"
 pods = "*"
 pandas = "*"
+matplotlib = "*"
+IPython = "*"
+scipy = "*"
 
 [tool.poetry.group.dev.dependencies]
 sphinx = "^8.2.3"
