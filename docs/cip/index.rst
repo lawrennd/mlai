@@ -7,8 +7,8 @@ This section contains Code Improvement Proposals (CIPs) that document major desi
    :maxdepth: 2
    :caption: CIPs:
 
-   ../cip/cip0001
-   ../cip/cip0002
+   cip0001
+   cip0002
 
 What are CIPs?
 --------------
