@@ -2145,10 +2145,20 @@ def animate_covariance_function(kernel_function,
 def covariance_func(kernel, x=None,
                     shortname=None, longname=None, comment=None,
                     num_samps=5, diagrams='../diagrams', multiple=False):
-    """Write a slide on a given covariance matrix."""
+    """
+    Plot covariance function samples.
 
-    if x is None:
-        x = np.linspace(-1, 1, 200)[:, np.newaxis]
+    :param kernel: Kernel function to sample from.
+    :param x: Input data (optional).
+    :param shortname: Short name for the kernel (optional).
+    :param longname: Long name for the kernel (optional).
+    :param comment: Comment to display (optional).
+    :param num_samps: Number of samples (default: 5).
+    :param diagrams: Directory to save the plot (default: '../diagrams').
+    :param multiple: Whether to show multiple samples (default: False).
+    """
+    if not os.path.exists(diagrams):
+        os.mkdir(diagrams)
     K, anim=animate_covariance_function(kernel.K, x, num_samps,
                                         multiple)
 
@@ -2187,8 +2197,16 @@ def covariance_func(kernel, x=None,
 
     
 def rejection_samples(kernel, x=None, num_few=20, num_many=1000,  diagrams='../diagrams', **kwargs):
-    """Plot samples from a GP, a small sample of data and a rejection sample."""
+    """
+    Generate rejection samples from a kernel.
 
+    :param kernel: Kernel function to sample from.
+    :param x: Input data (optional).
+    :param num_few: Number of few samples (default: 20).
+    :param num_many: Number of many samples (default: 1000).
+    :param diagrams: Directory to save the plot (default: '../diagrams').
+    :param **kwargs: Additional keyword arguments.
+    """
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=big_wide_figsize)
     if x is None:
         x = np.linspace(-1, 1, 250)[:, np.newaxis]
@@ -2241,8 +2259,12 @@ def rejection_samples(kernel, x=None, num_few=20, num_many=1000,  diagrams='../d
     
     
 def two_point_sample(kernel_function, diagrams='../diagrams'):
-    """Make plots for the two data point sample example for explaining gaussian processes."""
+    """
+    Sample from a two-point kernel function.
 
+    :param kernel_function: Kernel function to sample from.
+    :param diagrams: Directory to save the plot (default: '../diagrams').
+    """
     ind = [0, 1]    
     fig, ax = plt.subplots(nrows=1, ncols=2, figsize=two_figsize)
     x = np.linspace(-1, 1, 25)[:, np.newaxis]
@@ -2366,7 +2388,11 @@ def two_point_sample(kernel_function, diagrams='../diagrams'):
 
 
 def poisson(diagrams='../diagrams'):
-    """Make plots of the Poisson distribution"""
+    """
+    Plot Poisson distribution examples.
+
+    :param diagrams: Directory to save the plot (default: '../diagrams').
+    """
     from scipy.stats import poisson
     fig, ax = plt.subplots(figsize=two_figsize)
     y = np.asarray(range(0, 16))
@@ -2384,7 +2410,11 @@ def poisson(diagrams='../diagrams'):
     ma.write_figure('poisson.svg', directory=diagrams, transparent=True)
 
 def logistic(diagrams='../diagrams'):
-    """Make plots of the logistic function"""
+    """
+    Plot logistic function examples.
+
+    :param diagrams: Directory to save the plot (default: '../diagrams').
+    """
     fig, ax = plt.subplots(figsize=two_figsize)
     f = np.linspace(-8, 8, 100)
     g = 1/(1+np.exp(-f))
@@ -2410,7 +2440,13 @@ def height(ax, h, ph):
     #ax.hlines(ylim[0], xlim[0], xlim[1], color='k')
 
 def weight(ax, w, pw):
-    """Plot weight as a distribution."""
+    """
+    Plot weight distribution.
+
+    :param ax: Matplotlib axis.
+    :param w: Weight values.
+    :param pw: Weight probabilities.
+    """
     ax.plot(w, pw, '-', color=[0, 0, 1.], linewidth=3)
     ax.set_xticks([55, 75, 95])
     ax.set_yticks([0.02, 0.04, 0.06])
@@ -2423,7 +2459,12 @@ def weight(ax, w, pw):
     #ax.hlines(ylim[0], xlim[0], xlim[1], color='k')
 
 def low_rank_approximation(fontsize=25, diagrams='../diagrams'):
-    """Illustrate the low rank approximation used in sparse GPs."""
+    """
+    Visualize low-rank matrix approximation.
+
+    :param fontsize: Font size for labels (default: 25).
+    :param diagrams: Directory to save the plot (default: '../diagrams').
+    """
     fig, ax = plt.subplots(1, 4, figsize=big_wide_figsize)
     q = 3
     k1 = 10
@@ -2459,7 +2500,12 @@ def low_rank_approximation(fontsize=25, diagrams='../diagrams'):
     ma.write_figure('wisuvt.svg', directory=diagrams, transparent=True)
     
 def kronecker_illustrate(fontsize=25, diagrams='../diagrams'):
-    """Illustrate a Kronecker product"""
+    """
+    Illustrate Kronecker product concept.
+
+    :param fontsize: Font size for labels (default: 25).
+    :param diagrams: Directory to save the plot (default: '../diagrams').
+    """
     fig, ax = plt.subplots(1, 4, figsize=two_figsize)
     A = [['$a$', '$b$'],
          [ '$c$', '$d$']]
@@ -2493,7 +2539,11 @@ def kronecker_illustrate(fontsize=25, diagrams='../diagrams'):
         
     ma.write_figure('kronecker_product.svg', directory=diagrams, transparent=True)
 def blank_canvas(ax):
-    """Turn an axis into a blank canvas"""
+    """
+    Create a blank canvas for plotting.
+
+    :param ax: Matplotlib axis to clear.
+    """
     ax.set_position([0, 0, 1, 1])
     ax.set_xlim([0, 1])
     ax.set_ylim([0, 1])
