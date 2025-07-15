@@ -9,6 +9,7 @@ import pytest
 import numpy as np
 import matplotlib.pyplot as plt
 import mlai.mlai as mlai
+from mlai.mlai import radial_multivariate
 from pathlib import Path
 import tempfile
 import os
@@ -105,7 +106,7 @@ class TestTutorialWorkflows:
         y = np.hstack([np.zeros(n_samples//2), np.ones(n_samples//2)]).reshape(-1, 1)
         
         # Use multivariate RBF basis
-        basis = mlai.Basis(lambda x, num_basis: mlai.radial_multivariate(x, num_basis=num_basis, random_state=42), 10)
+        basis = mlai.Basis(lambda x, num_basis: radial_multivariate(x, num_basis=num_basis, random_state=42), 10)
         
         # Create and fit model
         model = mlai.LR(X, y, basis)
@@ -236,7 +237,7 @@ class TestTutorialDocumentationConsistency:
         y = np.hstack([np.zeros(n_samples//2), np.ones(n_samples//2)]).reshape(-1, 1)
         
         # Use multivariate RBF basis instead of polynomial for 2D input
-        basis = mlai.Basis(lambda x, num_basis: mlai.radial_multivariate(x, num_basis=num_basis, random_state=42), 10)
+        basis = mlai.Basis(lambda x, num_basis: radial_multivariate(x, num_basis=num_basis, random_state=42), 10)
         
         # Create logistic regression model
         model = mlai.LR(X, y, basis)
