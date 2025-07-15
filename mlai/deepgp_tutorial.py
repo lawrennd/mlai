@@ -118,8 +118,10 @@ def visualize_pinball(self, ax=None, scale=1.0, offset=0.0, xlabel='input', ylab
     """Visualize the layers in a deep GP with one-d input and output."""
     def scale_data(x, portion):     
         x = np.asarray(x).squeeze()  # Accept both 1D and 2D arrays
-        scale = (x.max()-x.min())/(1-2*portion)
-        offset = x.min() - portion*scale
+        x_max = np.max(x)
+        x_min = np.min(x)
+        scale = (x_max - x_min)/(1-2*portion)
+        offset = x_min - portion*scale
         return (x-offset)/scale, scale, offset
 
     if ax is None:
@@ -303,21 +305,25 @@ def visualize_pinball(self, ax=None, scale=1.0, offset=0.0, xlabel='input', ylab
         
         if vertical:
             xlim = list(ax.get_xlim())
-            if ticks.min()<xlim[0]:
-                xlim[0] = ticks.min()
-            if ticks.max()>xlim[1]:
-                xlim[1] = ticks.max()
+            ticks_min = np.min(ticks)
+            ticks_max = np.max(ticks)
+            if ticks_min<xlim[0]:
+                xlim[0] = ticks_min
+            if ticks_max>xlim[1]:
+                xlim[1] = ticks_max
             ax.set_xlim(xlim)
             
-            ax.plot([ticks.min(), ticks.max()], [level, level], **axargs)
+            ax.plot([ticks_min, ticks_max], [level, level], **axargs)
         else:
             ylim = list(ax.get_ylim())
-            if ticks.min()<ylim[0]:
-                ylim[0] = ticks.min()
-            if ticks.max()>ylim[1]:
-                ylim[1] = ticks.max()
+            ticks_min = np.min(ticks)
+            ticks_max = np.max(ticks)
+            if ticks_min<ylim[0]:
+                ylim[0] = ticks_min
+            if ticks_max>ylim[1]:
+                ylim[1] = ticks_max
             ax.set_ylim(ylim)
-            ax.plot([level, level], [ticks.min(), ticks.max()], **axargs)
+            ax.plot([level, level], [ticks_min, ticks_max], **axargs)
 
 
     _, xscale, xoffset = scale_data(first_x, portion=portion)
