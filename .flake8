@@ -1,15 +1,5 @@
 [flake8]
 max-line-length = 127
 max-complexity = 10
-ignore = 
-    E9,  # SyntaxError or IndentationError
-    F63, # SyntaxError
-    F7,  # SyntaxError
-    F82  # SyntaxError
-exclude = 
-    .git,
-    __pycache__,
-    .venv,
-    build,
-    dist,
-    *.egg-info 
+ignore = E9,F63,F7,F82
+exclude = .git,__pycache__,.venv,build,dist,*.egg-info 
