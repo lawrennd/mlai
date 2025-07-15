@@ -1,3 +1,29 @@
+"""
+mlai.plot
+=========
+
+Plotting utilities and visualization functions for the MLAI library.
+
+This module provides a wide range of plotting functions for illustrating
+machine learning concepts, model fits, matrix visualizations, and more.
+It is designed to support both teaching and research by offering
+publication-quality figures and interactive visualizations.
+
+Key features:
+- Matrix and covariance visualizations
+- Regression and classification plots
+- Model fit diagnostics (RMSE, holdout, cross-validation)
+- Neural network diagrams
+- Utility functions for figure generation
+
+Dependencies:
+- numpy
+- matplotlib
+- (optional) daft, IPython, mpl_toolkits.mplot3d
+
+Some functions expect models following the MLAI interface (e.g., LM, GP).
+"""
+
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -30,12 +56,15 @@ notation_map={'variance': '\\alpha',
            'period':'\omega'}
 
 def pred_range(x, portion=0.2, points=200, randomize=False):
-    """Return a one dimensional range for prediction across given a data set, x
+    """
+    Generate a range of prediction points for plotting.
 
-    :param x: input data from which to create a range.
-    :param portion: portion of the range to extend (default 0.2)
-    :param points: number of points in the range.
-    :param randomize: whether tho randomize the points slightly (add small Gaussian noise to each input location)."""
+    :param x: Input data (numpy array).
+    :param portion: Fraction of the data range to extend beyond min/max (default: 0.2).
+    :param points: Number of points in the generated range (default: 200).
+    :param randomize: If True, randomly shuffle the generated points (default: False).
+    :returns: Numpy array of prediction points.
+    """
     span = x.max()-x.min()
     xt=np.linspace(x.min()-portion*span, x.max()+portion*span, points)[:,np.newaxis]
     if not randomize:
@@ -78,7 +107,28 @@ def matrix(A, ax=None,
            zoom_col=None,
            bracket_color=[0,0,0],
            fontsize=16):
-    """Plot a matrix for visualisation in a slide or piece of text."""
+    """
+    Plot a matrix with optional highlighting and custom brackets.
+
+    :param A: Matrix to plot (2D numpy array or list of lists).
+    :param ax: Matplotlib axis to draw the plot on (optional).
+    :param bracket_width: Width of the bracket lines (default: 3).
+    :param bracket_style: Style of brackets ('square' or 'round', default: 'square').
+    :param type: Display type ('values', 'entries', etc., default: 'values').
+    :param colormap: Colormap for matrix values (optional).
+    :param highlight: Whether to highlight a row/column (default: False).
+    :param highlight_row: Row to highlight (optional).
+    :param highlight_col: Column to highlight (optional).
+    :param highlight_width: Width of highlight lines (default: 3).
+    :param highlight_color: Color for highlights (default: black).
+    :param prec: String precision for values (default: '.3').
+    :param zoom: Whether to zoom into a submatrix (default: False).
+    :param zoom_row: Row index for zoom (optional).
+    :param zoom_col: Column index for zoom (optional).
+    :param bracket_color: Color for brackets (default: black).
+    :param fontsize: Font size for text (default: 16).
+    :returns: Matplotlib axis with the matrix plot.
+    """
     
     if ax is None:
         ax = plt.gca()
@@ -213,7 +263,20 @@ def base_plot(K, ind=[0, 1], ax=None,
               contour_markersize=4,
               contour_marker='x',
               fontsize=20):
-    """Plot the contour of a covariance matrix"""
+    """
+    Plot a base contour for a covariance matrix.
+
+    :param K: Covariance matrix (2D numpy array).
+    :param ind: Indices of variables to plot (default: [0, 1]).
+    :param ax: Matplotlib axis to draw the plot on (optional).
+    :param contour_color: Color for the contour (default: blue).
+    :param contour_style: Line style for the contour (default: '-').
+    :param contour_size: Line width for the contour (default: 4).
+    :param contour_markersize: Marker size for the contour (default: 4).
+    :param contour_marker: Marker style (default: 'x').
+    :param fontsize: Font size for labels (default: 20).
+    :returns: Matplotlib axis with the contour plot.
+    """
 
     blackcolor = [0,0,0]
     if ax is None:
@@ -263,7 +326,18 @@ def covariance_capacity(rotate_angle=np.pi/4,
                         black_color = [0., 0., 0.],
                         blue_color = [0., 0., 1.],
                         magenta_color = [1., 0., 1.]):
-    """Plot a diagram showing the footprint of the determinant in comparison to the eigenvalues."""
+    """
+    Visualize the capacity of a covariance matrix by plotting its eigenvalues and eigenvectors.
+
+    :param rotate_angle: Angle to rotate the covariance ellipse (default: pi/4).
+    :param lambda1: First eigenvalue (default: 0.5).
+    :param lambda2: Second eigenvalue (default: 0.3).
+    :param diagrams: Directory to save the plot (default: '../diagrams/gp').
+    :param fill_color: Fill color for the ellipse (default: yellow).
+    :param black_color: Color for axes and lines (default: black).
+    :param blue_color: Color for one eigenvector (default: blue).
+    :param magenta_color: Color for the other eigenvector (default: magenta).
+    """
 
     counter = 0
 
