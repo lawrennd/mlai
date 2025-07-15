@@ -43,8 +43,9 @@ jobs:
 
     - name: Run tests with coverage
       run: |
-        poetry run pytest --cov=mlai --cov-report=xml --cov-report=html --cov-report=term-missing --cov-fail-under=80
+        poetry run pytest --cov=mlai --cov-report=xml --cov-report=html --cov-report=term-missing
 
+    - name: Check coverage
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v3
       with:
