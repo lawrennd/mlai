@@ -753,3 +753,216 @@ class TestNeuralNetworksExpanded:
             mlai.SimpleDropoutNeuralNetwork(0, drop_p=0.5)
         with pytest.raises(Exception):
             mlai.NonparametricDropoutNeuralNetwork(alpha=0, beta=1, n=10) 
+
+class TestLinearModelEdgeCases:
+    """Test edge cases and error handling for Linear Model."""
+    
+    def test_lm_set_param_unknown_parameter_raises(self):
+        """Test LM set_param raises ValueError for unknown parameters."""
+        X = np.array([[1], [2]])
+        y = np.array([1, 2])
+        basis = mlai.Basis(mlai.linear, 1)
+        model = mlai.LM(X, y, basis)
+        
+        with pytest.raises(ValueError, match="Unknown parameter"):
+            model.set_param("unknown_param", 1.0)
+    
+    def test_lm_set_param_no_update_when_same_value(self):
+        """Test LM set_param doesn't update when value is the same."""
+        X = np.array([[1], [2]])
+        y = np.array([1, 2])
+        basis = mlai.Basis(mlai.linear, 1)
+        model = mlai.LM(X, y, basis)
+        
+        # Set sigma2 to a known value
+        model.sigma2 = 0.5
+        original_sigma2 = model.sigma2
+        
+        # Set it to the same value - should not trigger refit
+        model.set_param("sigma2", 0.5, update_fit=False)
+        assert model.sigma2 == original_sigma2
+
+class TestKernelEdgeCases:
+    """Test edge cases and error handling for Kernel class."""
+    
+    def test_kernel_repr_html_not_implemented(self):
+        """Test Kernel._repr_html_ raises NotImplementedError."""
+        def test_kernel(x, x_prime, **kwargs):
+            return np.dot(x, x_prime)
+        
+        kernel = mlai.Kernel(test_kernel)
+        with pytest.raises(NotImplementedError):
+            kernel._repr_html_()
+
+class TestAdditionalKernelFunctions:
+    """Test additional kernel functions that were not previously covered."""
+    
+    def test_exponentiated_quadratic_kernel(self):
+        """Test exponentiated_quadratic kernel function."""
+        x = np.array([1, 2])
+        x_prime = np.array([2, 3])
+        
+        result = mlai.exponentiated_quadratic(x, x_prime, variance=2.0, lengthscale=1.5)
+        assert isinstance(result, (int, float))
+        assert result > 0
+    
+    def test_eq_cov_kernel(self):
+        """Test eq_cov kernel function."""
+        x = np.array([1, 2])
+        x_prime = np.array([2, 3])
+        
+        result = mlai.eq_cov(x, x_prime, variance=1.0, lengthscale=1.0)
+        assert isinstance(result, (int, float))
+        assert result > 0
+    
+    def test_ou_cov_kernel(self):
+        """Test ou_cov kernel function."""
+        x = np.array([1, 2])
+        x_prime = np.array([2, 3])
+        
+        result = mlai.ou_cov(x, x_prime, variance=1.0, lengthscale=1.0)
+        assert isinstance(result, (int, float))
+        assert result > 0
+    
+    def test_matern32_cov_kernel(self):
+        """Test matern32_cov kernel function."""
+        x = np.array([1, 2])
+        x_prime = np.array([2, 3])
+        
+        result = mlai.matern32_cov(x, x_prime, variance=1.0, lengthscale=1.0)
+        assert isinstance(result, (int, float))
+        assert result > 0
+    
+    def test_matern52_cov_kernel(self):
+        """Test matern52_cov kernel function."""
+        x = np.array([1, 2])
+        x_prime = np.array([2, 3])
+        
+        result = mlai.matern52_cov(x, x_prime, variance=1.0, lengthscale=1.0)
+        assert isinstance(result, (int, float))
+        assert result > 0
+    
+    def test_mlp_cov_kernel(self):
+        """Test mlp_cov kernel function."""
+        x = np.array([1, 2])
+        x_prime = np.array([2, 3])
+        
+        result = mlai.mlp_cov(x, x_prime, variance=1.0, w=1.0, b=5.0)
+        assert isinstance(result, (int, float))
+        assert result > 0
+    
+    def test_icm_cov_kernel(self):
+        """Test icm_cov kernel function."""
+        x = np.array([0, 1, 2])  # First element is output index
+        x_prime = np.array([1, 2, 3])  # First element is output index
+        B = np.array([[1.0, 0.5], [0.5, 1.0]])  # Coregionalization matrix
+        
+        def subkernel(x, x_prime, **kwargs):
+            return np.dot(x, x_prime)
+        
+        result = mlai.icm_cov(x, x_prime, B, subkernel)
+        assert isinstance(result, (int, float))
+    
+    def test_slfm_cov_kernel(self):
+        """Test slfm_cov kernel function."""
+        x = np.array([0, 1, 2])  # First element is output index
+        x_prime = np.array([1, 2, 3])  # First element is output index
+        W = np.array([[1.0, 0.5], [0.5, 1.0]])  # Latent factor matrix
+        
+        def subkernel(x, x_prime, **kwargs):
+            return np.dot(x, x_prime)
+        
+        result = mlai.slfm_cov(x, x_prime, W, subkernel)
+        assert isinstance(result, (int, float))
+    
+    def test_add_cov_kernel(self):
+        """Test add_cov kernel function."""
+        x = np.array([1, 2])
+        x_prime = np.array([2, 3])
+        
+        def kernel1(x, x_prime, **kwargs):
+            return np.dot(x, x_prime)
+        
+        def kernel2(x, x_prime, **kwargs):
+            return np.dot(x, x_prime) * 2
+        
+        kerns = [kernel1, kernel2]
+        kern_args = [{}, {}]
+        result = mlai.add_cov(x, x_prime, kerns, kern_args)
+        assert isinstance(result, (int, float))
+        assert result > 0
+    
+    def test_prod_kern_kernel(self):
+        """Test prod_kern kernel function."""
+        x = np.array([1, 2])
+        x_prime = np.array([2, 3])
+        
+        def kernel1(x, x_prime, **kwargs):
+            return np.dot(x, x_prime)
+        
+        def kernel2(x, x_prime, **kwargs):
+            return np.dot(x, x_prime) * 2
+        
+        kerns = [kernel1, kernel2]
+        kern_args = [{}, {}]
+        result = mlai.prod_cov(x, x_prime, kerns, kern_args)
+        assert isinstance(result, (int, float))
+        assert result > 0
+
+class TestBasisFunctionEdgeCases:
+    """Test edge cases for basis functions."""
+    
+    def test_polynomial_basis_edge_cases(self):
+        """Test polynomial basis function with edge cases."""
+        # Test with single point
+        x = np.array([[0.5]])
+        result = mlai.polynomial(x, num_basis=2, data_limits=[0, 1])
+        assert result.shape == (1, 2)
+        assert np.all(np.isfinite(result))
+        
+        # Test with different data limits
+        x = np.array([[0.5], [1.0]])
+        result = mlai.polynomial(x, num_basis=3, data_limits=[-2, 2])
+        assert result.shape == (2, 3)
+        assert np.all(np.isfinite(result))
+    
+    def test_radial_basis_edge_cases(self):
+        """Test radial basis function with edge cases."""
+        # Test with custom width
+        x = np.array([[0.5], [1.0]])
+        result = mlai.radial(x, num_basis=3, data_limits=[0, 2], width=0.5)
+        assert result.shape == (2, 3)
+        assert np.all(np.isfinite(result))
+        
+        # Test with single point
+        x = np.array([[0.5]])
+        result = mlai.radial(x, num_basis=2, data_limits=[0, 1])
+        assert result.shape == (1, 2)
+        assert np.all(np.isfinite(result))
+
+class TestUtilityFunctionEdgeCases:
+    """Test edge cases for utility functions."""
+    
+    def test_filename_join_edge_cases(self):
+        """Test filename_join with edge cases."""
+        # Test with empty filename
+        result = mlai.filename_join("")
+        assert result == ""
+        
+        # Test with None directory
+        result = mlai.filename_join("test.png", None)
+        assert result == "test.png"
+        
+        # Test with empty directory - this should work without creating directory
+        with tempfile.TemporaryDirectory() as temp_dir:
+            result = mlai.filename_join("test.png", temp_dir)
+            assert result == os.path.join(temp_dir, "test.png")
+    
+    def test_write_figure_edge_cases(self):
+        """Test write_figure with edge cases."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Test with custom kwargs that override defaults
+            with patch('matplotlib.pyplot.savefig') as mock_savefig:
+                mlai.write_figure("test.png", directory=temp_dir, transparent=False, dpi=300)
+                expected_path = os.path.join(temp_dir, "test.png")
+                mock_savefig.assert_called_once_with(expected_path, transparent=False, dpi=300) 
