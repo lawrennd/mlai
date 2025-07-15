@@ -504,34 +504,124 @@ class TestLogisticRegression:
 
 class TestBayesianLinearModel:
     """Test Bayesian Linear Model (BLM) class."""
-    
+
     def test_blm_initialization(self):
         """Test BLM class initialization."""
-        X = np.array([[1, 2], [3, 4]])
-        y = np.array([1, 2])
+        X = np.array([[1], [2], [3]])
+        y = np.array([1, 2, 3])
         alpha = 1.0
         sigma2 = 0.1
-        basis = mlai.Basis(mlai.linear, 1)
-        
+        basis = mlai.Basis(mlai.linear, 2)  # number=2 for 1D input
         blm = mlai.BLM(X, y, alpha, sigma2, basis)
         assert blm.alpha == alpha
         assert blm.sigma2 == sigma2
-    
-    def test_blm_predict(self):
-        """Test BLM predict method."""
-        X = np.array([[1], [2]])
-        y = np.array([1, 4])
+        assert blm.basis == basis
+        assert blm.Phi.shape[0] == X.shape[0]
+
+    def test_blm_fit_and_posterior(self):
+        """Test BLM fit computes posterior mean and covariance."""
+        X = np.array([[1], [2], [3]])
+        y = np.array([1, 2, 3])
         alpha = 1.0
         sigma2 = 0.1
-        basis = mlai.Basis(mlai.linear, 1)
-        
+        basis = mlai.Basis(mlai.linear, 2)
         blm = mlai.BLM(X, y, alpha, sigma2, basis)
-        # Skip fit for now due to matrix shape issues
-        # blm.fit()
-        
-        # Test that the model can be created
-        assert blm.alpha == alpha
-        assert blm.sigma2 == sigma2
+        blm.fit()
+        # Posterior mean and covariance should be set
+        assert hasattr(blm, 'mu_w')
+        assert hasattr(blm, 'C_w')
+        assert blm.mu_w.shape[0] == blm.Phi.shape[1]
+        assert blm.C_w.shape[0] == blm.C_w.shape[1]
+
+    def test_blm_predict_mean_and_variance(self):
+        """Test BLM predict returns mean and variance."""
+        X = np.array([[1], [2], [3]])
+        y = np.array([1, 2, 3])
+        alpha = 1.0
+        sigma2 = 0.1
+        basis = mlai.Basis(mlai.linear, 2)
+        blm = mlai.BLM(X, y, alpha, sigma2, basis)
+        blm.fit()
+        X_test = np.array([[4], [5]])
+        mean, var = blm.predict(X_test)
+        assert mean.shape[0] == X_test.shape[0]
+        assert var.shape[0] == X_test.shape[0]
+        # Test full_cov option
+        mean2, cov2 = blm.predict(X_test, full_cov=True)
+        assert mean2.shape[0] == X_test.shape[0]
+        assert cov2.shape[0] == X_test.shape[0]
+        assert cov2.shape[1] == X_test.shape[0]
+
+    def test_blm_objective_and_log_likelihood(self):
+        """Test BLM objective and log_likelihood methods."""
+        X = np.array([[1], [2], [3]])
+        y = np.array([1, 2, 3])
+        alpha = 1.0
+        sigma2 = 0.1
+        basis = mlai.Basis(mlai.linear, 2)
+        blm = mlai.BLM(X, y, alpha, sigma2, basis)
+        blm.fit()
+        obj = blm.objective()
+        ll = blm.log_likelihood()
+        assert isinstance(obj, float)
+        assert isinstance(ll, float)
+
+    def test_blm_update_nll_and_nll_split(self):
+        """Test BLM update_nll and nll_split methods."""
+        X = np.array([[1], [2], [3]])
+        y = np.array([1, 2, 3])
+        alpha = 1.0
+        sigma2 = 0.1
+        basis = mlai.Basis(mlai.linear, 2)
+        blm = mlai.BLM(X, y, alpha, sigma2, basis)
+        blm.fit()
+        blm.update_nll()
+        assert hasattr(blm, 'log_det')
+        assert hasattr(blm, 'quadratic')
+        log_det, quad = blm.nll_split()
+        assert isinstance(log_det, float)
+        assert isinstance(quad, float)
+
+    def test_blm_set_param_and_refit(self):
+        """Test BLM set_param updates parameter and refits."""
+        X = np.array([[1], [2], [3]])
+        y = np.array([1, 2, 3])
+        alpha = 1.0
+        sigma2 = 0.1
+        basis = mlai.Basis(mlai.linear, 2)
+        blm = mlai.BLM(X, y, alpha, sigma2, basis)
+        blm.fit()
+        blm.set_param('sigma2', 0.2)
+        assert blm.sigma2 == 0.2
+        # Test updating basis parameter
+        blm.set_param('number', 2)
+        assert blm.basis.number == 2
+
+    def test_blm_set_param_unknown_raises(self):
+        """Test BLM set_param with unknown parameter raises ValueError."""
+        X = np.array([[1], [2], [3]])
+        y = np.array([1, 2, 3])
+        alpha = 1.0
+        sigma2 = 0.1
+        basis = mlai.Basis(mlai.linear, 2)
+        blm = mlai.BLM(X, y, alpha, sigma2, basis)
+        with pytest.raises(ValueError):
+            blm.set_param('not_a_param', 123)
+
+    def test_blm_update_f_and_update_sum_squares(self):
+        """Test BLM update_f and update_sum_squares methods."""
+        X = np.array([[1], [2], [3]])
+        y = np.array([1, 2, 3])
+        alpha = 1.0
+        sigma2 = 0.1
+        basis = mlai.Basis(mlai.linear, 2)
+        blm = mlai.BLM(X, y, alpha, sigma2, basis)
+        blm.fit()
+        blm.update_f()
+        assert hasattr(blm, 'f_bar')
+        assert hasattr(blm, 'f_cov')
+        blm.update_sum_squares()
+        assert hasattr(blm, 'sum_squares')
 
 
 class TestNoiseModels:
