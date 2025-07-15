@@ -1361,9 +1361,9 @@ class LR(ProbMapModel):
         :rtype: numpy.ndarray
         """
         self.update_g()
-        dw = -(self.Phi[self.y.values, :]*(1-self.g[self.y.values, :])).sum(0)
-        dw += (self.Phi[~self.y.values, :]*self.g[~self.y.values, :]).sum(0)
-        return dw[:, None]
+        dw = -(self.Phi[self.y.values, :]*(1-self.g[self.y.values])).sum(0)
+        dw += (self.Phi[~self.y.values, :]*self.g[~self.y.values]).sum(0)
+        return dw
 
     def compute_g(self, f):
         """
@@ -1386,9 +1386,9 @@ class LR(ProbMapModel):
         ind = f>bound
         log_g[ind] = eps
         log_gminus[ind] = f[ind]
-        ind = (f>=-bound & f<=bound)
-        log_g[ind] = np.log(self.g[ind])
-        log_gminus[ind] = np.log(1-self.g[ind])
+        ind = np.logical_and(f>=-bound, f<=bound)
+        log_g[ind] = np.log(g[ind])
+        log_gminus[ind] = np.log(1-g[ind])
         return g, log_g, log_gminus
         
     def update_g(self):
@@ -1406,7 +1406,7 @@ class LR(ProbMapModel):
         :rtype: float
         """
         self.update_g()
-        return self.log_g[self.y.values, :].sum() + self.log_gminus[~self.y.values, :].sum()
+        return self.log_g[self.y.values].sum() + self.log_gminus[~self.y.values].sum()
     
 ##########          Week 12          ##########
 class GP(ProbMapModel):
