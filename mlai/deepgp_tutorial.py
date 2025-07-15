@@ -117,6 +117,7 @@ def visualize_pinball(self, ax=None, scale=1.0, offset=0.0, xlabel='input', ylab
                   xlim=None, ylim=None, fontsize=20, portion=0.2, points=50, vertical=True):
     """Visualize the layers in a deep GP with one-d input and output."""
     def scale_data(x, portion):     
+        x = np.asarray(x).squeeze()  # Accept both 1D and 2D arrays
         scale = (x.max()-x.min())/(1-2*portion)
         offset = x.min() - portion*scale
         return (x-offset)/scale, scale, offset
