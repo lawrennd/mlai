@@ -1220,20 +1220,20 @@ def rmse_fit(x, y, param_name, param_range,
              model=LM, #plot_objectives={'RMSE':ma.MapModel.rmse},
              objective_ylim=None, xlim=None,
              plot_fit=marathon_fit, diagrams='../diagrams', **kwargs):
+    """
+    Fit a model and show RMSE error.
 
-    """Fit a model and show RMSE error
-
-    :param x: the input x data.
-    :param y: the input y data.
-    :param param_name: the parameter name to vary.
-    :param param_range: the range over which to vary the parameter.
-    :param model: the model to fit (default is LM).
-    :param objective_ylim: the y limits for the plot of the objective.
-    :param xlim: the x limits for the plot.
-    :param plot_fit: the plotting function to use for the fit.
-    :param diagrams: the folder to place the diagrams in (default is ../diagrams).
-    :kwargs: arguments to pass to the model construction."""
-
+    :param x: The input x data.
+    :param y: The input y data.
+    :param param_name: The parameter name to vary.
+    :param param_range: The range over which to vary the parameter.
+    :param model: The model to fit (default is LM).
+    :param objective_ylim: The y limits for the plot of the objective.
+    :param xlim: The x limits for the plot.
+    :param plot_fit: Function to use for plotting the fit.
+    :param diagrams: Directory to save the plots (default: '../diagrams').
+    :param **kwargs: Additional keyword arguments passed to plot_fit.
+    """
     f, ax = plt.subplots(1, 2, figsize=two_figsize)
     num_data = x.shape[0]
     
@@ -1259,20 +1259,23 @@ def rmse_fit(x, y, param_name, param_range,
 def holdout_fit(x, y, param_name, param_range, model=LM, val_start=20,
                 objective_ylim=None, xlim=None, plot_fit=marathon_fit,
                 permute=True, prefix='olympic_val', diagrams='../diagrams', **kwargs):
-    """Fit a model and show holdout error.
+    """
+    Fit a model and show holdout error.
 
-    :param x: the input x data.
-    :param y: the input y data.
-    :param param_name: the parameter name to vary.
-    :param param_range: the range over which to vary the parameter.
-    :param model: the model to fit (default is LM).
-    :param objective_ylim: the y limits for the plot of the objective.
-    :param xlim: the x limits for the plot.
-    :param plot_fit: the plotting function to use for the fit.
-    :param prefix: the prefix to use for filenames (default is olympic_val).
-    :param diagrams: the folder to place the diagrams in (default is ../diagrams).
-    :kwargs: arguments to pass to the model construction."""
-
+    :param x: The input x data.
+    :param y: The input y data.
+    :param param_name: The parameter name to vary.
+    :param param_range: The range over which to vary the parameter.
+    :param model: The model to fit (default is LM).
+    :param val_start: Starting index for validation set (default: 20).
+    :param objective_ylim: The y limits for the plot of the objective.
+    :param xlim: The x limits for the plot.
+    :param plot_fit: Function to use for plotting the fit.
+    :param permute: Whether to permute the data (default: True).
+    :param prefix: Prefix for saved plot filenames (default: 'olympic_val').
+    :param diagrams: Directory to save the plots (default: '../diagrams').
+    :param **kwargs: Additional keyword arguments passed to plot_fit.
+    """
     f, ax = plt.subplots(1, 2, figsize=two_figsize)
     num_data = x.shape[0]
 
@@ -1315,20 +1318,21 @@ def loo_fit(x, y, param_name, param_range,
             xlim=None, plot_fit=marathon_fit,
             prefix='olympic_loo', diagrams='../diagrams',
             **kwargs):
-    """Fit a model and show leave one out error
+    """
+    Fit a model and show leave one out error.
 
-    :param x: the input x data.
-    :param y: the input y data.
-    :param param_name: the parameter name to vary.
-    :param param_range: the range over which to vary the parameter.
-    :param model: the model to fit (default is LM).
-    :param objective_ylim: the y limits for the plot of the objective.
-    :param xlim: the x limits for the plot.
-    :param plot_fit: the plotting function to use for the fit.
-    :param prefix: the prefix to use for filenames (default is olympic_loo).
-    :param diagrams: the folder to place the diagrams in (default is ../diagrams).
-    :kwargs: arguments to pass to the model construction."""
-
+    :param x: The input x data.
+    :param y: The input y data.
+    :param param_name: The parameter name to vary.
+    :param param_range: The range over which to vary the parameter.
+    :param model: The model to fit (default is LM).
+    :param objective_ylim: The y limits for the plot of the objective.
+    :param xlim: The x limits for the plot.
+    :param plot_fit: Function to use for plotting the fit.
+    :param prefix: Prefix for saved plot filenames (default: 'olympic_loo').
+    :param diagrams: Directory to save the plots (default: '../diagrams').
+    :param **kwargs: Additional keyword arguments passed to plot_fit.
+    """
     f, ax = plt.subplots(1, 2, figsize=two_figsize)
 
 
@@ -1379,20 +1383,22 @@ def loo_fit(x, y, param_name, param_range,
 
 
 def cv_fit(x, y, param_name, param_range, model=LM, objective_ylim=None, 
-               xlim=None, plot_fit=marathon_fit, num_parts=5, diagrams='../diagrams', **kwargs):
-    """Fit a model and show cross validation error
+           xlim=None, plot_fit=marathon_fit, num_parts=5, diagrams='../diagrams', **kwargs):
+    """
+    Fit a model and show cross validation error.
 
-    :param x: the input x data.
-    :param y: the input y data.
-    :param param_name: the parameter name to vary.
-    :param param_range: the range over which to vary the parameter.
-    :param model: the model to fit (default is LM).
-    :param objective_ylim: the y limits for the plot of the objective.
-    :param xlim: the x limits for the plot.
-    :param plot_fit: the plotting function to use for the fit.
-    :param diagrams: the folder to place the diagrams in (default is ../diagrams).
-    :kwargs: arguments to pass to the model construction."""
-
+    :param x: The input x data.
+    :param y: The input y data.
+    :param param_name: The parameter name to vary.
+    :param param_range: The range over which to vary the parameter.
+    :param model: The model to fit (default is LM).
+    :param objective_ylim: The y limits for the plot of the objective.
+    :param xlim: The x limits for the plot.
+    :param plot_fit: Function to use for plotting the fit.
+    :param num_parts: Number of parts for cross-validation (default: 5).
+    :param diagrams: Directory to save the plots (default: '../diagrams').
+    :param **kwargs: Additional keyword arguments passed to plot_fit.
+    """
     f, ax = plt.subplots(1, 2, figsize=two_figsize)
     num_data = x.shape[0]
     partitions = []
@@ -1442,7 +1448,11 @@ def cv_fit(x, y, param_name, param_range, model=LM, objective_ylim=None,
 #################### Session 6 ####################    
 
 def under_determined_system(diagrams='../diagrams'):
-    """Visualise what happens in an under determined system with linear regression."""
+    """
+    Visualize what happens in an under determined system with linear regression.
+
+    :param diagrams: Directory to save the plots (default: '../diagrams').
+    """
     x = 1.
     y = 3.
     fig, ax = plt.subplots(figsize=one_figsize)
@@ -1472,7 +1482,11 @@ def under_determined_system(diagrams='../diagrams'):
 
 
 def bayes_update(diagrams='../diagrams'):
-    """Visualise the updating of a posterior of Bayesian inference for a Gaussian lieklihood."""
+    """
+    Visualize Bayesian updating with a simple example.
+
+    :param diagrams: Directory to save the plots (default: '../diagrams').
+    """
     fig, ax = plt.subplots(figsize=two_figsize)
     num_points = 1000
     x_max = 6
@@ -1540,7 +1554,17 @@ def bayes_update(diagrams='../diagrams'):
 
 def height_weight(h=None, w=None, muh=1.7, varh=0.0225,
                   muw=75, varw=36, diagrams='../diagrams'):
-    """Plot height and weight as Gaussians."""
+    """
+    Plot height and weight data with Gaussian distributions.
+
+    :param h: Height data (optional).
+    :param w: Weight data (optional).
+    :param muh: Mean height (default: 1.7).
+    :param varh: Variance of height (default: 0.0225).
+    :param muw: Mean weight (default: 75).
+    :param varw: Variance of weight (default: 36).
+    :param diagrams: Directory to save the plot (default: '../diagrams').
+    """
     if h is None:
         h = np.linspace(1.25, 2.15, 100)[:, np.newaxis]
     if w is None:
@@ -1559,7 +1583,18 @@ def height_weight(h=None, w=None, muh=1.7, varh=0.0225,
 def independent_height_weight(h=None, w=None, muh=1.7, varh=0.0225,
                               muw=75, varw=36, num_samps=20,
                               diagrams='../diagrams'):
-    """Plot independent Gaussians of height and weight."""
+    """
+    Plot independent height and weight samples.
+
+    :param h: Height data (optional).
+    :param w: Weight data (optional).
+    :param muh: Mean height (default: 1.7).
+    :param varh: Variance of height (default: 0.0225).
+    :param muw: Mean weight (default: 75).
+    :param varw: Variance of weight (default: 36).
+    :param num_samps: Number of samples to generate (default: 20).
+    :param diagrams: Directory to save the plot (default: '../diagrams').
+    """
     if h is None:
         h = np.linspace(1.25, 2.15, 100)[:, np.newaxis]
     if w is None:
@@ -1620,7 +1655,18 @@ def independent_height_weight(h=None, w=None, muh=1.7, varh=0.0225,
 
 def correlated_height_weight(h=None, w=None, muh=1.7, varh=0.0225,
                              muw=75, varw=36, num_samps=20, diagrams='../diagrams'):
-    "Plot correlated Gaussian distributions of height and weight."
+    """
+    Plot correlated height and weight samples.
+
+    :param h: Height data (optional).
+    :param w: Weight data (optional).
+    :param muh: Mean height (default: 1.7).
+    :param varh: Variance of height (default: 0.0225).
+    :param muw: Mean weight (default: 75).
+    :param varw: Variance of weight (default: 36).
+    :param num_samps: Number of samples to generate (default: 20).
+    :param diagrams: Directory to save the plot (default: '../diagrams').
+    """
     if not os.path.exists(diagrams):
         os.mkdir(diagrams)
     if h is None:
@@ -1696,7 +1742,24 @@ def two_point_pred(K, f, x, ax=None, ind=[0, 1],
                    fixed_linecolor = [0., 1., 0.],
                    fixed_size = 4, stub=None, start=0,
                    diagrams='../diagrams'):
-    """Plot two dimensional predictions of the Gaussian density"""
+    """
+    Plot two-point prediction for Gaussian processes.
+
+    :param K: Covariance matrix.
+    :param f: Function values.
+    :param x: Input points.
+    :param ax: Matplotlib axis (optional).
+    :param ind: Indices to plot (default: [0, 1]).
+    :param conditional_linestyle: Line style for conditional (default: '-').
+    :param conditional_linecolor: Color for conditional (default: red).
+    :param conditional_size: Line width for conditional (default: 4).
+    :param fixed_linestyle: Line style for fixed (default: '-').
+    :param fixed_linecolor: Color for fixed (default: green).
+    :param fixed_size: Line width for fixed (default: 4).
+    :param stub: Stub parameter (optional).
+    :param start: Starting index (default: 0).
+    :param diagrams: Directory to save the plot (default: '../diagrams').
+    """
     if not os.path.exists(diagrams):
         os.mkdir(diagrams)
     
@@ -1735,7 +1798,13 @@ def two_point_pred(K, f, x, ax=None, ind=[0, 1],
     
 
 def output_augment_x(x, num_outputs):
-    """Compute an autmented input matrix with associated output indices."""
+    """
+    Augment input x with output dimensions.
+
+    :param x: Input data.
+    :param num_outputs: Number of outputs.
+    :returns: Augmented input data.
+    """
     num_data = x.shape[0]
     x = np.tile(x, (num_outputs, 1))
     index = np.asarray([])
@@ -1745,7 +1814,21 @@ def output_augment_x(x, num_outputs):
     return np.hstack((index, x))
 
 def basis(function, x_min, x_max, fig, ax, loc, text, diagrams='./diagrams', fontsize=20, num_basis=3, num_plots=3):
-    """Plot examples of the basis vectors."""
+    """
+    Plot basis functions.
+
+    :param function: Basis function to plot.
+    :param x_min: Minimum x value.
+    :param x_max: Maximum x value.
+    :param fig: Matplotlib figure.
+    :param ax: Matplotlib axis.
+    :param loc: Location for text.
+    :param text: Text to display.
+    :param diagrams: Directory to save the plot (default: './diagrams').
+    :param fontsize: Font size (default: 20).
+    :param num_basis: Number of basis functions (default: 3).
+    :param num_plots: Number of plots (default: 3).
+    """
     if not os.path.exists(diagrams):
         os.mkdir(diagrams)
     x = np.linspace(x_min, x_max, 100)[:, None]
@@ -1813,6 +1896,16 @@ def computing_covariance(kernel,
                          stub,
                          prec='1.2',
                          diagrams='../slides/diagrams/kern'):
+    """
+    Visualize covariance computation.
+
+    :param kernel: Kernel function.
+    :param x: Input data.
+    :param formula: Formula to display.
+    :param stub: Stub parameter.
+    :param prec: Precision for values (default: '1.2').
+    :param diagrams: Directory to save the plots (default: '../slides/diagrams/kern').
+    """
     if not os.path.exists(diagrams):
         os.mkdir(diagrams)
     counter=0
@@ -1924,7 +2017,21 @@ def kern_circular_sample(K, mu=None, x=None,
                          filename=None, fig=None, num_samps=5,
                          num_theta=48, multiple=True,
                          diagrams='../diagrams', **kwargs):
-    """Make an animation of a circular sample from a covariance function."""
+    """
+    Sample from a circular kernel and create animation.
+
+    :param K: Kernel function.
+    :param mu: Mean (optional).
+    :param x: Input data (optional).
+    :param filename: Output filename (optional).
+    :param fig: Matplotlib figure (optional).
+    :param num_samps: Number of samples (default: 5).
+    :param num_theta: Number of theta values (default: 48).
+    :param multiple: Whether to show multiple samples (default: True).
+    :param diagrams: Directory to save the plots (default: '../diagrams').
+    :param **kwargs: Additional keyword arguments.
+    :returns: Animation object.
+    """
     if not os.path.exists(diagrams):
         os.mkdir(diagrams)
 
@@ -2011,7 +2118,15 @@ def kern_circular_sample(K, mu=None, x=None,
 def animate_covariance_function(kernel_function,
                                 x=None, num_samps=5,
                                 multiple=False):
-    """Create an animation of a prior covariance function."""
+    """
+    Create animation of covariance function samples.
+
+    :param kernel_function: Kernel function to sample from.
+    :param x: Input data (optional).
+    :param num_samps: Number of samples (default: 5).
+    :param multiple: Whether to show multiple samples (default: False).
+    :returns: Animation object.
+    """
 
     fig, ax = plt.subplots(figsize=one_figsize)
 
