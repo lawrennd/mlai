@@ -11,6 +11,7 @@ except ImportError:
     pass
 
 import mlai as ma
+from mlai.mlai import LM
 import mlai.gp_tutorial as gpt
 
 
@@ -1037,7 +1038,7 @@ def marathon_fit(model, value, param_name, param_range,
 
 
 def rmse_fit(x, y, param_name, param_range,
-             model=ma.LM, #plot_objectives={'RMSE':ma.MapModel.rmse},
+             model=LM, #plot_objectives={'RMSE':ma.MapModel.rmse},
              objective_ylim=None, xlim=None,
              plot_fit=marathon_fit, diagrams='../diagrams', **kwargs):
 
@@ -1047,7 +1048,7 @@ def rmse_fit(x, y, param_name, param_range,
     :param y: the input y data.
     :param param_name: the parameter name to vary.
     :param param_range: the range over which to vary the parameter.
-    :param model: the model to fit (default is ma.LM).
+    :param model: the model to fit (default is LM).
     :param objective_ylim: the y limits for the plot of the objective.
     :param xlim: the x limits for the plot.
     :param plot_fit: the plotting function to use for the fit.
@@ -1076,7 +1077,7 @@ def rmse_fit(x, y, param_name, param_range,
         count += 1
 
 
-def holdout_fit(x, y, param_name, param_range, model=ma.LM, val_start=20,
+def holdout_fit(x, y, param_name, param_range, model=LM, val_start=20,
                 objective_ylim=None, xlim=None, plot_fit=marathon_fit,
                 permute=True, prefix='olympic_val', diagrams='../diagrams', **kwargs):
     """Fit a model and show holdout error.
@@ -1085,7 +1086,7 @@ def holdout_fit(x, y, param_name, param_range, model=ma.LM, val_start=20,
     :param y: the input y data.
     :param param_name: the parameter name to vary.
     :param param_range: the range over which to vary the parameter.
-    :param model: the model to fit (default is ma.LM).
+    :param model: the model to fit (default is LM).
     :param objective_ylim: the y limits for the plot of the objective.
     :param xlim: the x limits for the plot.
     :param plot_fit: the plotting function to use for the fit.
@@ -1131,7 +1132,7 @@ def holdout_fit(x, y, param_name, param_range, model=ma.LM, val_start=20,
         count+=1
 
 def loo_fit(x, y, param_name, param_range,
-            model=ma.LM, objective_ylim=None, 
+            model=LM, objective_ylim=None, 
             xlim=None, plot_fit=marathon_fit,
             prefix='olympic_loo', diagrams='../diagrams',
             **kwargs):
@@ -1141,7 +1142,7 @@ def loo_fit(x, y, param_name, param_range,
     :param y: the input y data.
     :param param_name: the parameter name to vary.
     :param param_range: the range over which to vary the parameter.
-    :param model: the model to fit (default is ma.LM).
+    :param model: the model to fit (default is LM).
     :param objective_ylim: the y limits for the plot of the objective.
     :param xlim: the x limits for the plot.
     :param plot_fit: the plotting function to use for the fit.
@@ -1198,7 +1199,7 @@ def loo_fit(x, y, param_name, param_range,
             count+=1
 
 
-def cv_fit(x, y, param_name, param_range, model=ma.LM, objective_ylim=None, 
+def cv_fit(x, y, param_name, param_range, model=LM, objective_ylim=None, 
                xlim=None, plot_fit=marathon_fit, num_parts=5, diagrams='../diagrams', **kwargs):
     """Fit a model and show cross validation error
 
@@ -1206,7 +1207,7 @@ def cv_fit(x, y, param_name, param_range, model=ma.LM, objective_ylim=None,
     :param y: the input y data.
     :param param_name: the parameter name to vary.
     :param param_range: the range over which to vary the parameter.
-    :param model: the model to fit (default is ma.LM).
+    :param model: the model to fit (default is LM).
     :param objective_ylim: the y limits for the plot of the objective.
     :param xlim: the x limits for the plot.
     :param plot_fit: the plotting function to use for the fit.
