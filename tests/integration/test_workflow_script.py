@@ -122,7 +122,9 @@ class TestWorkflowScript:
             # Allow for overflow warnings in logistic regression (expected)
             allowed_warnings = [
                 "overflow encountered in exp",
-                "RuntimeWarning"
+                "RuntimeWarning",
+                "g = 1./(1+np.exp(f))",  # This is the actual warning line
+                "proba = 1. / (1 + np.exp(-f))"  # Another expected warning line
             ]
             
             for line in stderr.split('\n'):
