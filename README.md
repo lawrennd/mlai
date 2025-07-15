@@ -1,8 +1,9 @@
 # MLAI: Machine Learning and Adaptive Intelligence Teaching Library
 
-[![CI](https://github.com/lawrennd/mlai/workflows/CI/badge.svg)](https://github.com/lawrennd/mlai/actions/workflows/ci.yml)
+[![Tests](https://github.com/lawrennd/mlai/workflows/Tests/badge.svg)](https://github.com/lawrennd/mlai/actions/workflows/tests.yml)
+[![Lint](https://github.com/lawrennd/mlai/workflows/Lint/badge.svg)](https://github.com/lawrennd/mlai/actions/workflows/lint.yml)
 [![Documentation](https://github.com/lawrennd/mlai/workflows/Build%20and%20Deploy%20Documentation/badge.svg)](https://github.com/lawrennd/mlai/actions/workflows/docs.yml)
-[![Tests](https://github.com/lawrennd/mlai/workflows/Tests%20and%20Linting/badge.svg)](https://github.com/lawrennd/mlai/actions/workflows/tests.yml)
+[![codecov](https://codecov.io/gh/lawrennd/mlai/branch/main/graph/badge.svg)](https://codecov.io/gh/lawrennd/mlai)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
@@ -76,13 +77,18 @@ We welcome contributions! Please:
 ---
 
 ## 🧪 Testing
-A comprehensive test framework is being developed (see [CIP-0002](cip/cip0002.md)).
+A comprehensive test framework has been implemented (see [CIP-0002](cip/cip0002.md)).
 
-- To run tests (when available):
+- To run tests:
   ```bash
   pytest
   ```
-- Test coverage and CI/CD integration coming soon
+- To run tests with coverage:
+  ```bash
+  pytest --cov=mlai --cov-report=html
+  ```
+- Tests run automatically on GitHub Actions for all pull requests
+- Coverage reports are uploaded to [Codecov](https://codecov.io/gh/lawrennd/mlai)
 
 ---
 
