@@ -1,6 +1,5 @@
 # Import core functionality
 from . import mlai
-from . import plot
 
 # Check for GPy availability
 GPY_AVAILABLE = True
