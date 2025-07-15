@@ -38,7 +38,13 @@ except ImportError:
 
 import mlai as ma
 from mlai.mlai import LM
-import mlai.gp_tutorial as gpt
+
+# Import GPy-dependent modules conditionally
+try:
+    import mlai.gp_tutorial as gpt
+    GPY_AVAILABLE = True
+except ImportError:
+    GPY_AVAILABLE = False
 
 
 tau = 2*np.pi
@@ -1174,10 +1180,17 @@ def marathon_fit(model, value, param_name, param_range,
     y_pred, y_var = model.predict(x_pred)
     
     if y_var is None:
-        gpt.meanplot(x_pred, y_pred, ax=ax[0])
+        if GPY_AVAILABLE:
+            gpt.meanplot(x_pred, y_pred, ax=ax[0])
+        else:
+            ax[0].plot(x_pred, y_pred, 'b-', linewidth=2)
     else:
         y_err = np.sqrt(y_var)*2
-        gpt.gpplot(x_pred, y_pred, y_pred - y_err, y_pred + y_err, ax=ax[0])
+        if GPY_AVAILABLE:
+            gpt.gpplot(x_pred, y_pred, y_pred - y_err, y_pred + y_err, ax=ax[0])
+        else:
+            ax[0].plot(x_pred, y_pred, 'b-', linewidth=2)
+            ax[0].fill_between(x_pred.flatten(), (y_pred - y_err).flatten(), (y_pred + y_err).flatten(), alpha=0.3)
         
     #ax[0].set_xlabel('year', fontsize=fontsize)
     ax[0].set_ylim(ylim)
@@ -2250,11 +2263,15 @@ def rejection_samples(kernel, x=None, num_few=20, num_many=1000,  diagrams='../d
     A = np.dot(Kinv, K_star)
     mu_f = np.dot(A.T, y_data)
     c_f = np.diag(K - np.dot(A.T, K_star))[:, np.newaxis]
-    _ = gpt.gpplot(x,
+    if GPY_AVAILABLE:
+        _ = gpt.gpplot(x,
                            mu_f,
                            mu_f-2*np.sqrt(c_f),
                            mu_f+2*np.sqrt(c_f), 
                            ax=ax)
+    else:
+        ax.plot(x, mu_f, 'b-', linewidth=2)
+        ax.fill_between(x.flatten(), (mu_f-2*np.sqrt(c_f)).flatten(), (mu_f+2*np.sqrt(c_f)).flatten(), alpha=0.3)
     ma.write_figure('gp_rejection_sample005.png', directory=diagrams, transparent=True)
     
     
@@ -3404,11 +3421,18 @@ def model_output(model, output_dim=0, scale=1.0, offset=0.0, ax=None, xlabel='$x
     if yt_sd.shape[1]>1:
         yt_sd = yt_sd[:, output_dim]
 
-    _ = gpt.gpplot(xt.flatten(),
+    if GPY_AVAILABLE:
+        _ = gpt.gpplot(xt.flatten(),
                            yt_mean[:, output_dim],
                            yt_mean[:, output_dim]-2*yt_sd.flatten(),
                            yt_mean[:, output_dim]+2*yt_sd.flatten(), 
                            ax=ax)
+    else:
+        ax.plot(xt.flatten(), yt_mean[:, output_dim], 'b-', linewidth=2)
+        ax.fill_between(xt.flatten(), 
+                       (yt_mean[:, output_dim]-2*yt_sd.flatten()).flatten(), 
+                       (yt_mean[:, output_dim]+2*yt_sd.flatten()).flatten(), 
+                       alpha=0.3)
 
 
     if ylim is None:
@@ -3441,11 +3465,18 @@ def model_sample(model, output_dim=0, scale=1.0, offset=0.0,
     if yt_sd.shape[1]>1:
         yt_sd = yt_sd[:, output_dim]
         
-    _ = gpt.gpplot(xt.flatten(),
+    if GPY_AVAILABLE:
+        _ = gpt.gpplot(xt.flatten(),
                yt_mean[:, output_dim],
                yt_mean[:, output_dim]-2*yt_sd.flatten(),
                yt_mean[:, output_dim]+2*yt_sd.flatten(), 
                ax=ax)
+    else:
+        ax.plot(xt.flatten(), yt_mean[:, output_dim], 'b-', linewidth=2)
+        ax.fill_between(xt.flatten(), 
+                       (yt_mean[:, output_dim]-2*yt_sd.flatten()).flatten(), 
+                       (yt_mean[:, output_dim]+2*yt_sd.flatten()).flatten(), 
+                       alpha=0.3)
     for i in range(samps):
         xt = pred_range(model.X, portion=portion, randomize=True)
         a = model.posterior_sample(xt)
