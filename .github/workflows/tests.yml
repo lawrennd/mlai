@@ -28,6 +28,9 @@ jobs:
         virtualenvs-create: true
         virtualenvs-in-project: true
 
+    - name: Check Poetry version
+      run: poetry --version
+
     - name: Load cached venv
       id: cached-poetry-dependencies
       uses: actions/cache@v4
@@ -36,7 +39,6 @@ jobs:
         key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
 
     - name: Install dependencies
-      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
       run: poetry install --with dev
 
     - name: Run tests with coverage
