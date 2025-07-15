@@ -6,6 +6,7 @@ authors = ["Neil D. Lawrence <lawrennd@gmail.com>"]
 license = "MIT"
 readme = "README.md"
 homepage = "https://github.com/lawrennd/mlai"
+packages = [{include = "mlai"}]
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python",
