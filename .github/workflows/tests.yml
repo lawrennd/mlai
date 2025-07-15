@@ -1,60 +1,64 @@
-name: Tests and Linting
+name: Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.11', '3.12']
-        
+        python-version: ["3.11", "3.12"]
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      
+    - uses: actions/checkout@v4
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-        
+
     - name: Install Poetry
       uses: snok/install-poetry@v1
       with:
         version: latest
         virtualenvs-create: true
         virtualenvs-in-project: true
-        
+
     - name: Load cached venv
       id: cached-poetry-dependencies
       uses: actions/cache@v4
       with:
         path: .venv
         key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
-        
+
     - name: Install dependencies
       if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
       run: poetry install --with dev
-      
-    - name: Run tests
+
+    - name: Run tests with coverage
       run: |
-        poetry run pytest tests/ -v --cov=mlai --cov-report=xml
-      continue-on-error: true  # Allow tests to fail until test framework is implemented
-      
-    - name: Upload coverage to Codecov
+        poetry run pytest --cov=mlai --cov-report=xml --cov-report=html --cov-report=term-missing --cov-fail-under=80
+
+    - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v3
       with:
         file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
         fail_ci_if_error: false
-      continue-on-error: true  # Allow coverage upload to fail until tests are implemented
-      
-    - name: Lint with flake8
+        token: ${{ secrets.CODECOV_TOKEN }}
+
+    - name: Upload coverage report as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report-${{ matrix.python-version }}
+        path: htmlcov/
+        retention-days: 30
+
+    - name: Display coverage summary
       run: |
-        poetry run pip install flake8
-        poetry run flake8 mlai/ --count --select=E9,F63,F7,F82 --show-source --statistics
-        poetry run flake8 mlai/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-      continue-on-error: true  # Allow linting to fail until code style is standardized 
+        poetry run coverage report --show-missing 
