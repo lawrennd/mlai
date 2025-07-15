@@ -176,3 +176,26 @@ Desktop.ini
 
 # Cursor
 .cursor/
+
+# VibeSafe-specific files (exclude from version control)
+# These are project-specific scripts and configuration files that shouldn't be shared
+whats-next
+install-whats-next.sh
+scripts/
+backlog/update_index.py
+backlog/task_template.md
+cip/cip_template.md
+whats-next
+
+# Keep important project files:
+# - backlog/ (task management)
+# - cip/ (code improvement plans) 
+# - tenets/ (project principles)
+# - ai-requirements/ (framework documentation)
+# Backup and temporary files
+*~
+*#
+*.bak
+*.tmp
+*.swp
+*.swo
