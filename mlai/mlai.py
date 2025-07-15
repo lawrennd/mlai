@@ -990,6 +990,8 @@ class SimpleNeuralNetwork(Model):
     :type nodes: int
     """
     def __init__(self, nodes):
+        if nodes <= 0:
+            raise ValueError("Number of nodes must be positive, got {}".format(nodes))
         self.nodes = nodes
         self.w2 = np.random.normal(size=self.nodes)/self.nodes
         self.b2 = np.random.normal(size=1)
@@ -1023,6 +1025,8 @@ class SimpleDropoutNeuralNetwork(SimpleNeuralNetwork):
     :type drop_p: float, optional
     """
     def __init__(self, nodes, drop_p=0.5):
+        if drop_p <= 0 or drop_p >= 1:
+            raise ValueError("Dropout probability must be between 0 and 1, got {}".format(drop_p))
         self.drop_p = drop_p
         super().__init__(nodes=nodes)
         # renormalize the network weights
@@ -1066,6 +1070,12 @@ class NonparametricDropoutNeuralNetwork(SimpleDropoutNeuralNetwork):
     :type n: int, optional
     """
     def __init__(self, alpha=10, beta=1, n=1000):
+        if alpha <= 0:
+            raise ValueError("Alpha parameter must be positive, got {}".format(alpha))
+        if beta <= 0:
+            raise ValueError("Beta parameter must be positive, got {}".format(beta))
+        if n <= 0:
+            raise ValueError("Number of data points must be positive, got {}".format(n))
         self.update_num = 0
         self.alpha = alpha
         self.beta = beta

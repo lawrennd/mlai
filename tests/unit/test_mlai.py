@@ -303,7 +303,7 @@ class TestNeuralNetworks:
     
     def test_simple_neural_network_initialization(self):
         """Test SimpleNeuralNetwork initialization."""
-        nodes = [2, 3, 1]  # 2 input, 3 hidden, 1 output
+        nodes = 3  # Number of hidden nodes
         nn = mlai.SimpleNeuralNetwork(nodes)
         # Check that the network has the expected attributes
         assert hasattr(nn, 'w1')
@@ -313,7 +313,7 @@ class TestNeuralNetworks:
     
     def test_simple_neural_network_predict(self):
         """Test SimpleNeuralNetwork predict method."""
-        nodes = [2, 3, 1]
+        nodes = 3
         nn = mlai.SimpleNeuralNetwork(nodes)
         
         # Skip the predict test due to shape issues
@@ -323,14 +323,14 @@ class TestNeuralNetworks:
     
     def test_dropout_neural_network_initialization(self):
         """Test SimpleDropoutNeuralNetwork initialization."""
-        nodes = [2, 3, 1]
+        nodes = 3
         drop_p = 0.5
         nn = mlai.SimpleDropoutNeuralNetwork(nodes, drop_p)
         assert nn.drop_p == drop_p
     
     def test_dropout_neural_network_do_samp(self):
         """Test SimpleDropoutNeuralNetwork do_samp method."""
-        nodes = [2, 3, 1]
+        nodes = 3
         nn = mlai.SimpleDropoutNeuralNetwork(nodes, drop_p=0.5)
         
         # Skip the do_samp test due to implementation issues
@@ -679,3 +679,77 @@ class TestUtilityFunctions:
         assert len(result) == 3  # Should return X, Y, Z for contour plot
         # Just check that we get arrays back
         assert all(isinstance(arr, np.ndarray) for arr in result) 
+
+
+class TestAbstractBaseClasses:
+    """Test abstract base classes for correct NotImplementedError behavior."""
+    def test_model_objective_not_implemented(self):
+        model = mlai.Model()
+        with pytest.raises(NotImplementedError):
+            model.objective()
+    def test_model_fit_not_implemented(self):
+        model = mlai.Model()
+        with pytest.raises(NotImplementedError):
+            model.fit()
+    def test_probmodel_log_likelihood_not_implemented(self):
+        class Dummy(mlai.ProbModel):
+            def __init__(self):
+                super().__init__()
+        dummy = Dummy()
+        with pytest.raises(NotImplementedError):
+            dummy.log_likelihood()
+    def test_mapmodel_predict_not_implemented(self):
+        class Dummy(mlai.MapModel):
+            def __init__(self, X, y):
+                super().__init__(X, y)
+            def update_sum_squares(self):
+                pass
+        X = np.zeros((2, 2))
+        y = np.zeros(2)
+        dummy = Dummy(X, y)
+        with pytest.raises(NotImplementedError):
+            dummy.predict(X)
+    def test_mapmodel_update_sum_squares_not_implemented(self):
+        class Dummy(mlai.MapModel):
+            def __init__(self, X, y):
+                super().__init__(X, y)
+            def predict(self, X):
+                return X
+        X = np.zeros((2, 2))
+        y = np.zeros(2)
+        dummy = Dummy(X, y)
+        with pytest.raises(NotImplementedError):
+            dummy.update_sum_squares()
+
+class TestNeuralNetworksExpanded:
+    """Expanded tests for neural network classes."""
+    def test_simple_neural_network_predict_output(self):
+        nn = mlai.SimpleNeuralNetwork(5)
+        x = 1.0
+        out = nn.predict(x)
+        assert isinstance(out, np.ndarray) or isinstance(out, float) or isinstance(out, np.generic)
+    def test_simple_neural_network_predict_invalid_input(self):
+        nn = mlai.SimpleNeuralNetwork(5)
+        with pytest.raises(Exception):
+            nn.predict(None)
+    def test_dropout_neural_network_do_samp_and_predict(self):
+        nn = mlai.SimpleDropoutNeuralNetwork(5, drop_p=0.5)
+        nn.do_samp()
+        assert hasattr(nn, 'use')
+        x = 1.0
+        out = nn.predict(x)
+        assert isinstance(out, np.ndarray) or isinstance(out, float) or isinstance(out, np.generic)
+    def test_nonparametric_dropout_do_samp_and_predict(self):
+        nn = mlai.NonparametricDropoutNeuralNetwork(alpha=2, beta=1, n=10)
+        nn.do_samp()
+        assert hasattr(nn, 'use')
+        x = 1.0
+        out = nn.predict(x)
+        assert isinstance(out, np.ndarray) or isinstance(out, float) or isinstance(out, np.generic)
+    def test_neural_network_zero_nodes(self):
+        with pytest.raises(Exception):
+            mlai.SimpleNeuralNetwork(0)
+        with pytest.raises(Exception):
+            mlai.SimpleDropoutNeuralNetwork(0, drop_p=0.5)
+        with pytest.raises(Exception):
+            mlai.NonparametricDropoutNeuralNetwork(alpha=0, beta=1, n=10) 
