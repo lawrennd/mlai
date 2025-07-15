@@ -1,12 +1,15 @@
 import pytest
 import numpy as np
 from unittest.mock import patch, MagicMock
-from mlai import gp_tutorial
+import mlai
 
 
 @pytest.mark.unit
 def test_ax_default_function_exists():
     """Test that ax_default function exists and is callable."""
+    if not mlai.GPY_AVAILABLE:
+        pytest.skip("GPy not available, skipping gp_tutorial tests")
+    from mlai import gp_tutorial
     assert hasattr(gp_tutorial, 'ax_default')
     assert callable(gp_tutorial.ax_default)
 
@@ -14,6 +17,9 @@ def test_ax_default_function_exists():
 @pytest.mark.unit
 def test_meanplot_function_exists():
     """Test that meanplot function exists and is callable."""
+    if not mlai.GPY_AVAILABLE:
+        pytest.skip("GPy not available, skipping gp_tutorial tests")
+    from mlai import gp_tutorial
     assert hasattr(gp_tutorial, 'meanplot')
     assert callable(gp_tutorial.meanplot)
 
@@ -21,6 +27,9 @@ def test_meanplot_function_exists():
 @pytest.mark.unit
 def test_gpplot_function_exists():
     """Test that gpplot function exists and is callable."""
+    if not mlai.GPY_AVAILABLE:
+        pytest.skip("GPy not available, skipping gp_tutorial tests")
+    from mlai import gp_tutorial
     assert hasattr(gp_tutorial, 'gpplot')
     assert callable(gp_tutorial.gpplot)
 
@@ -28,6 +37,9 @@ def test_gpplot_function_exists():
 @pytest.mark.unit
 def test_ax_default_signature():
     """Test that ax_default has the expected parameters."""
+    if not mlai.GPY_AVAILABLE:
+        pytest.skip("GPy not available, skipping gp_tutorial tests")
+    from mlai import gp_tutorial
     import inspect
     sig = inspect.signature(gp_tutorial.ax_default)
     params = list(sig.parameters.keys())
@@ -38,6 +50,9 @@ def test_ax_default_signature():
 @pytest.mark.unit
 def test_meanplot_signature():
     """Test that meanplot has the expected parameters."""
+    if not mlai.GPY_AVAILABLE:
+        pytest.skip("GPy not available, skipping gp_tutorial tests")
+    from mlai import gp_tutorial
     import inspect
     sig = inspect.signature(gp_tutorial.meanplot)
     params = list(sig.parameters.keys())
@@ -50,6 +65,9 @@ def test_meanplot_signature():
 @pytest.mark.unit
 def test_gpplot_signature():
     """Test that gpplot has the expected parameters."""
+    if not mlai.GPY_AVAILABLE:
+        pytest.skip("GPy not available, skipping gp_tutorial tests")
+    from mlai import gp_tutorial
     import inspect
     sig = inspect.signature(gp_tutorial.gpplot)
     params = list(sig.parameters.keys())
@@ -66,6 +84,9 @@ def test_gpplot_signature():
 @patch('mlai.gp_tutorial.plt')
 def test_ax_default_creates_new_figure(mock_plt):
     """Test ax_default creates a new figure when ax is None."""
+    if not mlai.GPY_AVAILABLE:
+        pytest.skip("GPy not available, skipping gp_tutorial tests")
+    from mlai import gp_tutorial
     # Mock the matplotlib components
     mock_fig = MagicMock()
     mock_ax = MagicMock()
@@ -86,6 +107,9 @@ def test_ax_default_creates_new_figure(mock_plt):
 @patch('mlai.gp_tutorial.plt')
 def test_ax_default_uses_existing_axis(mock_plt):
     """Test ax_default uses existing axis when provided."""
+    if not mlai.GPY_AVAILABLE:
+        pytest.skip("GPy not available, skipping gp_tutorial tests")
+    from mlai import gp_tutorial
     # Mock the matplotlib components
     mock_fig = MagicMock()
     mock_ax = MagicMock()
@@ -106,6 +130,9 @@ def test_ax_default_uses_existing_axis(mock_plt):
 @patch('mlai.gp_tutorial.plt')
 def test_meanplot_calls_ax_default_and_plot(mock_plt, mock_ax_default):
     """Test meanplot calls ax_default and plots correctly."""
+    if not mlai.GPY_AVAILABLE:
+        pytest.skip("GPy not available, skipping gp_tutorial tests")
+    from mlai import gp_tutorial
     # Mock the components
     mock_fig = MagicMock()
     mock_ax = MagicMock()
@@ -134,6 +161,9 @@ def test_meanplot_calls_ax_default_and_plot(mock_plt, mock_ax_default):
 @patch('mlai.gp_tutorial.plt')
 def test_gpplot_creates_all_plot_elements(mock_plt, mock_ax_default, mock_meanplot):
     """Test gpplot creates all expected plot elements."""
+    if not mlai.GPY_AVAILABLE:
+        pytest.skip("GPy not available, skipping gp_tutorial tests")
+    from mlai import gp_tutorial
     # Mock the components
     mock_fig = MagicMock()
     mock_ax = MagicMock()

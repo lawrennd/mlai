@@ -2,14 +2,12 @@ import pytest
 import numpy as np
 from unittest.mock import patch, MagicMock
 
-# Mock GPy before importing deepgp_tutorial
-with patch.dict('sys.modules', {'GPy': MagicMock()}):
-    import mlai.deepgp_tutorial as deepgp_tutorial
-
 
 @pytest.mark.unit
 def test_initialize_function_exists():
     """Test that initialize function exists and is callable."""
+    with patch.dict('sys.modules', {'GPy': MagicMock()}):
+        import mlai.deepgp_tutorial as deepgp_tutorial
     assert hasattr(deepgp_tutorial, 'initialize')
     assert callable(deepgp_tutorial.initialize)
 
@@ -17,6 +15,8 @@ def test_initialize_function_exists():
 @pytest.mark.unit
 def test_staged_optimize_function_exists():
     """Test that staged_optimize function exists and is callable."""
+    with patch.dict('sys.modules', {'GPy': MagicMock()}):
+        import mlai.deepgp_tutorial as deepgp_tutorial
     assert hasattr(deepgp_tutorial, 'staged_optimize')
     assert callable(deepgp_tutorial.staged_optimize)
 
@@ -24,6 +24,8 @@ def test_staged_optimize_function_exists():
 @pytest.mark.unit
 def test_posterior_sample_function_exists():
     """Test that posterior_sample function exists and is callable."""
+    with patch.dict('sys.modules', {'GPy': MagicMock()}):
+        import mlai.deepgp_tutorial as deepgp_tutorial
     assert hasattr(deepgp_tutorial, 'posterior_sample')
     assert callable(deepgp_tutorial.posterior_sample)
 
@@ -31,6 +33,8 @@ def test_posterior_sample_function_exists():
 @pytest.mark.unit
 def test_visualize_function_exists():
     """Test that visualize function exists and is callable."""
+    with patch.dict('sys.modules', {'GPy': MagicMock()}):
+        import mlai.deepgp_tutorial as deepgp_tutorial
     assert hasattr(deepgp_tutorial, 'visualize')
     assert callable(deepgp_tutorial.visualize)
 
@@ -38,6 +42,8 @@ def test_visualize_function_exists():
 @pytest.mark.unit
 def test_visualize_pinball_function_exists():
     """Test that visualize_pinball function exists and is callable."""
+    with patch.dict('sys.modules', {'GPy': MagicMock()}):
+        import mlai.deepgp_tutorial as deepgp_tutorial
     assert hasattr(deepgp_tutorial, 'visualize_pinball')
     assert callable(deepgp_tutorial.visualize_pinball)
 
@@ -45,6 +51,8 @@ def test_visualize_pinball_function_exists():
 @pytest.mark.unit
 def test_initialize_signature():
     """Test that initialize has the expected parameters."""
+    with patch.dict('sys.modules', {'GPy': MagicMock()}):
+        import mlai.deepgp_tutorial as deepgp_tutorial
     import inspect
     sig = inspect.signature(deepgp_tutorial.initialize)
     params = list(sig.parameters.keys())
@@ -56,6 +64,8 @@ def test_initialize_signature():
 @pytest.mark.unit
 def test_staged_optimize_signature():
     """Test that staged_optimize has the expected parameters."""
+    with patch.dict('sys.modules', {'GPy': MagicMock()}):
+        import mlai.deepgp_tutorial as deepgp_tutorial
     import inspect
     sig = inspect.signature(deepgp_tutorial.staged_optimize)
     params = list(sig.parameters.keys())
@@ -67,6 +77,8 @@ def test_staged_optimize_signature():
 @pytest.mark.unit
 def test_posterior_sample_signature():
     """Test that posterior_sample has the expected parameters."""
+    with patch.dict('sys.modules', {'GPy': MagicMock()}):
+        import mlai.deepgp_tutorial as deepgp_tutorial
     import inspect
     sig = inspect.signature(deepgp_tutorial.posterior_sample)
     params = list(sig.parameters.keys())
@@ -77,6 +89,8 @@ def test_posterior_sample_signature():
 @pytest.mark.unit
 def test_visualize_signature():
     """Test that visualize has the expected parameters."""
+    with patch.dict('sys.modules', {'GPy': MagicMock()}):
+        import mlai.deepgp_tutorial as deepgp_tutorial
     import inspect
     sig = inspect.signature(deepgp_tutorial.visualize)
     params = list(sig.parameters.keys())
@@ -90,6 +104,8 @@ def test_visualize_signature():
 @pytest.mark.unit
 def test_visualize_pinball_signature():
     """Test that visualize_pinball has the expected parameters."""
+    with patch.dict('sys.modules', {'GPy': MagicMock()}):
+        import mlai.deepgp_tutorial as deepgp_tutorial
     import inspect
     sig = inspect.signature(deepgp_tutorial.visualize_pinball)
     params = list(sig.parameters.keys())
@@ -104,6 +120,8 @@ def test_visualize_pinball_signature():
 @pytest.mark.unit
 def test_initialize_with_mock_gpy():
     """Test initialize function with mocked GPy dependencies."""
+    with patch.dict('sys.modules', {'GPy': MagicMock()}):
+        import mlai.deepgp_tutorial as deepgp_tutorial
     # Create a mock self object
     mock_self = MagicMock()
     # Create a mock array with var method
@@ -140,6 +158,8 @@ def test_initialize_with_mock_gpy():
 @pytest.mark.unit
 def test_staged_optimize_with_mock_gpy():
     """Test staged_optimize function with mocked GPy dependencies."""
+    with patch.dict('sys.modules', {'GPy': MagicMock()}):
+        import mlai.deepgp_tutorial as deepgp_tutorial
     # Create a mock self object
     mock_self = MagicMock()
     mock_self.optimize = MagicMock()
@@ -174,6 +194,8 @@ def test_staged_optimize_with_mock_gpy():
 @pytest.mark.unit
 def test_posterior_sample_with_mock_gpy():
     """Test posterior_sample function with mocked GPy dependencies."""
+    with patch.dict('sys.modules', {'GPy': MagicMock()}):
+        import mlai.deepgp_tutorial as deepgp_tutorial
     # Create a mock self object
     mock_self = MagicMock()
     
@@ -199,6 +221,8 @@ def test_posterior_sample_with_mock_gpy():
 @pytest.mark.unit
 def test_visualize_with_mocked_dependencies():
     """Test visualize function with mocked dependencies."""
+    with patch.dict('sys.modules', {'GPy': MagicMock()}):
+        import mlai.deepgp_tutorial as deepgp_tutorial
     # Patch dependencies directly on the module
     with patch.object(deepgp_tutorial, 'gpplot'), \
          patch.object(deepgp_tutorial, 'plot') as mock_plot, \
@@ -232,6 +256,8 @@ def test_visualize_with_mocked_dependencies():
 @pytest.mark.unit
 def test_visualize_pinball_with_mocked_dependencies():
     """Test visualize_pinball function with mocked dependencies."""
+    with patch.dict('sys.modules', {'GPy': MagicMock()}):
+        import mlai.deepgp_tutorial as deepgp_tutorial
     # Patch dependencies directly on the module
     with patch.object(deepgp_tutorial, 'plot') as mock_plot, \
          patch.object(deepgp_tutorial, 'plt') as mock_plt:

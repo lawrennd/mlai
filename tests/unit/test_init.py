@@ -69,6 +69,17 @@ def test_package_has_expected_attributes():
 @pytest.mark.unit
 def test_gpy_dependent_modules_conditionally_available():
     """Test that GPy-dependent modules are conditionally available based on GPY_AVAILABLE."""
+    # Import mlai fresh to avoid test isolation issues
+    import importlib
+    import sys
+    
+    # Remove mlai from sys.modules to force a fresh import
+    if 'mlai' in sys.modules:
+        del sys.modules['mlai']
+    
+    # Import mlai fresh
+    import mlai
+    
     if mlai.GPY_AVAILABLE:
         # If GPy is available, these modules should be imported
         assert hasattr(mlai, 'mountain_car'), "mountain_car should be available when GPy is available"

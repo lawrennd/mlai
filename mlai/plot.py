@@ -39,10 +39,10 @@ except ImportError:
 import mlai as ma
 from mlai.mlai import LM
 
-# Import GPy-dependent modules conditionally
+# Check for GPy availability
+GPY_AVAILABLE = True
 try:
-    import mlai.gp_tutorial as gpt
-    GPY_AVAILABLE = True
+    import GPy
 except ImportError:
     GPY_AVAILABLE = False
 
@@ -1181,12 +1181,14 @@ def marathon_fit(model, value, param_name, param_range,
     
     if y_var is None:
         if GPY_AVAILABLE:
+            import mlai.gp_tutorial as gpt
             gpt.meanplot(x_pred, y_pred, ax=ax[0])
         else:
             ax[0].plot(x_pred, y_pred, 'b-', linewidth=2)
     else:
         y_err = np.sqrt(y_var)*2
         if GPY_AVAILABLE:
+            import mlai.gp_tutorial as gpt
             gpt.gpplot(x_pred, y_pred, y_pred - y_err, y_pred + y_err, ax=ax[0])
         else:
             ax[0].plot(x_pred, y_pred, 'b-', linewidth=2)
@@ -2264,6 +2266,7 @@ def rejection_samples(kernel, x=None, num_few=20, num_many=1000,  diagrams='../d
     mu_f = np.dot(A.T, y_data)
     c_f = np.diag(K - np.dot(A.T, K_star))[:, np.newaxis]
     if GPY_AVAILABLE:
+        import mlai.gp_tutorial as gpt
         _ = gpt.gpplot(x,
                            mu_f,
                            mu_f-2*np.sqrt(c_f),
@@ -3422,6 +3425,7 @@ def model_output(model, output_dim=0, scale=1.0, offset=0.0, ax=None, xlabel='$x
         yt_sd = yt_sd[:, output_dim]
 
     if GPY_AVAILABLE:
+        import mlai.gp_tutorial as gpt
         _ = gpt.gpplot(xt.flatten(),
                            yt_mean[:, output_dim],
                            yt_mean[:, output_dim]-2*yt_sd.flatten(),
@@ -3466,6 +3470,7 @@ def model_sample(model, output_dim=0, scale=1.0, offset=0.0,
         yt_sd = yt_sd[:, output_dim]
         
     if GPY_AVAILABLE:
+        import mlai.gp_tutorial as gpt
         _ = gpt.gpplot(xt.flatten(),
                yt_mean[:, output_dim],
                yt_mean[:, output_dim]-2*yt_sd.flatten(),
