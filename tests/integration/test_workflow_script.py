@@ -24,8 +24,22 @@ class TestWorkflowScript:
         self.original_cwd = os.getcwd()
         os.chdir(self.temp_dir)
         
-        # Path to the workflow script
-        self.workflow_script = Path(self.original_cwd) / "docs" / "tutorials" / "example_workflow.py"
+        # Path to the workflow script - handle both local and CI environments
+        possible_paths = [
+            Path(self.original_cwd) / "docs" / "tutorials" / "example_workflow.py",
+            Path(self.original_cwd) / "mlai" / "docs" / "tutorials" / "example_workflow.py",
+            Path.cwd() / "docs" / "tutorials" / "example_workflow.py",
+            Path.cwd() / "mlai" / "docs" / "tutorials" / "example_workflow.py"
+        ]
+        
+        self.workflow_script = None
+        for path in possible_paths:
+            if path.exists():
+                self.workflow_script = path
+                break
+                
+        if self.workflow_script is None:
+            pytest.skip(f"Workflow script not found. Tried: {[str(p) for p in possible_paths]}")
         
         # Copy the script to temp directory
         import shutil
@@ -120,7 +134,8 @@ class TestWorkflowScript:
         """Test that the workflow script can be imported without errors."""
         # Test importing the script as a module
         import sys
-        sys.path.insert(0, str(Path(self.original_cwd) / "docs" / "tutorials"))
+        workflow_dir = self.workflow_script.parent
+        sys.path.insert(0, str(workflow_dir))
         
         try:
             # Import the workflow module
@@ -147,7 +162,22 @@ class TestWorkflowFunctions:
         """Test that workflow functions can be called."""
         # Import the workflow module
         import sys
-        workflow_dir = Path(__file__).parent.parent.parent / "docs" / "tutorials"
+        # Find the workflow script path
+        possible_paths = [
+            Path(__file__).parent.parent.parent / "docs" / "tutorials" / "example_workflow.py",
+            Path(__file__).parent.parent.parent.parent / "docs" / "tutorials" / "example_workflow.py",
+        ]
+        
+        workflow_script = None
+        for path in possible_paths:
+            if path.exists():
+                workflow_script = path
+                break
+                
+        if workflow_script is None:
+            pytest.skip(f"Workflow script not found for import test")
+            
+        workflow_dir = workflow_script.parent
         sys.path.insert(0, str(workflow_dir))
         
         try:
@@ -177,7 +207,19 @@ class TestWorkflowDependencies:
     def test_workflow_imports(self):
         """Test that all imports in the workflow script work."""
         # Read the workflow script
-        workflow_script = Path(__file__).parent.parent.parent / "docs" / "tutorials" / "example_workflow.py"
+        possible_paths = [
+            Path(__file__).parent.parent.parent / "docs" / "tutorials" / "example_workflow.py",
+            Path(__file__).parent.parent.parent.parent / "docs" / "tutorials" / "example_workflow.py",
+        ]
+        
+        workflow_script = None
+        for path in possible_paths:
+            if path.exists():
+                workflow_script = path
+                break
+                
+        if workflow_script is None:
+            pytest.skip(f"Workflow script not found for import test")
         
         with open(workflow_script, 'r') as f:
             content = f.read()

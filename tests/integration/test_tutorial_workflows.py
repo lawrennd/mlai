@@ -174,7 +174,7 @@ class TestTutorialWorkflows:
         
         # Create basis and model
         basis = mlai.Basis(mlai.linear, 2, data_limits=[float(np.min(x_data)), float(np.max(x_data))])
-        model = mlai.BLM(x_data, y_data, basis=basis)
+        model = mlai.BLM(x_data, y_data, alpha=1.0, sigma2=1.0, basis=basis)
         
         # Fit model
         model.fit()
