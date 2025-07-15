@@ -35,8 +35,7 @@ Each CIP can have one of the following statuses:
 
 ## Current CIPs
 
-- [CIP-0001](./cip0001.md): Documentation Improvements with Sphinx
-- [CIP-0002](./cip0002.md): Comprehensive Test Framework with pytest
+- [CIP-0001](./cip0001.md): 
 
 ## Creating a Good CIP
 
