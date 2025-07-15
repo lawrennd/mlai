@@ -47,6 +47,7 @@ from IPython.display import display, clear_output, HTML
 
 import numpy as np
 import scipy.linalg as la
+from numpy import vstack
 
 
 def filename_join(filename, directory=None):
@@ -1023,7 +1024,7 @@ class SimpleDropoutNeuralNetwork(SimpleNeuralNetwork):
     """
     def __init__(self, nodes, drop_p=0.5):
         self.drop_p = drop_p
-        nn.__init__(self, nodes=nodes)
+        super().__init__(nodes=nodes)
         # renormalize the network weights
         self.w2 /= self.drop_p 
         
@@ -1072,7 +1073,7 @@ class NonparametricDropoutNeuralNetwork(SimpleDropoutNeuralNetwork):
         tot = np.log(n) + self.gamma + 0.5/n * (1./12.)/(n*n)
         self.exp_features = alpha*beta*tot
         self.maxk = np.max((10000,int(self.exp_features + np.ceil(4*np.sqrt(self.exp_features)))))
-        donn.__init__(self, nodes=self.maxk, drop_p=self.alpha/self.maxk)
+        super().__init__(nodes=self.maxk, drop_p=self.alpha/self.maxk)
         self.maxval = 0
         self.w2 *= self.maxk/self.alpha
         self.count = np.zeros(self.maxk)
@@ -1351,7 +1352,7 @@ class LR(ProbMapModel):
         """
         self.update_g()
         dw = -(self.Phi[self.y.values, :]*(1-self.g[self.y.values, :])).sum(0)
-        dw += (Phi[~self.y.values, :]*self.g[~self.y.values, :]).sum(0)
+        dw += (self.Phi[~self.y.values, :]*self.g[~self.y.values, :]).sum(0)
         return dw[:, None]
 
     def compute_g(self, f):

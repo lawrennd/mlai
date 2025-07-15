@@ -57,8 +57,8 @@ wide_figsize = (7, 3.5)
 big_wide_figsize = (10, 6)
 hcolor = [1., 0., 1.] # highlighting color
 
-notation_map={'variance': '\\alpha',
-           'lengthscale': '\\ell',
+notation_map={'variance': r'\\alpha',
+           'lengthscale': r'\\ell',
            'period':r'\omega'}
 
 def pred_range(x, portion=0.2, points=200, randomize=False):
@@ -1553,16 +1553,16 @@ def bayes_update(diagrams='../diagrams'):
     ax.hlines(ylim[0], xlim[0], xlim[1], color=[0., 0., 0.]) 
 
     ax.plot(f, prior_curve, color=[1, 0., 0.], linewidth=3)
-    ax.text(3.5, 2, '$p(c) = \mathcal{N}(c|0, \\alpha_1)$', horizontalalignment='center', fontsize=20) 
+    ax.text(3.5, 2, r'$p(c) = \mathcal{N}(c|0, \alpha_1)$', horizontalalignment='center', fontsize=20) 
     ma.write_figure('dem_gaussian001.svg', directory=diagrams, transparent=True)
 
     ax.plot(f, likelihood_curve, color=[0, 0, 1], linewidth=3)
-    ax.text(3.5, 1.5,'$p(y|m, c, x, \\sigma^2)=\mathcal{N}(y|mx+c,\\sigma^2)$', horizontalalignment='center', fontsize=20) 
+    ax.text(3.5, 1.5,r'$p(y|m, c, x, \sigma^2)=\mathcal{N}(y|mx+c,\sigma^2)$', horizontalalignment='center', fontsize=20) 
     ma.write_figure('dem_gaussian002.svg', directory=diagrams, transparent=True)
 
     ax.plot(f, posterior_curve, color=[1, 0, 1], linewidth=3)
-    ax.text(3.5, 1, '$p(c|y, m, x, \\sigma^2)=$', horizontalalignment='center', fontsize=20) 
-    plt.text(3.5, 0.65, '$\mathcal{N}\\left(c|\\frac{y-mx}{1+\\sigma^2\\alpha_1},(\\sigma^{-2}+\\alpha_1^{-1})^{-1}\\right)$', horizontalalignment='center', fontsize=20)
+    ax.text(3.5, 1, r'$p(c|y, m, x, \sigma^2)=$', horizontalalignment='center', fontsize=20) 
+    plt.text(3.5, 0.65, r'$\mathcal{N}\left(c|\frac{y-mx}{1+\sigma^2\alpha_1},(\sigma^{-2}+\alpha_1^{-1})^{-1}\right)$', horizontalalignment='center', fontsize=20)
     ma.write_figure('dem_gaussian003.svg', directory=diagrams, transparent=True)
 
 def height_weight(h=None, w=None, muh=1.7, varh=0.0225,
@@ -1822,7 +1822,7 @@ def output_augment_x(x, num_outputs):
     x = np.tile(x, (num_outputs, 1))
     index = np.asarray([])
     for i in range(num_outputs):
-        index=np.append(index, np.ones(n)*i)
+        index=np.append(index, np.ones(num_data)*i)
     index = index[:, np.newaxis]
     return np.hstack((index, x))
 
@@ -2708,9 +2708,9 @@ def kronecker_IK_highlight(fontsize=25, figsize=two_figsize, reverse=False, diag
 def kronecker_WX(fontsize=25, figsize=two_figsize, diagrams='../diagrams'):
     """Illustrate a Kronecker product"""
     fig, ax = plt.subplots(1, 4, figsize=figsize)
-    A = [['$\mathbf{W}$', '$\mathbf{0}$', '$\mathbf{0}$'],['$\mathbf{0}$', '$\mathbf{W}$', '$\mathbf{0}$'],['$\mathbf{0}$', '$\mathbf{0}$', '$\mathbf{W}$']]
-    B = [['$\mathbf{x}_{1,:}$'],['$\mathbf{x}_{2,:}$'],['$\mathbf{x}_{3,:}$']]
-    AkroneckerB = [['$\mathbf{W}\mathbf{x}_{1,:}$'],[ '$\mathbf{W}\mathbf{x}_{2,:}$'], ['$\mathbf{W}\mathbf{x}_{3,:}$']]
+    A = [['$\\mathbf{W}$', '$\\mathbf{0}$', '$\\mathbf{0}$'],['$\\mathbf{0}$', '$\\mathbf{W}$', '$\\mathbf{0}$'],['$\\mathbf{0}$', '$\\mathbf{0}$', '$\\mathbf{W}$']]
+    B = [['$\\mathbf{x}_{1,:}$'],['$\\mathbf{x}_{2,:}$'],['$\\mathbf{x}_{3,:}$']]
+    AkroneckerB = [['$\\mathbf{W}\\mathbf{x}_{1,:}$'],[ '$\\mathbf{W}\\mathbf{x}_{2,:}$'], ['$\\mathbf{W}\\mathbf{x}_{3,:}$']]
 
     blank_canvas(ax[0])
     ax[0].text(0.4, 0.5, r'$\times$',
@@ -3492,7 +3492,7 @@ def model_sample(model, output_dim=0, scale=1.0, offset=0.0,
                
     if hasattr(model, 'Z'):
         ylim = ax.get_ylim()
-        ax.plot(m.Z, np.ones(m.Z.shape)*ax.get_ylim()[0], marker='^', linestyle=None, markersize=20)
+        ax.plot(model.Z, np.ones(model.Z.shape)*ax.get_ylim()[0], marker='^', linestyle=None, markersize=20)
 
 
 

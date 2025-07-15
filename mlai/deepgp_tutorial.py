@@ -71,6 +71,7 @@ def visualize(self, scale=1.0, offset=0.0, xlabel='input', ylabel='output',
     filename = os.path.join(diagrams, fname)
     last_name = xlabel
     last_x = self.X
+    next_lim = None  # Initialize next_lim
     for i, layer in enumerate(reversed(self.layers)):
         if i>0:
             plt.plot(last_x, layer.X.mean, 'r.',markersize=10)
