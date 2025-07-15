@@ -14,5 +14,8 @@ if GPY_AVAILABLE:
     from . import gp_tutorial
     from . import deepgp_tutorial
 
-# Make key functions available at package level
-from .mlai import write_figure, write_animation, Basis, linear, icm_cov, slfm_cov
+# Only expose core utilities and Basis at the package level
+from .mlai import write_figure, write_animation
+
+# Import all functions from mlai module for consistent access
+from .mlai import *
