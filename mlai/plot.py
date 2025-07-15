@@ -53,7 +53,7 @@ hcolor = [1., 0., 1.] # highlighting color
 
 notation_map={'variance': '\\alpha',
            'lengthscale': '\\ell',
-           'period':'\omega'}
+           'period':r'\omega'}
 
 def pred_range(x, portion=0.2, points=200, randomize=False):
     """
