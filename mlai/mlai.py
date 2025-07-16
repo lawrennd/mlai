@@ -1377,7 +1377,7 @@ class LR(ProbMapModel):
         grad = np.zeros((self.Phi.shape[1], 1))
         grad += -(self.Phi[y_bool, :].T @ (1 - self.g[y_bool, :]))
         grad += (self.Phi[~y_bool, :].T @ self.g[~y_bool, :])
-        return grad.flatten()  # Return 1D array to match test expectations
+        return grad  # Return 2D array to match w_star shape
 
     def fit(self, learning_rate=0.1, max_iterations=1000, tolerance=1e-6):
         """
@@ -1393,7 +1393,11 @@ class LR(ProbMapModel):
         for iteration in range(max_iterations):
             old_objective = self.objective()
             gradient = self.gradient()
-            self.w_star -= learning_rate * gradient
+            # Flatten w_star for optimization, then reshape back
+            w_flat = self.w_star.flatten()
+            grad_flat = gradient.flatten()
+            w_flat -= learning_rate * grad_flat
+            self.w_star = w_flat.reshape(self.w_star.shape)
             new_objective = self.objective()
             
             if abs(new_objective - old_objective) < tolerance:
