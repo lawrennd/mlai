@@ -59,7 +59,7 @@ hcolor = [1., 0., 1.] # highlighting color
 
 notation_map={'variance': r'\\alpha',
            'lengthscale': r'\\ell',
-           'period':r'\omega'}
+           'period':r'\\omega'}
 
 def pred_range(x, portion=0.2, points=200, randomize=False):
     """
@@ -92,7 +92,7 @@ def pred_range(x, portion=0.2, points=200, randomize=False):
 #     out = '### ' + meta
 #     for name, val in kwargs.items():
 #         if isinstance(val,list) or isinstance(
-#         out += '\n\n' + write_figure(filebase=filebase, directory=directory, **kwargs) + '\n\n'
+#         out += '\\n\n' + write_figure(filebase=filebase, directory=directory, **kwargs) + '\\n\n'
 #         for 
 #     interact(show_figure, filebase=fixed(filebase), directory=fixed(directory), **kwargs)
 
@@ -360,7 +360,7 @@ def covariance_capacity(rotate_angle=np.pi/4,
     tax2.set_xlim([0, 1.])
     tax2.set_ylim([0, 1.])
     tax2.set_axis_off()
-    label_eigenvalue = tax2.text(0.5, 0.5, r'$\Lambda=$', fontsize=20)
+    label_eigenvalue = tax2.text(0.5, 0.5, r'$\\Lambda=$', fontsize=20)
 
     ax = fig.add_axes([0.5, 0.25, 0.5, 0.5])
     ax.set_xlim([-0.25, 0.6])
@@ -418,15 +418,15 @@ def covariance_capacity(rotate_angle=np.pi/4,
     ar_two = ax.arrow(x=0, y=0, dx=0, dy=lambda2, head_width=0.03)
     ar_three = ax.arrow(x=0, y=0, dx=-0.2*lambda1, dy=-0.2*lambda2, head_width=0.03)
     ar_one_text = ax.text(0.5*lambda1, -0.05*yspan, 
-                          '$\lambda_1$', 
+                          '$\\lambda_1$', 
                           horizontalalignment='center',
                          fontsize=14)
     ar_two_text = ax.text(-0.05*xspan, 0.5*lambda2, 
-                          '$\lambda_2$', 
+                          '$\\lambda_2$', 
                           horizontalalignment='center',
                          fontsize=14)
     ar_three_text = ax.text(-0.05*xspan-0.1*lambda1, -0.1*lambda2+0.05*yspan, 
-                            '$\lambda_3$', 
+                            '$\\lambda_3$', 
                             horizontalalignment='center',
                            fontsize=14)
 
@@ -449,7 +449,7 @@ def covariance_capacity(rotate_angle=np.pi/4,
     matrix_ax = fig.add_axes([0.2, 0.35, 0.3, 0.3])
     matrix_ax.set_aspect('equal')
     matrix_ax.set_axis_off()
-    eigenvals = [['$\lambda_1$', '$0$'],['$0$', '$\lambda_2$']]
+    eigenvals = [['$\\lambda_1$', '$0$'],['$0$', '$\\lambda_2$']]
     matrix(eigenvals, 
            matrix_ax, 
            bracket_style='square', 
@@ -511,7 +511,7 @@ def covariance_capacity(rotate_angle=np.pi/4,
     tax.set_xlim([0, 1])
     tax.set_ylim([0, 1])
     det_text = tax.text(0.5, 0.5,
-                    '$\det{\Lambda} = \lambda_1 \lambda_2$', 
+                    '$\\det{\\Lambda} = \\lambda_1 \\lambda_2$', 
                     horizontalalignment='center',
                        fontsize=20)
     file_name = 'gp-optimise-determinant{counter:0>3}.svg'.format(counter=counter)
@@ -525,7 +525,7 @@ def covariance_capacity(rotate_angle=np.pi/4,
 
     det_text_plot = ax.text(0.5*lambda1, 
                                   0.5*lambda2, 
-                                  '$\det{\Lambda}$', 
+                                  '$\\det{\\Lambda}$', 
                                   horizontalalignment='center', fontsize=20)
 
     file_name = 'gp-optimise-determinant{counter:0>3}.svg'.format(counter=counter)
@@ -533,9 +533,9 @@ def covariance_capacity(rotate_angle=np.pi/4,
     counter += 1
 
 
-    eigenvals2 = [['$\lambda_1$', '$0$', '$0$'],
-                  ['$0$', '$\lambda_2$', '$0$'],
-                  ['$0$', '$0$', '$\lambda_3$']]
+    eigenvals2 = [['$\\lambda_1$', '$0$', '$0$'],
+                  ['$0$', '$\\lambda_2$', '$0$'],
+                  ['$0$', '$0$', '$\\lambda_3$']]
 
     matrix_ax.cla()
     matrix(eigenvals2, matrix_ax, 
@@ -555,7 +555,7 @@ def covariance_capacity(rotate_angle=np.pi/4,
     ar_three_text.set(visible=True)
     for hand in pat_hand3:
         hand.set(visible=True)
-    det_text.set(text='$\det{\Lambda} = \lambda_1 \lambda_2\lambda_3$', 
+    det_text.set(text='$\\det{\\Lambda} = \\lambda_1 \\lambda_2\\lambda_3$', 
                  fontsize=20, 
                  horizontalalignment='center')
 
@@ -574,19 +574,19 @@ def covariance_capacity(rotate_angle=np.pi/4,
     ar_three_text.set(visible=False)
     for hand in pat_hand3:
         hand.set(visible=False)
-    det_text.set(text='$\det{\Lambda} = \lambda_1 \lambda_2$')
+    det_text.set(text='$\\det{\\Lambda} = \\lambda_1 \\lambda_2$')
 
     file_name = 'gp-optimise-determinant{counter:0>3}.svg'.format(counter=counter)
     ma.write_figure(file_name, directory=diagrams)
     counter += 1
 
-    det_text.set(text='$\det{\mathbf{R}\Lambda} = \lambda_1 \lambda_2$')
-    label_eigenvalue.set(label='\Large $\mathbf{R}\Lambda=$')
+    det_text.set(text='$\\det{\\mathbf{R}\\Lambda} = \\lambda_1 \\lambda_2$')
+    label_eigenvalue.set(label='\\Large $\\mathbf{R}\\Lambda=$')
 
     import matplotlib.transforms as mtransforms
 
-    det_text.set(text='$\det{\mathbf{R}\Lambda} = \lambda_1 \lambda_2$')
-    label_eigenvalue.set(text='$\mathbf{R}\Lambda=$')
+    det_text.set(text='$\\det{\\mathbf{R}\\Lambda} = \\lambda_1 \\lambda_2$')
+    label_eigenvalue.set(text='$\\mathbf{R}\\Lambda=$')
 
     trans_data =  mtransforms.Affine2D().rotate_deg(rotate_angle*180/np.pi) + ax.transData
 
@@ -1138,7 +1138,7 @@ def gaussian_of_height(diagrams='../diagrams'):
     ax2.set_ylim(ylim)
     ax2.set_xlim(1.4, 2.0)
     ax2.set_xlabel('$h/m$', fontsize=20)
-    ax2.set_ylabel('$p(h|\mu, \sigma^2)$', fontsize = 20)
+    ax2.set_ylabel('$p(h|\\mu, \\sigma^2)$', fontsize = 20)
     ma.write_figure(figure=f2, filename='gaussian_of_height.svg', directory=diagrams, transparent=True)
     
 def marathon_fit(model, value, param_name, param_range,
@@ -1555,16 +1555,16 @@ def bayes_update(diagrams='../diagrams'):
     ax.hlines(ylim[0], xlim[0], xlim[1], color=[0., 0., 0.]) 
 
     ax.plot(f, prior_curve, color=[1, 0., 0.], linewidth=3)
-    ax.text(3.5, 2, r'$p(c) = \mathcal{N}(c|0, \alpha_1)$', horizontalalignment='center', fontsize=20) 
+    ax.text(3.5, 2, r'$p(c) = \\mathcal{N}(c|0, \\alpha_1)$', horizontalalignment='center', fontsize=20) 
     ma.write_figure('dem_gaussian001.svg', directory=diagrams, transparent=True)
 
     ax.plot(f, likelihood_curve, color=[0, 0, 1], linewidth=3)
-    ax.text(3.5, 1.5,r'$p(y|m, c, x, \sigma^2)=\mathcal{N}(y|mx+c,\sigma^2)$', horizontalalignment='center', fontsize=20) 
+    ax.text(3.5, 1.5,r'$p(y|m, c, x, \\sigma^2)=\\mathcal{N}(y|mx+c,\\sigma^2)$', horizontalalignment='center', fontsize=20) 
     ma.write_figure('dem_gaussian002.svg', directory=diagrams, transparent=True)
 
     ax.plot(f, posterior_curve, color=[1, 0, 1], linewidth=3)
-    ax.text(3.5, 1, r'$p(c|y, m, x, \sigma^2)=$', horizontalalignment='center', fontsize=20) 
-    plt.text(3.5, 0.65, r'$\mathcal{N}\left(c|\frac{y-mx}{1+\sigma^2\alpha_1},(\sigma^{-2}+\alpha_1^{-1})^{-1}\right)$', horizontalalignment='center', fontsize=20)
+    ax.text(3.5, 1, r'$p(c|y, m, x, \\sigma^2)=$', horizontalalignment='center', fontsize=20) 
+    plt.text(3.5, 0.65, r'$\\mathcal{N}\\left(c|\\frac{y-mx}{1+\\sigma^2\\alpha_1},(\\sigma^{-2}+\\alpha_1^{-1})^{-1}\\right)$', horizontalalignment='center', fontsize=20)
     ma.write_figure('dem_gaussian003.svg', directory=diagrams, transparent=True)
 
 def height_weight(h=None, w=None, muh=1.7, varh=0.0225,
@@ -1867,7 +1867,7 @@ def basis(function, x_min, x_max, fig, ax, loc, text, diagrams='./diagrams', fon
     ax.set_ylim(ylim)
 
     ax.set_xlabel('$x$', fontsize=fontsize)
-    ax.set_ylabel('$\phi(x)$', fontsize=fontsize)
+    ax.set_ylabel('$\\phi(x)$', fontsize=fontsize)
     for i in range(basis.number):
         ax.plot(x, Phi[:, i], '-', color=colors[i], linewidth=3)
         ax.text(loc[i][0], loc[i][1], text[i], horizontalalignment='center', fontsize=fontsize, color=colors[i])
@@ -1940,7 +1940,7 @@ def computing_covariance(kernel,
         if param in notation_map:
             param_text += '$' + notation_map[param] 
         else:
-            param_text += '$\text{' + param + '}' 
+            param_text += '$\\text{' + param + '}' 
         param_text += '={param:{prec}}$'.format(param=kernel.parameters[param],prec=prec)
         if i<len(kernel.parameters)-2:
             param_text += ', '
@@ -1973,7 +1973,7 @@ def computing_covariance(kernel,
             text = '$x_{i}={val_i:{prec}}$, $x_{j}={val_j:{prec}}$'.format(i=i, j=j, val_i=x[i,0], val_j=x[j, 0], prec=prec)
             a.set_text(text)
             #a.append(ax[0].text(0.25, 0.4, 
-            #                    ['$\kernelScalar_{' num2str(i) ', ' num2str(j) '} = ' numsf2str(variance, nsf) ' \times \exp \left(-\frac{(' numsf2str(t(i), nsf) '-' numsf2str(t(j), nsf) ')^2}{2\times ' numsf2str(lengthScale, nsf) '^2}\right)$'], 'horizontalalignment', 'center')])
+            #                    ['$\\kernelScalar_{' num2str(i) ', ' num2str(j) '} = ' numsf2str(variance, nsf) ' \\times \\exp \\left(-\\frac{(' numsf2str(t(i), nsf) '-' numsf2str(t(j), nsf) ')^2}{2\\times ' numsf2str(lengthScale, nsf) '^2}\\right)$'], 'horizontalalignment', 'center')])
             file_name = base_file_name+'{counter:0>3}.svg'.format(counter=counter)
             ma.write_figure(file_name, directory=diagrams, transparent=True)
             counter += 1
@@ -2199,12 +2199,12 @@ def covariance_func(kernel, x=None,
 
     if kernel.name is not None:
         out = '<h2>' + kernel.name + ' Covariance</h2>'
-        out += '\n\n'
+        out += '\\n\n'
     else:
         out = ''
     if kernel.formula is not None:
         out += '<p><center>' + kernel.formula + '</center></p>'
-    out += '<table>\n  <tr><td><img src="' + ma.filename_join(filename, diagrams) + '.svg"></td><td><img src="' + ma.filename_join(filename, diagrams) + '.gif"></td></tr>\n</table>'
+    out += '<table>\\n  <tr><td><img src="' + ma.filename_join(filename, diagrams) + '.svg"></td><td><img src="' + ma.filename_join(filename, diagrams) + '.gif"></td></tr>\\n</table>'
     if comment is not None:
         out += '<p><center>' + comment + '</center></p>'
     fhand = open(ma.filename_join(filename + '.html', diagrams), 'w')
@@ -2291,7 +2291,7 @@ def two_point_sample(kernel_function, diagrams='../diagrams'):
     K = kernel_function(x, x)
     obj = matrix(K, ax=ax[1], type='image', colormap='gray')
     ax[1].set_xlabel('$i$',fontsize=16)
-    ax[1].set_ylabel('$i^\prime$',fontsize=16)
+    ax[1].set_ylabel('$i^\\prime$',fontsize=16)
     #fig.colorbar(mappable=obj, ax=ax[1])
     #ax[1].set_axis('off')
     ma.write_figure('two_point_sample000.svg', directory=diagrams, transparent=True)
@@ -2318,7 +2318,7 @@ def two_point_sample(kernel_function, diagrams='../diagrams'):
                  highlight_color=hcolor,
                  colormap='gray')
     ax[1].set_xlabel('$i$',fontsize=16)
-    ax[1].set_ylabel('$i^\prime$',fontsize=16)
+    ax[1].set_ylabel('$i^\\prime$',fontsize=16)
     ma.write_figure('two_point_sample003.svg', directory=diagrams, transparent=True)
 
     obj = matrix(K, ax=ax[1], type='image', 
@@ -2332,7 +2332,7 @@ def two_point_sample(kernel_function, diagrams='../diagrams'):
                  zoom_col=[0, 9],
                  colormap='gray')
     ax[1].set_xlabel('$i$',fontsize=16)
-    ax[1].set_ylabel('$i^\prime$',fontsize=16)
+    ax[1].set_ylabel('$i^\\prime$',fontsize=16)
     ma.write_figure('two_point_sample004.svg', directory=diagrams, transparent=True)
 
     obj = matrix(K, ax=ax[1], type='image', 
@@ -2346,7 +2346,7 @@ def two_point_sample(kernel_function, diagrams='../diagrams'):
                  zoom_col=[0, 4],
                  colormap='gray')
     ax[1].set_xlabel('$i$',fontsize=16)
-    ax[1].set_ylabel('$i^\prime$',fontsize=16)
+    ax[1].set_ylabel('$i^\\prime$',fontsize=16)
     ma.write_figure('two_point_sample005.svg', directory=diagrams, transparent=True)
 
     obj = matrix(K, ax=ax[1], type='image', 
@@ -2360,7 +2360,7 @@ def two_point_sample(kernel_function, diagrams='../diagrams'):
                  zoom_col=[0, 2],
                  colormap='gray')
     ax[1].set_xlabel('$i$',fontsize=16)
-    ax[1].set_ylabel('$i^\prime$',fontsize=16)
+    ax[1].set_ylabel('$i^\\prime$',fontsize=16)
     ma.write_figure('two_point_sample006.svg', directory=diagrams, transparent=True)
 
     obj = matrix(K, ax=ax[1], type='image', 
@@ -2374,12 +2374,12 @@ def two_point_sample(kernel_function, diagrams='../diagrams'):
                  zoom_col=[0, 1],
                  colormap='gray')
     ax[1].set_xlabel('$i$',fontsize=16)
-    ax[1].set_ylabel('$i^\prime$',fontsize=16)
+    ax[1].set_ylabel('$i^\\prime$',fontsize=16)
     ma.write_figure('two_point_sample007.svg', directory=diagrams, transparent=True)
 
     obj = matrix(K[ind][:, ind], ax=ax[1], type='values')
     ax[1].set_xlabel('$i$',fontsize=16)
-    ax[1].set_ylabel('$i^\prime$',fontsize=16)
+    ax[1].set_ylabel('$i^\\prime$',fontsize=16)
     ma.write_figure('two_point_sample008.svg', directory=diagrams, transparent=True)
 
     ax[0].cla()
@@ -2400,7 +2400,7 @@ def two_point_sample(kernel_function, diagrams='../diagrams'):
     ax[0]
     obj = matrix(K[ind][:, ind], ax=ax[1], type='values')
     ax[1].set_xlabel('$i$',fontsize=16)
-    ax[1].set_ylabel('$i^\prime$',fontsize=16)
+    ax[1].set_ylabel('$i^\\prime$',fontsize=16)
     ma.write_figure('two_point_sample013.svg', directory=diagrams, transparent=True)
 
     ax[0].cla()
@@ -2420,9 +2420,9 @@ def poisson(diagrams='../diagrams'):
     p3 = poisson.pmf(y, mu=3.)
     p10 = poisson.pmf(y, mu=10.)
 
-    ax.plot(y, p1, 'r.-', markersize=20, label='$\lambda=1$', lw=3)
-    ax.plot(y, p3, 'g.-', markersize=20, label='$\lambda=3$', lw=3)
-    ax.plot(y, p10, 'b.-', markersize=20, label='$\lambda=10$', lw=3)
+    ax.plot(y, p1, 'r.-', markersize=20, label='$\\lambda=1$', lw=3)
+    ax.plot(y, p3, 'g.-', markersize=20, label='$\\lambda=3$', lw=3)
+    ax.plot(y, p10, 'b.-', markersize=20, label='$\\lambda=10$', lw=3)
     ax.set_title('Poisson Distribution', fontsize=20)
     ax.set_xlabel('$y_i$', fontsize=20)
     ax.set_ylabel('$p(y_i)$', fontsize=20)
@@ -2490,19 +2490,19 @@ def low_rank_approximation(fontsize=25, diagrams='../diagrams'):
     k1 = 10
     k2 = 12
     blank_canvas(ax[3])
-    ax[3].text(0.145, 0.55, r'$\times$', 
+    ax[3].text(0.145, 0.55, r'$\\times$', 
                horizontalalignment='center',
                fontsize=fontsize)
     ax[3].text(0.47, 0.55, r'$=$', 
                horizontalalignment='center',
                fontsize=fontsize)
-    ax[3].text(0.075, 0.55, r'$\mathbf{U}$', 
+    ax[3].text(0.075, 0.55, r'$\\mathbf{U}$', 
                horizontalalignment='center',
                fontsize=fontsize, color=[1, 1, 1])
-    ax[3].text(0.3, 0.55, r'$\mathbf{V}^\top$', 
+    ax[3].text(0.3, 0.55, r'$\\mathbf{V}^\\top$', 
                horizontalalignment='center',
                fontsize=fontsize, color=[1, 1, 1])
-    ax[3].text(0.65, 0.55, r'$\mathbf{W}$', 
+    ax[3].text(0.65, 0.55, r'$\\mathbf{W}$', 
                horizontalalignment='center',
                fontsize=fontsize, color=[1, 1, 1])
     U = np.random.randn(k1, q)
@@ -2529,14 +2529,14 @@ def kronecker_illustrate(fontsize=25, diagrams='../diagrams'):
     fig, ax = plt.subplots(1, 4, figsize=two_figsize)
     A = [['$a$', '$b$'],
          [ '$c$', '$d$']]
-    B = [['$\mathbf{K}$']]
+    B = [['$\\mathbf{K}$']]
 
-    AkroneckerB = [['$a\mathbf{K}$', '$b\mathbf{K}$'],
-                    ['$c\mathbf{K}$', '$d\mathbf{K}$']]
+    AkroneckerB = [['$a\\mathbf{K}$', '$b\\mathbf{K}$'],
+                    ['$c\\mathbf{K}$', '$d\\mathbf{K}$']]
     ax[0].set_position([0, 0, 1, 1])
     ax[0].set_xlim([0, 1])
     ax[0].set_ylim([0, 1])
-    ax[0].text(0.4, 0.5, ' $\otimes$', horizontalalignment='center',
+    ax[0].text(0.4, 0.5, ' $\\otimes$', horizontalalignment='center',
                   fontsize=fontsize)
     ax[0].text(0.55, 0.5, ' $=$', horizontalalignment='center',
                   fontsize=fontsize)
@@ -2577,13 +2577,13 @@ def kronecker_illustrate(fontsize=25, figsize=two_figsize, diagrams='../diagrams
     fig, ax = plt.subplots(1, 4, figsize=figsize)
     A = [['$a$', '$b$'],
          [ '$c$', '$d$']]
-    B = [['$\mathbf{K}$']]
+    B = [['$\\mathbf{K}$']]
 
-    AkroneckerB = [['$a\mathbf{K}$', '$b\mathbf{K}$'],
-                    ['$c\mathbf{K}$', '$d\mathbf{K}$']]
+    AkroneckerB = [['$a\\mathbf{K}$', '$b\\mathbf{K}$'],
+                    ['$c\\mathbf{K}$', '$d\\mathbf{K}$']]
 
     blank_canvas(ax[0])
-    ax[0].text(0.4, 0.5, ' $\otimes$',
+    ax[0].text(0.4, 0.5, ' $\\otimes$',
                horizontalalignment='center',
                fontsize=fontsize)
     ax[0].text(0.55, 0.5, ' $=$',
@@ -2619,7 +2619,7 @@ def kronecker_IK(fontsize=25, figsize=two_figsize, reverse=False, diagrams='../d
     K = np.dot(L, L.T)
         
     blank_canvas(ax[0])
-    ax[0].text(0.3, 0.5, ' $\otimes$',
+    ax[0].text(0.3, 0.5, ' $\\otimes$',
                horizontalalignment='center',
                fontsize=fontsize)
     ax[0].text(0.615, 0.5, ' $=$',
@@ -2716,7 +2716,7 @@ def kronecker_WX(fontsize=25, figsize=two_figsize, diagrams='../diagrams'):
     AkroneckerB = [['$\\mathbf{W}\\mathbf{x}_{1,:}$'],[ '$\\mathbf{W}\\mathbf{x}_{2,:}$'], ['$\\mathbf{W}\\mathbf{x}_{3,:}$']]
 
     blank_canvas(ax[0])
-    ax[0].text(0.4, 0.5, r'$\times$',
+    ax[0].text(0.4, 0.5, r'$\\times$',
                horizontalalignment='center',
                fontsize=fontsize)
     ax[0].text(0.65, 0.5, ' $=$',
@@ -2901,10 +2901,10 @@ def non_linear_difficulty_plot_3(alpha=1.0,
     ax[1].set(xlim=[0, 1])
     ax[1].set(ylim=[0, 1])
     ax[1].set_axis_off()
-    ax[1].text(0.5, 0.55, '$y_j = f_j(\mathbf{x})$', 
+    ax[1].text(0.5, 0.55, '$y_j = f_j(\\mathbf{x})$', 
                ha='center',
               fontsize=fontsize)
-    ax[1].text(0.5, 0.45, '$\longrightarrow$', 
+    ax[1].text(0.5, 0.45, '$\\longrightarrow$', 
                ha='center',
                fontsize=4*fontsize/3)
     ma.write_figure("nonlinear-mapping-3d-plot.svg",
@@ -2963,7 +2963,7 @@ def non_linear_difficulty_plot_2(alpha=1.0,
     ax[1].set(ylim=[0, 1])
     ax[1].set_axis_off()
     ax[1].text(0.5, 0.65, '$y_1 = f_1(x)$', ha='center', fontsize=fontsize)
-    ax[1].text(0.5, 0.5, '$\longrightarrow$', ha='center', fontsize=4*fontsize/3)
+    ax[1].text(0.5, 0.5, '$\\longrightarrow$', ha='center', fontsize=4*fontsize/3)
     ax[1].text(0.5, 0.35, '$y_2 = f_2(x)$', ha='center', fontsize=fontsize)
     ma.write_figure('nonlinear-mapping-2d-plot.svg',
                       directory=diagrams,
@@ -3017,8 +3017,8 @@ def non_linear_difficulty_plot_1(alpha=1.0,
     ax[1].set(xlim=[0, 1])
     ax[1].set(ylim=[0, 1])
     ax[1].set_axis_off()
-    ax[1].text(0.5, 0.45, '$y = f(x) + \epsilon$', ha='center', fontsize=fontsize)
-    ax[1].text(0.5, 0.35, '$\longrightarrow$', ha='center', fontsize=4*fontsize/3)
+    ax[1].text(0.5, 0.45, '$y = f(x) + \\epsilon$', ha='center', fontsize=fontsize)
+    ax[1].text(0.5, 0.35, '$\\longrightarrow$', ha='center', fontsize=4*fontsize/3)
     ma.write_figure('gaussian-through-nonlinear.svg',
                       directory=diagrams,
                       figure=fig,
@@ -3112,15 +3112,15 @@ def deep_nn(diagrams='../diagrams'):
     """Draw a deep neural network."""
     model = network()
     model.add_layer(layer(width=6, label='x_{index}',
-                    observed=True, text=r'given $\mathbf{x}$'))
+                    observed=True, text=r'given $\\mathbf{x}$'))
     model.add_layer(layer(width=8, label='h_{{1, {index}}}',
-                    text=r'$\mathbf{h}_1=\boldsymbol{\phi}\left(\mathbf{W}_1\mathbf{x}\right)$'))
+                    text=r'$\\mathbf{h}_1=\\boldsymbol{\\phi}\\left(\\mathbf{W}_1\\mathbf{x}\\right)$'))
     model.add_layer(layer(width=6, label='h_{{2, {index}}}',
-                    text=r'$\mathbf{h}_2=\boldsymbol{\phi}\left(\mathbf{W}_2\mathbf{h}_1\right)$'))
+                    text=r'$\\mathbf{h}_2=\\boldsymbol{\\phi}\\left(\\mathbf{W}_2\\mathbf{h}_1\\right)$'))
     model.add_layer(layer(width=4, label='h_{{3, {index}}}',
-                    text=r'$\mathbf{h}_3=\boldsymbol{\phi}\left(\mathbf{W}_3\mathbf{h}_2\right)$'))
+                    text=r'$\\mathbf{h}_3=\\boldsymbol{\\phi}\\left(\\mathbf{W}_3\\mathbf{h}_2\\right)$'))
     model.add_layer(layer(width=1, label='y',
-                    text=r'$y=\mathbf{w}_4^\top\mathbf{h}_3$',
+                    text=r'$y=\\mathbf{w}_4^\\top\\mathbf{h}_3$',
                     observed=True))
     fig, ax = model.draw()
     ma.write_figure('deep-nn2.svg',
@@ -3143,23 +3143,23 @@ def deep_nn_bottleneck(diagrams='../diagrams'):
     """Draw a deep neural network with bottleneck layers."""
     model = network()
     model.add_layer(layer(width=6, label='x_{index}',
-                    observed=True, text=r'given $\mathbf{x}$'))
+                    observed=True, text=r'given $\\mathbf{x}$'))
     model.add_layer(layer(width=4, label='z_{{1, {index}}}',
-                    fixed=True, text=r'$\mathbf{z}_1 = \mathbf{V}_1^\top\mathbf{x}$'))
+                    fixed=True, text=r'$\\mathbf{z}_1 = \\mathbf{V}_1^\\top\\mathbf{x}$'))
     model.add_layer(layer(width=8, label='h_{{1, {index}}}',
-                    text=r'$\mathbf{h}_1=\boldsymbol{\phi}\left(\mathbf{U}_1\mathbf{z}_1\right)$'))
+                    text=r'$\\mathbf{h}_1=\\boldsymbol{\\phi}\\left(\\mathbf{U}_1\\mathbf{z}_1\\right)$'))
     model.add_layer(layer(width=4, label='z_{{2, {index}}}',
-                    text=r'$\mathbf{z}_2 = \mathbf{V}_2^\top\mathbf{h}_1$',
+                    text=r'$\\mathbf{z}_2 = \\mathbf{V}_2^\\top\\mathbf{h}_1$',
                     fixed=True))
     model.add_layer(layer(width=6, label='h_{{2, {index}}}',
-                    text=r'$\mathbf{h}_2=\boldsymbol{\phi}\left(\mathbf{U}_2\mathbf{z}_2\right)$'))
+                    text=r'$\\mathbf{h}_2=\\boldsymbol{\\phi}\\left(\\mathbf{U}_2\\mathbf{z}_2\\right)$'))
     model.add_layer(layer(width=2, label='z_{{3, {index}}}',
-                    text = r'$\mathbf{z}_2 = \mathbf{V}_3^\top\mathbf{h}_2$',
+                    text = r'$\\mathbf{z}_2 = \\mathbf{V}_3^\\top\\mathbf{h}_2$',
                     fixed=True))
     model.add_layer(layer(width=4, label='h_{{3, {index}}}',
-                    text=r'$\mathbf{h}_3=\boldsymbol{\phi}\left(\mathbf{U}_3\mathbf{z}_3\right)$'))
+                    text=r'$\\mathbf{h}_3=\\boldsymbol{\\phi}\\left(\\mathbf{U}_3\\mathbf{z}_3\\right)$'))
     model.add_layer(layer(width=1, label='y',
-                    text=r'$y=\mathbf{w}_4^\top\mathbf{h}_3$',
+                    text=r'$y=\\mathbf{w}_4^\\top\\mathbf{h}_3$',
                     observed=True))
     fig, ax = model.draw()
     ma.write_figure('deep-nn-bottleneck2.svg',
@@ -3285,17 +3285,17 @@ def vertical_chain(depth=5, grid_unit=1.5, node_unit=1, line_width=1.5, shape=No
                   line_width=line_width)
 
     node = "x"
-    pgm.add_node(daft.Node("x", r"$\mathbf{x}$", 0.5, 6.5, fixed=True))
+    pgm.add_node(daft.Node("x", r"$\\mathbf{x}$", 0.5, 6.5, fixed=True))
     for i in range(depth):
         last = node
         node="f_{index}".format(index=i+1)
-        pgm.add_node(daft.Node(node, r"$\mathbf{{f}}_{index}$".format(index=i+1),
+        pgm.add_node(daft.Node(node, r"$\\mathbf{{f}}_{index}$".format(index=i+1),
                                0.5, depth-i + 0.5))
         pgm.add_edge(last, node)
 
     last = node
     node = target
-    pgm.add_node(daft.Node(node, r"$\mathbf{y}$", 
+    pgm.add_node(daft.Node(node, r"$\\mathbf{y}$", 
                            0.5, 0.5, observed=True))
     pgm.add_edge(last, node)
     return pgm
@@ -3321,16 +3321,16 @@ def horizontal_chain(depth=5,
                   line_width=line_width)
 
     node = "x"
-    pgm.add_node(daft.Node(node, r"$\mathbf{x}$", 0.5, 0.5, fixed=True))
+    pgm.add_node(daft.Node(node, r"$\\mathbf{x}$", 0.5, 0.5, fixed=True))
     for i in range(depth):
         last=node
         node = "f_{index}".format(index=i+1)
-        pgm.add_node(daft.Node(node, r"$\mathbf{{f}}_{index}$".format(index=i+1), 
+        pgm.add_node(daft.Node(node, r"$\\mathbf{{f}}_{index}$".format(index=i+1), 
                                i+1.5, 0.5))
         pgm.add_edge(last, node)
     last = node
     node=target
-    pgm.add_node(daft.Node(target, r"$\mathbf{y}$", depth+1.5, 0.5, observed=True))
+    pgm.add_node(daft.Node(target, r"$\\mathbf{y}$", depth+1.5, 0.5, observed=True))
     pgm.add_edge(last, node)
     return pgm
 
@@ -3343,12 +3343,12 @@ def shared_gplvm():
                    observed_style='shaded',
                   line_width=3)
 
-    pgm.add_node(daft.Node("t", r"$\mathbf{t}$", 2, 2.5, observed=True))
-    pgm.add_node(daft.Node("X", r"$\mathbf{X}$", 2, 1.5))
-    pgm.add_node(daft.Node("Z_1", r"$\mathbf{Z}_1$", 1, 1.5))
-    pgm.add_node(daft.Node("Z_2", r"$\mathbf{Z}_2$", 3, 1.5))
-    pgm.add_node(daft.Node("Y_1", r"$\mathbf{Y}_1$", 1.5, 0.5, observed=True))
-    pgm.add_node(daft.Node("Y_2", r"$\mathbf{Y}_2$", 2.5, 0.5, observed=True))
+    pgm.add_node(daft.Node("t", r"$\\mathbf{t}$", 2, 2.5, observed=True))
+    pgm.add_node(daft.Node("X", r"$\\mathbf{X}$", 2, 1.5))
+    pgm.add_node(daft.Node("Z_1", r"$\\mathbf{Z}_1$", 1, 1.5))
+    pgm.add_node(daft.Node("Z_2", r"$\\mathbf{Z}_2$", 3, 1.5))
+    pgm.add_node(daft.Node("Y_1", r"$\\mathbf{Y}_1$", 1.5, 0.5, observed=True))
+    pgm.add_node(daft.Node("Y_2", r"$\\mathbf{Y}_2$", 2.5, 0.5, observed=True))
     pgm.add_edge("t", "X")
     pgm.add_edge("X", "Y_1")
     pgm.add_edge("X", "Y_2")
@@ -3544,7 +3544,7 @@ def multiple_optima(ax=None, gene_number=937, resolution=80, model_restarts=10, 
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
     ax.set_xlabel('length scale', fontsize=fontsize)
-    ax.set_ylabel('$\log_{10}$ SNR', fontsize=fontsize)
+    ax.set_ylabel('$\\log_{10}$ SNR', fontsize=fontsize)
 
     ma.write_figure('multiple-optima000.svg',
                       directory=diagrams,

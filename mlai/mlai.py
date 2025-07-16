@@ -485,7 +485,7 @@ class LM(ProbMapModel):
     
     :param X: Input features, shape (n_samples, n_features)
     :type X: numpy.ndarray
-    :param y: Target values, shape (n_samples,)
+    :param y: Target values, shape (n_samples, 1)
     :type y: numpy.ndarray
     :param basis: Basis function object that provides the feature transformation
     :type basis: Basis
@@ -516,14 +516,17 @@ class LM(ProbMapModel):
         
         :param X: Input features, shape (n_samples, n_features)
         :type X: numpy.ndarray
-        :param y: Target values, shape (n_samples,)
+        :param y: Target values, shape (n_samples, 1)
         :type y: numpy.ndarray
         :param basis: Basis function object that provides the feature transformation
         :type basis: Basis
         """
         ProbModel.__init__(self)
+        # Ensure y is 2D (n_samples, 1)
+        if y.ndim  != 2 or y.shape[1] != 1:
+            raise ValueError("y must be 2D with shape (n_samples, 1)")
         self.y = y
-        self.num_data = y.shape[0]
+        self.num_data = self.y.shape[0]
         self.X = X
         self.sigma2 = 1.
         self.basis = basis
@@ -1120,32 +1123,33 @@ class BLM(LM):
     
     :param X: Input values
     :type X: numpy.ndarray
-    :param y: Target values
+    :param y: Target values, shape (n_samples, 1)
     :type y: numpy.ndarray
-    :param alpha: Scale of prior on parameters
-    :type alpha: float
-    :param sigma2: Noise variance
-    :type sigma2: float
     :param basis: Basis function
-    :type basis: function
+    :type basis: Basis
+    :param alpha: Scale of prior on parameters (default: 1.0)
+    :type alpha: float, optional
+    :param sigma2: Noise variance (default: 1.0)
+    :type sigma2: float, optional
     """
 
-    def __init__(self, X, y, alpha, sigma2, basis):
+    def __init__(self, X, y, basis, alpha=1.0, sigma2=1.0):
         """
         Initialize the Bayesian Linear Model.
         
         :param X: Input values
         :type X: numpy.ndarray
-        :param y: Target values
+        :param y: Target values, shape (n_samples, 1)
         :type y: numpy.ndarray
-        :param alpha: Scale of prior on parameters
-        :type alpha: float
-        :param sigma2: Noise variance
-        :type sigma2: float
         :param basis: Basis function
-        :type basis: function
+        :type basis: Basis
+        :param alpha: Scale of prior on parameters (default: 1.0)
+        :type alpha: float, optional
+        :param sigma2: Noise variance (default: 1.0)
+        :type sigma2: float, optional
         """
-        ProbMapModel.__init__(self, X, y)
+        # Call LM constructor to handle 2D target arrays
+        super().__init__(X, y, basis)
         self.sigma2 = sigma2
         self.alpha = alpha
         self.basis = basis
@@ -1335,11 +1339,18 @@ class LR(ProbMapModel):
     :type basis: function
     """
     def __init__(self, X, y, basis):
+        # Ensure y is 2D (n_samples, 1)
+        if y.ndim == 1:
+            y = y.reshape(-1, 1)
+        elif y.ndim != 2 or y.shape[1] != 1:
+            raise ValueError("y must be 2D with shape (n_samples, 1)")
+        
         ProbMapModel.__init__(self, X, y)
         self.basis = basis
         self.Phi = self.basis.Phi(X)
-        self.w_star = np.zeros(self.basis.number)
-        
+        # Ensure w_star is (n_basis, 1)
+        self.w_star = np.zeros((self.basis.number, 1))
+
     def predict(self, X):
         """
         Generate the prediction function and the basis matrix.
@@ -1350,8 +1361,9 @@ class LR(ProbMapModel):
         :rtype: tuple
         """
         Phi = self.basis.Phi(X)
-        f = Phi@self.w_star
-        return 1./(1+np.exp(-f)), Phi
+        f = Phi @ self.w_star  # (n_samples, 1)
+        proba = 1. / (1 + np.exp(-f))
+        return proba, Phi
 
     def gradient(self):
         """
@@ -1361,9 +1373,31 @@ class LR(ProbMapModel):
         :rtype: numpy.ndarray
         """
         self.update_g()
-        dw = -(self.Phi[self.y.values, :]*(1-self.g[self.y.values])).sum(0)
-        dw += (self.Phi[~self.y.values, :]*self.g[~self.y.values]).sum(0)
-        return dw
+        y_bool = self.y.flatten().astype(bool)  # Ensure 1D
+        grad = np.zeros((self.Phi.shape[1], 1))
+        grad += -(self.Phi[y_bool, :].T @ (1 - self.g[y_bool, :]))
+        grad += (self.Phi[~y_bool, :].T @ self.g[~y_bool, :])
+        return grad
+
+    def fit(self, learning_rate=0.1, max_iterations=1000, tolerance=1e-6):
+        """
+        Fit the logistic regression model using gradient descent.
+        
+        :param learning_rate: Learning rate for gradient descent
+        :type learning_rate: float, optional
+        :param max_iterations: Maximum number of iterations
+        :type max_iterations: int, optional
+        :param tolerance: Convergence tolerance
+        :type tolerance: float, optional
+        """
+        for iteration in range(max_iterations):
+            old_objective = self.objective()
+            gradient = self.gradient()
+            self.w_star -= learning_rate * gradient
+            new_objective = self.objective()
+            
+            if abs(new_objective - old_objective) < tolerance:
+                break
 
     def compute_g(self, f):
         """
@@ -1395,7 +1429,7 @@ class LR(ProbMapModel):
         """
         Compute the prediction function on training data.
         """
-        self.f = self.Phi@self.w_star
+        self.f = self.Phi @ self.w_star  # (n_samples, 1)
         self.g, self.log_g, self.log_gminus = self.compute_g(self.f)
         
     def objective(self):
@@ -1406,9 +1440,9 @@ class LR(ProbMapModel):
         :rtype: float
         """
         self.update_g()
-        return self.log_g[self.y.values].sum() + self.log_gminus[~self.y.values].sum()
-    
-##########          Week 12          ##########
+        y_bool = self.y.flatten().astype(bool)  # Ensure 1D
+        return self.log_g[y_bool, :].sum() + self.log_gminus[~y_bool, :].sum()
+
 class GP(ProbMapModel):
     """
     Gaussian Process model.
@@ -2081,6 +2115,45 @@ def contour_data(model, data, length_scales, log_SNRs):
         lls.append(length_scale_lls)
 
     return np.asarray(lls)
+
+def radial_multivariate(x, num_basis=4, width=None, random_state=0):
+    """
+    Multivariate radial basis function (RBF) for multi-dimensional input.
+
+    :param x: Input features, shape (n_samples, n_features)
+    :type x: numpy.ndarray
+    :param num_basis: Number of radial basis functions
+    :type num_basis: int, optional
+    :param width: Width parameter for the Gaussian functions. If None, auto-computed.
+    :type width: float, optional
+    :param random_state: Seed for reproducible center placement
+    :type random_state: int, optional
+    :returns: Radial basis matrix, shape (n_samples, num_basis)
+    :rtype: numpy.ndarray
+    """
+    x = np.asarray(x, dtype=float)
+    n_samples, n_features = x.shape
+    rng = np.random.RandomState(random_state)
+    # Place centers randomly within the min/max of the data
+    mins = np.min(x, axis=0)
+    maxs = np.max(x, axis=0)
+    centres = rng.uniform(mins, maxs, size=(num_basis, n_features))
+    if width is None:
+        from scipy.spatial.distance import cdist
+        # Calculate distances between all pairs of centers
+        center_dists = cdist(centres, centres)
+        # Set diagonal to infinity to exclude self-distances
+        np.fill_diagonal(center_dists, np.inf)
+        # Use average distance to nearest neighbor as width
+        nearest_dists = np.min(center_dists, axis=1)
+        width = np.mean(nearest_dists) if len(nearest_dists) > 0 else 1.0
+        # Optionally scale down the width for better separation
+        width = width * 0.5
+    Phi = np.zeros((n_samples, num_basis))
+    for i in range(num_basis):
+        diff = x - centres[i]
+        Phi[:, i] = np.exp(-0.5 * np.sum(diff**2, axis=1) / width**2)
+    return Phi
 
 
 
