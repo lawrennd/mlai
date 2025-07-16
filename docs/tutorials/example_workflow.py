@@ -171,8 +171,7 @@ def demonstrate_logistic_regression():
         y = y.reshape(-1, 1)
     
     # Use the new multivariate RBF basis with a fixed random seed
-    import mlai.mlai as mlai_module
-    basis = mlai.Basis(lambda x, num_basis: mlai_module.radial_multivariate(x, num_basis=num_basis, random_state=42), 10)
+    basis = mlai.Basis(lambda x, num_basis: mlai.radial_multivariate(x, num_basis=num_basis, random_state=42), 10)
     
     # Create and fit logistic regression model
     model = mlai.LR(X, y, basis)

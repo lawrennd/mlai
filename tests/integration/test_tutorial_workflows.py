@@ -9,10 +9,12 @@ import pytest
 import numpy as np
 import matplotlib.pyplot as plt
 import mlai.mlai as mlai
-from mlai.mlai import radial_multivariate
 from pathlib import Path
 import tempfile
 import os
+
+# Import radial_multivariate
+from mlai.mlai import radial_multivariate
 
 # Disable matplotlib display for testing
 plt.ioff()
