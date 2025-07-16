@@ -1377,7 +1377,7 @@ class LR(ProbMapModel):
         grad = np.zeros((self.Phi.shape[1], 1))
         grad += -(self.Phi[y_bool, :].T @ (1 - self.g[y_bool, :]))
         grad += (self.Phi[~y_bool, :].T @ self.g[~y_bool, :])
-        return grad
+        return grad.flatten()  # Return 1D array to match test expectations
 
     def fit(self, learning_rate=0.1, max_iterations=1000, tolerance=1e-6):
         """

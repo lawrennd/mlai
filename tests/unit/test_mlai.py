@@ -978,8 +978,8 @@ class TestLogisticRegressionMethods:
         basis = mlai.Basis(mlai.linear, 2)  # 2 basis functions to match w_star size
         lr = mlai.LR(X, y, basis)
         
-        # Set some weights to compute gradient
-        lr.w_star = np.array([0.5, 0.3])
+        # Set some weights to compute gradient (ensure 2D shape)
+        lr.w_star = np.array([0.5, 0.3]).reshape(-1, 1)
         
         gradient = lr.gradient()
         assert isinstance(gradient, np.ndarray)
@@ -1011,8 +1011,8 @@ class TestLogisticRegressionMethods:
         basis = mlai.Basis(mlai.linear, 2)  # 2 basis functions to match w_star size
         lr = mlai.LR(X, y, basis)
         
-        # Set some weights
-        lr.w_star = np.array([0.5, 0.3])
+        # Set some weights (ensure 2D shape)
+        lr.w_star = np.array([0.5, 0.3]).reshape(-1, 1)
         
         lr.update_g()
         assert hasattr(lr, 'f')
@@ -1027,8 +1027,8 @@ class TestLogisticRegressionMethods:
         basis = mlai.Basis(mlai.linear, 2)  # 2 basis functions to match w_star size
         lr = mlai.LR(X, y, basis)
         
-        # Set some weights
-        lr.w_star = np.array([0.5, 0.3])
+        # Set some weights (ensure 2D shape)
+        lr.w_star = np.array([0.5, 0.3]).reshape(-1, 1)
         
         objective = lr.objective()
         assert isinstance(objective, (int, float))
