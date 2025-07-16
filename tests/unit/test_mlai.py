@@ -513,7 +513,7 @@ class TestBayesianLinearModel:
         alpha = 1.0
         sigma2 = 0.1
         basis = mlai.Basis(mlai.linear, 2)  # number=2 for 1D input
-        blm = mlai.BLM(X, y, alpha, sigma2, basis)
+        blm = mlai.BLM(X, y, basis, alpha=alpha, sigma2=sigma2)
         assert blm.alpha == alpha
         assert blm.sigma2 == sigma2
         assert blm.basis == basis
@@ -526,7 +526,7 @@ class TestBayesianLinearModel:
         alpha = 1.0
         sigma2 = 0.1
         basis = mlai.Basis(mlai.linear, 2)
-        blm = mlai.BLM(X, y, alpha, sigma2, basis)
+        blm = mlai.BLM(X, y, basis, alpha=alpha, sigma2=sigma2)
         blm.fit()
         # Posterior mean and covariance should be set
         assert hasattr(blm, 'mu_w')
@@ -541,7 +541,7 @@ class TestBayesianLinearModel:
         alpha = 1.0
         sigma2 = 0.1
         basis = mlai.Basis(mlai.linear, 2)
-        blm = mlai.BLM(X, y, alpha, sigma2, basis)
+        blm = mlai.BLM(X, y, basis, alpha=alpha, sigma2=sigma2)
         blm.fit()
         X_test = np.array([[4], [5]])
         mean, var = blm.predict(X_test)
@@ -560,7 +560,7 @@ class TestBayesianLinearModel:
         alpha = 1.0
         sigma2 = 0.1
         basis = mlai.Basis(mlai.linear, 2)
-        blm = mlai.BLM(X, y, alpha, sigma2, basis)
+        blm = mlai.BLM(X, y, basis, alpha=alpha, sigma2=sigma2)
         blm.fit()
         obj = blm.objective()
         ll = blm.log_likelihood()
@@ -574,7 +574,7 @@ class TestBayesianLinearModel:
         alpha = 1.0
         sigma2 = 0.1
         basis = mlai.Basis(mlai.linear, 2)
-        blm = mlai.BLM(X, y, alpha, sigma2, basis)
+        blm = mlai.BLM(X, y, basis, alpha=alpha, sigma2=sigma2)
         blm.fit()
         blm.update_nll()
         assert hasattr(blm, 'log_det')
@@ -590,7 +590,7 @@ class TestBayesianLinearModel:
         alpha = 1.0
         sigma2 = 0.1
         basis = mlai.Basis(mlai.linear, 2)
-        blm = mlai.BLM(X, y, alpha, sigma2, basis)
+        blm = mlai.BLM(X, y, basis, alpha=alpha, sigma2=sigma2)
         blm.fit()
         blm.set_param('sigma2', 0.2)
         assert blm.sigma2 == 0.2
@@ -605,18 +605,18 @@ class TestBayesianLinearModel:
         alpha = 1.0
         sigma2 = 0.1
         basis = mlai.Basis(mlai.linear, 2)
-        blm = mlai.BLM(X, y, alpha, sigma2, basis)
+        blm = mlai.BLM(X, y, basis, alpha=alpha, sigma2=sigma2)
         with pytest.raises(ValueError):
             blm.set_param('not_a_param', 123)
 
     def test_blm_update_f_and_update_sum_squares(self):
         """Test BLM update_f and update_sum_squares methods."""
         X = np.array([[1], [2], [3]])
-        y = np.array([1, 2, 3])
+        y = np.array([1, 2, 3]).reshape(-1, 1)
         alpha = 1.0
         sigma2 = 0.1
         basis = mlai.Basis(mlai.linear, 2)
-        blm = mlai.BLM(X, y, alpha, sigma2, basis)
+        blm = mlai.BLM(X, y, basis, alpha=alpha, sigma2=sigma2)
         blm.fit()
         blm.update_f()
         assert hasattr(blm, 'f_bar')
@@ -761,7 +761,7 @@ class TestLinearModelEdgeCases:
     def test_lm_set_param_unknown_parameter_raises(self):
         """Test LM set_param raises ValueError for unknown parameters."""
         X = np.array([[1], [2]])
-        y = np.array([1, 2])
+        y = np.array([1, 2]).reshape(-1, 1)
         basis = mlai.Basis(mlai.linear, 1)
         model = mlai.LM(X, y, basis)
         
@@ -771,7 +771,7 @@ class TestLinearModelEdgeCases:
     def test_lm_set_param_no_update_when_same_value(self):
         """Test LM set_param doesn't update when value is the same."""
         X = np.array([[1], [2]])
-        y = np.array([1, 2])
+        y = np.array([1, 2]).reshape(-1, 1)
         basis = mlai.Basis(mlai.linear, 1)
         model = mlai.LM(X, y, basis)
         
@@ -974,7 +974,7 @@ class TestLogisticRegressionMethods:
     def test_lr_gradient(self):
         """Test LR gradient method."""
         X = np.array([[1], [2]])
-        y = pd.Series([0, 1])  # Use pandas Series for boolean indexing
+        y = np.array([0, 1]).reshape(-1, 1)  # Convert to numpy array
         basis = mlai.Basis(mlai.linear, 2)  # 2 basis functions to match w_star size
         lr = mlai.LR(X, y, basis)
         
@@ -988,7 +988,7 @@ class TestLogisticRegressionMethods:
     def test_lr_compute_g(self):
         """Test LR compute_g method."""
         X = np.array([[1], [2]])
-        y = pd.Series([0, 1])
+        y = np.array([0, 1]).reshape(-1, 1)
         basis = mlai.Basis(mlai.linear, 1)
         lr = mlai.LR(X, y, basis)
         
@@ -1007,7 +1007,7 @@ class TestLogisticRegressionMethods:
     def test_lr_update_g(self):
         """Test LR update_g method."""
         X = np.array([[1], [2]])
-        y = pd.Series([0, 1])
+        y = np.array([0, 1]).reshape(-1, 1)
         basis = mlai.Basis(mlai.linear, 2)  # 2 basis functions to match w_star size
         lr = mlai.LR(X, y, basis)
         
@@ -1023,7 +1023,7 @@ class TestLogisticRegressionMethods:
     def test_lr_objective(self):
         """Test LR objective method."""
         X = np.array([[1], [2]])
-        y = pd.Series([0, 1])
+        y = np.array([0, 1]).reshape(-1, 1)
         basis = mlai.Basis(mlai.linear, 2)  # 2 basis functions to match w_star size
         lr = mlai.LR(X, y, basis)
         
