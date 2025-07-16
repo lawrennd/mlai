@@ -160,7 +160,9 @@ def matrix(A, ax=None,
     elif type == 'values':
         for i in range(nrows):
             for j in range(ncols):
-                handle.append(ax.text(j, i, '{val:{prec}}'.format(val=A[i, j], prec=prec), horizontalalignment='center', fontsize=fontsize))
+                # Convert to float for proper formatting
+                val = float(A[i, j])
+                handle.append(ax.text(j, i, '{val:{prec}}'.format(val=val, prec=prec), horizontalalignment='center', fontsize=fontsize))
     elif type == 'entries':
         for i in range(nrows):
             for j in range(ncols):
@@ -213,17 +215,26 @@ def matrix(A, ax=None,
                               y_lim[1]],
                              linewidth=bracket_width, color=np.array(bracket_color))
       
-    if highlight:       
-        h_row = highlight_row
-        h_col = highlight_col
-        if isinstance(h_row, str) and h_row == ':':
-            h_row = [0, nrows]
-        if isinstance(h_col, str) and h_col == ':':
-            h_col = [0, ncols]
-        if len(h_row) == 1:
+    if highlight:
+        h_row = highlight_row if highlight_row is not None else ':'
+        h_col = highlight_col if highlight_col is not None else ':'
+        # Expand ':' to full range
+        if h_row == ':':
+            h_row = [0, nrows-1]
+        elif isinstance(h_row, int):
             h_row = [h_row, h_row]
-        if len(h_col) == 1:
+        elif isinstance(h_row, list):
+            if len(h_row) == 1:
+                h_row = [h_row[0], h_row[0]]
+        if h_col == ':':
+            h_col = [0, ncols-1]
+        elif isinstance(h_col, int):
             h_col = [h_col, h_col]
+        elif isinstance(h_col, list):
+            if len(h_col) == 1:
+                h_col = [h_col[0], h_col[0]]
+        h_col = [int(x) for x in h_col]
+        h_row = [int(x) for x in h_row]
         h_col.sort()
         h_row.sort()
         ax.add_line(plt.Line2D([h_col[0]-0.5, h_col[0]-0.5,
@@ -234,17 +245,26 @@ def matrix(A, ax=None,
                               h_row[0]-0.5], color=highlight_color,
                                linewidth=highlight_width))
                     
-    if zoom:      
-        z_row = zoom_row
-        z_col = zoom_col
-        if isinstance(z_row, str) and z_row == ':':
-            z_row = [1, nrows]
-        if isinstance(z_col, str) and z_col == ':':
-            z_col = [1, ncols]
-        if len(z_row) == 1:
+    if zoom:
+        z_row = zoom_row if zoom_row is not None else ':'
+        z_col = zoom_col if zoom_col is not None else ':'
+        # Expand ':' to full range
+        if z_row == ':':
+            z_row = [0, nrows-1]
+        elif isinstance(z_row, int):
             z_row = [z_row, z_row]
-        if len(z_col) == 1:
+        elif isinstance(z_row, list):
+            if len(z_row) == 1:
+                z_row = [z_row[0], z_row[0]]
+        if z_col == ':':
+            z_col = [0, ncols-1]
+        elif isinstance(z_col, int):
             z_col = [z_col, z_col]
+        elif isinstance(z_col, list):
+            if len(z_col) == 1:
+                z_col = [z_col[0], z_col[0]]
+        z_col = [int(x) for x in z_col]
+        z_row = [int(x) for x in z_row]
         z_col.sort()
         z_row.sort()
         x_lim = [z_col[0]-0.5, z_col[1]+0.5]
@@ -3449,6 +3469,7 @@ def model_output(model, output_dim=0, scale=1.0, offset=0.0, ax=None, xlabel='$x
         ax.plot(z, np.full_like(z, ylim[0]), 'k^', markersize='20')
 
     ax.autoscale(enable=True, axis='x', tight=True)
+    return ax
 
 def model_sample(model, output_dim=0, scale=1.0, offset=0.0,
                  samps=10, ax=None, xlabel='$x$', ylabel='$y$', 
@@ -3498,8 +3519,7 @@ def model_sample(model, output_dim=0, scale=1.0, offset=0.0,
     if hasattr(model, 'Z'):
         ylim = ax.get_ylim()
         ax.plot(model.Z, np.ones(model.Z.shape)*ax.get_ylim()[0], marker='^', linestyle=None, markersize=20)
-
-
+    return ax
 
 def multiple_optima(ax=None, gene_number=937, resolution=80, model_restarts=10, seed=10000, max_iters=300, optimize=True, fontsize=20, diagrams='./diagrams'):
     """
