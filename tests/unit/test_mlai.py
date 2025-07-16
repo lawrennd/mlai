@@ -263,18 +263,18 @@ class TestLinearModel:
     def test_lm_initialization(self):
         """Test LM class initialization."""
         X = np.array([[1, 2], [3, 4]])
-        y = np.array([1, 2])
+        y = np.array([1, 2]).reshape(-1, 1)
         basis = mlai.Basis(mlai.linear, 1)
         
         model = mlai.LM(X, y, basis)
         assert model.X.shape == (2, 2)
-        assert model.y.shape == (2,)
+        assert model.y.shape == (2, 1)
         assert model.basis == basis
     
     def test_lm_set_param(self):
         """Test LM set_param method."""
         X = np.array([[1], [2]])  # Single feature
-        y = np.array([1, 2])
+        y = np.array([1, 2]).reshape(-1, 1)
         basis = mlai.Basis(mlai.linear, 1)
         
         model = mlai.LM(X, y, basis)
@@ -285,7 +285,7 @@ class TestLinearModel:
     def test_lm_fit_and_predict(self):
         """Test LM fit and predict methods."""
         X = np.array([[1], [2], [3]])
-        y = np.array([2, 4, 6])  # Linear relationship y = 2x
+        y = np.array([2, 4, 6]).reshape(-1, 1)  # Linear relationship y = 2x
         basis = mlai.Basis(mlai.linear, 1)
         
         model = mlai.LM(X, y, basis)
@@ -293,8 +293,8 @@ class TestLinearModel:
         
         # Test prediction
         X_test = np.array([[4], [5]])
-        predictions = model.predict(X_test)
-        assert len(predictions) == 2
+        predictions, _ = model.predict(X_test)
+        assert predictions.shape[0] == 2
         # Should predict approximately linear relationship
         assert predictions[0] is not None  # Just check it's not None
 
@@ -481,12 +481,12 @@ class TestLogisticRegression:
     def test_lr_initialization(self):
         """Test LR class initialization."""
         X = np.array([[1, 2], [3, 4]])
-        y = np.array([0, 1])  # Binary labels
+        y = np.array([0, 1]).reshape(-1, 1)  # Binary labels
         basis = mlai.Basis(mlai.linear, 1)
         
         lr = mlai.LR(X, y, basis)
         assert lr.X.shape == (2, 2)
-        assert lr.y.shape == (2,)
+        assert lr.y.shape == (2, 1)
         assert lr.basis == basis
     
     def test_lr_predict(self):
@@ -509,7 +509,7 @@ class TestBayesianLinearModel:
     def test_blm_initialization(self):
         """Test BLM class initialization."""
         X = np.array([[1], [2], [3]])
-        y = np.array([1, 2, 3])
+        y = np.array([1, 2, 3]).reshape(-1, 1)
         alpha = 1.0
         sigma2 = 0.1
         basis = mlai.Basis(mlai.linear, 2)  # number=2 for 1D input
@@ -522,7 +522,7 @@ class TestBayesianLinearModel:
     def test_blm_fit_and_posterior(self):
         """Test BLM fit computes posterior mean and covariance."""
         X = np.array([[1], [2], [3]])
-        y = np.array([1, 2, 3])
+        y = np.array([1, 2, 3]).reshape(-1, 1)
         alpha = 1.0
         sigma2 = 0.1
         basis = mlai.Basis(mlai.linear, 2)
@@ -537,7 +537,7 @@ class TestBayesianLinearModel:
     def test_blm_predict_mean_and_variance(self):
         """Test BLM predict returns mean and variance."""
         X = np.array([[1], [2], [3]])
-        y = np.array([1, 2, 3])
+        y = np.array([1, 2, 3]).reshape(-1, 1)
         alpha = 1.0
         sigma2 = 0.1
         basis = mlai.Basis(mlai.linear, 2)
@@ -556,7 +556,7 @@ class TestBayesianLinearModel:
     def test_blm_objective_and_log_likelihood(self):
         """Test BLM objective and log_likelihood methods."""
         X = np.array([[1], [2], [3]])
-        y = np.array([1, 2, 3])
+        y = np.array([1, 2, 3]).reshape(-1, 1)
         alpha = 1.0
         sigma2 = 0.1
         basis = mlai.Basis(mlai.linear, 2)
@@ -570,7 +570,7 @@ class TestBayesianLinearModel:
     def test_blm_update_nll_and_nll_split(self):
         """Test BLM update_nll and nll_split methods."""
         X = np.array([[1], [2], [3]])
-        y = np.array([1, 2, 3])
+        y = np.array([1, 2, 3]).reshape(-1, 1)
         alpha = 1.0
         sigma2 = 0.1
         basis = mlai.Basis(mlai.linear, 2)
@@ -586,7 +586,7 @@ class TestBayesianLinearModel:
     def test_blm_set_param_and_refit(self):
         """Test BLM set_param updates parameter and refits."""
         X = np.array([[1], [2], [3]])
-        y = np.array([1, 2, 3])
+        y = np.array([1, 2, 3]).reshape(-1, 1)
         alpha = 1.0
         sigma2 = 0.1
         basis = mlai.Basis(mlai.linear, 2)
@@ -601,7 +601,7 @@ class TestBayesianLinearModel:
     def test_blm_set_param_unknown_raises(self):
         """Test BLM set_param with unknown parameter raises ValueError."""
         X = np.array([[1], [2], [3]])
-        y = np.array([1, 2, 3])
+        y = np.array([1, 2, 3]).reshape(-1, 1)
         alpha = 1.0
         sigma2 = 0.1
         basis = mlai.Basis(mlai.linear, 2)
