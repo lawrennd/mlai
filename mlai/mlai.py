@@ -1377,8 +1377,8 @@ class LR(ProbMapModel):
         grad = np.zeros((self.Phi.shape[1], 1))
         grad += -(self.Phi[y_bool, :].T @ (1 - self.g[y_bool, :]))
         grad += (self.Phi[~y_bool, :].T @ self.g[~y_bool, :])
-        return grad  # Return 2D array to match w_star shape
-
+        return grad.flatten()  # Return 1D array 
+    
     def fit(self, learning_rate=0.1, max_iterations=1000, tolerance=1e-6):
         """
         Fit the logistic regression model using gradient descent.
@@ -1395,8 +1395,7 @@ class LR(ProbMapModel):
             gradient = self.gradient()
             # Flatten w_star for optimization, then reshape back
             w_flat = self.w_star.flatten()
-            grad_flat = gradient.flatten()
-            w_flat -= learning_rate * grad_flat
+            w_flat -= learning_rate * gradient
             self.w_star = w_flat.reshape(self.w_star.shape)
             new_objective = self.objective()
             

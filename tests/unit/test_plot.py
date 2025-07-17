@@ -34,8 +34,8 @@ class TestPlotUtilities:
         assert isinstance(result, np.ndarray)
         assert result.shape[1] == 1
         assert result.shape[0] == 200
-        assert result.min() < x.min()
-        assert result.max() > x.max()
+        assert np.min(result) < np.min(x)
+        assert np.max(result) > np.max(x)
     
     def test_pred_range_custom_params(self):
         """Test pred_range function with custom parameters."""
@@ -44,8 +44,8 @@ class TestPlotUtilities:
         assert isinstance(result, np.ndarray)
         assert result.shape[0] == 50
         assert result.shape[1] == 1
-        assert result.min() < x.min()
-        assert result.max() > x.max()
+        assert np.min(result) < np.min(x)
+        assert np.max(result) > np.max(x)
     
     def test_pred_range_2d_input(self):
         """Test pred_range function with 2D input."""
@@ -54,8 +54,8 @@ class TestPlotUtilities:
         assert isinstance(result, np.ndarray)
         assert result.shape[1] == 1
         assert result.shape[0] == 200
-        assert result.min() < x.min()
-        assert result.max() > x.max()
+        assert np.min(result) < np.min(x)
+        assert np.max(result) > np.max(x)
 
 class TestMatrixPlotting:
     """Test matrix plotting functionality."""
@@ -63,7 +63,8 @@ class TestMatrixPlotting:
     def test_matrix_basic(self):
         """Test basic matrix plotting."""
         A = np.array([[1, 2], [3, 4]])
-        result = plot.matrix(A)
+        mock_ax = MagicMock()
+        result = plot.matrix(A, ax=mock_ax)
         assert isinstance(result, list)
         assert len(result) == 4
     
@@ -256,7 +257,9 @@ class TestRegressionFunctions:
         m_vals = np.array([1, 2, 3])
         c_vals = np.array([0, 1, 2])
         E_grid = np.array([[1, 2], [3, 4]])
-        plot.regression_contour(mock_f, mock_ax, m_vals, c_vals, E_grid)
+        # Mock plt.clabel to avoid matplotlib internal issues
+        with patch('matplotlib.pyplot.clabel'):
+            plot.regression_contour(mock_f, mock_ax, m_vals, c_vals, E_grid)
         # Should have called some plotting methods
         assert mock_ax.contour.called or mock_ax.contourf.called
 

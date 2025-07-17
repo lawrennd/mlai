@@ -12,6 +12,7 @@ import mlai.mlai as mlai
 from pathlib import Path
 import tempfile
 import os
+from unittest.mock import patch
 
 
 # Disable matplotlib display for testing
@@ -55,7 +56,7 @@ class TestTutorialWorkflows:
         
         for name, basis_func, num_basis in basis_types:
             # Create basis
-            basis = mlai.Basis(basis_func, num_basis, data_limits=[float(np.min(x)), float(np.max(x))])
+            basis = mlai.Basis(basis_func, num_basis, data_limits=[float(np.min(x.flatten())), float(np.max(x.flatten()))])
             
             # Compute basis matrix
             Phi = basis.Phi(x)
@@ -203,7 +204,7 @@ class TestTutorialDocumentationConsistency:
         y_data = 2 * x_data**2 - 3 * x_data + 1 + 0.5 * np.random.randn(n_samples, 1)
         
         # Create polynomial basis functions
-        basis = mlai.Basis(mlai.polynomial, 3, data_limits=[x_data.min(), x_data.max()])
+        basis = mlai.Basis(mlai.polynomial, 3, data_limits=[float(np.min(x_data.flatten())), float(np.max(x_data.flatten()))])
         
         # Create linear model
         model = mlai.LM(x_data, y_data, basis)
@@ -270,15 +271,14 @@ class TestTutorialOutputs:
         y = 2 * x**2 - 3 * x + 1 + 0.5 * np.random.randn(100, 1)
         
         # Create basis and model
-        basis = mlai.Basis(mlai.polynomial, 3, data_limits=[float(np.min(x)), float(np.max(x))])
+        basis = mlai.Basis(mlai.polynomial, 3, data_limits=[float(np.min(x.flatten())), float(np.max(x.flatten()))])
         model = mlai.LM(x, y, basis)
         model.fit()
-        
-        # Create a plot
+            
         plt.figure(figsize=(10, 6))
-        plt.scatter(x, y, c='blue', alpha=0.6, label='Data')
+        plt.scatter(x.flatten(), y.flatten(), c='blue', alpha=0.6, label='Data')
         
-        x_smooth = np.linspace(np.min(x), np.max(x), 200).reshape(-1, 1)
+        x_smooth = np.linspace(float(np.min(x.flatten())), float(np.max(x.flatten())), 200).reshape(-1, 1)
         y_smooth, _ = model.predict(x_smooth)
         plt.plot(x_smooth, y_smooth, 'r-', linewidth=2, label='Model Fit')
         

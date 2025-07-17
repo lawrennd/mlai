@@ -983,7 +983,7 @@ class TestLogisticRegressionMethods:
         
         gradient = lr.gradient()
         assert isinstance(gradient, np.ndarray)
-        assert gradient.shape == (2, 1)  # 2D array for internal matrix operations
+        assert gradient.shape == (2,)  # 1D array for optimization
     
     def test_lr_compute_g(self):
         """Test LR compute_g method."""
