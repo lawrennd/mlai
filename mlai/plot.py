@@ -78,8 +78,8 @@ def pred_range(x, portion=0.2, points=200, randomize=False):
         x = x.flatten()
     if not np.issubdtype(x.dtype, np.number):
         raise ValueError("Input array x must be numeric.")
-    span = np.max(x) - np.min(x)
-    xt = np.linspace(np.min(x) - portion * span, np.max(x) + portion * span, points)[:, np.newaxis]
+    span = np.max(x.flatten()) - np.min(x.flatten())
+    xt = np.linspace(np.min(x.flatten()) - portion * span, np.max(x.flatten()) + portion * span, points)[:, np.newaxis]
     if not randomize:
         return xt
     else:
@@ -163,7 +163,7 @@ def matrix(A, ax=None,
     if type == 'image':
         handle =  ax.matshow(A)
     elif type == 'imagesc':
-        handle =  ax.images(A, [np.min(np.array([np.min(A), 0])), np.max(A)])
+        handle =  ax.images(A, [np.min(np.array([np.min(A.flatten()), 0])), np.max(A.flatten())])
     elif type == 'values':
         for i in range(nrows):
             for j in range(ncols):
@@ -181,19 +181,21 @@ def matrix(A, ax=None,
     elif type == 'patch':
         for i in range(nrows):
             for j in range(ncols):
+                # Convert to float for proper color handling
+                color_val = float(A[i, j])
                 handle.append(ax.add_patch(
                     plt.Rectangle([i-0.5, j-0.5],
                                   width=1., height=1.,
-                                  color=(A[i, j])*np.array([1, 1, 1]))))
+                                  color=color_val*np.array([1, 1, 1]))))
     elif type == 'colorpatch':
         for i in range(nrows):
             for j in range(ncols):
+                # Convert boolean arrays to RGB values (0 or 1)
+                rgb = np.array([float(A[i, j, 0]), float(A[i, j, 1]), float(A[i, j, 2])])
                 handle.append(ax.add_patch(
                     plt.Rectangle([i-0.5, j-0.5],
                                   width=1., height=1.,
-                                  color=np.array([A[i, j, 0],
-                                                  A[i, j, 1],
-                                                  A[i, j, 2]]))))
+                                  color=rgb)))
                 
                 
     if bracket_style == 'boxes':
@@ -1569,8 +1571,8 @@ def bayes_update(diagrams='../diagrams'):
     approx_curve = np.exp(ln_approx_curve)
     noise
     xlim = [x_min, x_max] 
-    ylim = [0, np.vstack([approx_curve, likelihood_curve, 
-                          posterior_curve, prior_curve]).max()*1.1]
+    ylim = [0, np.max(np.vstack([approx_curve, likelihood_curve, 
+                          posterior_curve, prior_curve]).flatten())*1.1]
 
     fig, ax = plt.subplots(figsize=two_figsize)
 
@@ -2109,10 +2111,10 @@ def kern_circular_sample(K, mu=None, x=None,
     if multiple:
         x_lim = (np.min(x[:, 1]), np.max(x[:, 1]))
     else:
-        x_lim = (np.min(x), np.max(x))
+        x_lim = (np.min(x.flatten()), np.max(x.flatten()))
     
-    y_lim = np.sqrt(2)*np.array([np.min(np.array([np.min(LR1), np.min(LR2)])),
-                        np.max(np.array([np.max(LR1), np.max(LR2)]))])
+    y_lim = np.sqrt(2)*np.array([np.min(np.array([np.min(LR1.flatten()), np.min(LR2.flatten())])),
+                        np.max(np.array([np.max(LR1.flatten()), np.max(LR2.flatten())]))])
     
     if fig is None:
         fig, _ = plt.subplots(figsize=one_figsize)
@@ -2258,7 +2260,7 @@ def rejection_samples(kernel, x=None, num_few=20, num_many=1000,  diagrams='../d
     #ax.set_xticks(range(1, 26, 2))
     #ax.set_yticks([-1, 0, 1])
     ylim = [-4, 4]
-    xlim = [np.min(x), np.max(x)]
+    xlim = [np.min(x.flatten()), np.max(x.flatten() )]
     ax.set_ylim(ylim)
     ax.set_xlim(xlim)
     ax.set_position([0., 0., 1., 1.])
@@ -2707,7 +2709,7 @@ def kronecker_IK_highlight(fontsize=25, figsize=two_figsize, reverse=False, diag
                     bracket_style='boxes', type='colorpatch',
                     fontsize=fontsize)
         
-    ma.write_figure('kronecker_{stem}_highlighted001.svg'.format(stem=stem), direcotry=diagrams)
+    ma.write_figure('kronecker_{stem}_highlighted001.svg'.format(stem=stem), directory=diagrams)
     objAkB = matrix(IK_stack,
                     ax=ax,
                     bracket_style='boxes', type='colorpatch',
@@ -3028,7 +3030,7 @@ def non_linear_difficulty_plot_1(alpha=1.0,
     ax[0].set(xlim=[-6, 6])
     ax[0].set_xlabel('$p(x)$', ha='center', fontsize=20)
 
-    y = np.linspace(f.min()-3*data_std, f.max()+3*data_std, 100)[:, np.newaxis]
+    y = np.linspace(np.min(f.flatten())-3*data_std, np.max(f.flatten())+3*data_std, 100)[:, np.newaxis]
     p = np.mean(np.exp(-0.5/(data_std*data_std)*dist2(y, f))*1/(np.sqrt(2*np.pi)*data_std), 1)
     patch = Polygon(np.column_stack((y, p)), closed=True, facecolor=patch_color)
     a=ax[2].add_patch(patch)
@@ -3442,7 +3444,7 @@ def model_output(model, output_dim=0, scale=1.0, offset=0.0, ax=None, xlabel='$x
     ax.set_ylabel(ylabel, fontsize=fontsize)
     xt = pred_range(model.X, portion=portion)
     if xlim is None:
-        xlim = [xt.min(), xt.max()]
+        xlim = [np.min(xt.flatten()), np.max(xt.flatten())]
 
     yt_mean, yt_var = model.predict(xt)
     yt_mean = yt_mean*scale + offset
@@ -3519,7 +3521,7 @@ def model_sample(model, output_dim=0, scale=1.0, offset=0.0,
     if xlim is not None:
         ax.set_xlim(xlim)
     else:
-        ax.set_xlim([xt.min(), xt.max()])
+        ax.set_xlim([np.min(xt.flatten()), np.max(xt.flatten())])
     if ylim is not None: 
         ax.set_ylim(ylim)
                
