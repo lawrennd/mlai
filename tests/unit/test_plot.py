@@ -854,8 +854,9 @@ class TestAdditionalPlotFunctions:
             mock_basis_instance.Phi.return_value = np.ones((100, 3))  # 100 samples, 3 basis functions
             mock_basis_instance.function = test_function  # So __name__ is available
             mock_basis_class.return_value = mock_basis_instance
-            plot.basis(test_function, x_min, x_max, mock_fig, mock_ax, loc, text)
-            assert mock_write_figure.called
+            with patch('matplotlib.pyplot.sca'):
+                plot.basis(test_function, x_min, x_max, mock_fig, mock_ax, loc, text)
+                assert mock_write_figure.called
     
     def test_computing_covariance(self):
         """Test computing_covariance function."""
@@ -1094,11 +1095,13 @@ class TestAdditionalPlotFunctions:
                     # Mock savefig and write_figure to avoid mathtext parsing errors
                     mock_savefig.return_value = None
                     mock_write_figure.return_value = None
-                    try:
-                        plot.deep_nn()
-                    except Exception as e:
-                        pytest.fail(f'deep_nn raised an exception: {e}')
-                    # The function doesn't call subplots, so we just check it runs without error
+                    with patch('matplotlib.pyplot.figure') as mock_figure:
+                        mock_figure.return_value = MagicMock()
+                        try:
+                            plot.deep_nn()
+                        except Exception as e:
+                            pytest.fail(f'deep_nn raised an exception: {e}')
+                        # The function doesn't call subplots, so we just check it runs without error
 
     def test_deep_nn_bottleneck(self):
         """Test deep_nn_bottleneck function with daft mocked at import time."""
@@ -1115,11 +1118,13 @@ class TestAdditionalPlotFunctions:
                     # Mock savefig and write_figure to avoid mathtext parsing errors
                     mock_savefig.return_value = None
                     mock_write_figure.return_value = None
-                    try:
-                        plot.deep_nn_bottleneck()
-                    except Exception as e:
-                        pytest.fail(f'deep_nn_bottleneck raised an exception: {e}')
-                    # The function doesn't call subplots, so we just check it runs without error
+                    with patch('matplotlib.pyplot.figure') as mock_figure:
+                        mock_figure.return_value = MagicMock()
+                        try:
+                            plot.deep_nn_bottleneck()
+                        except Exception as e:
+                            pytest.fail(f'deep_nn_bottleneck raised an exception: {e}')
+                        # The function doesn't call subplots, so we just check it runs without error
 
     def test_vertical_chain(self):
         """Test vertical_chain function with daft mocked at import time."""
@@ -1221,5 +1226,7 @@ class TestAdditionalPlotFunctions:
                 # Fix the size to match expected shape - multivariate_normal returns (size, n)
                 mock_mvn.return_value = np.random.normal(size=(1, 25))  # size=1, n=25
                 mock_pred.return_value = None
-                plot.two_point_sample(kernel)
-                assert mock_subplots.called 
+                with patch('matplotlib.pyplot.savefig') as mock_savefig:
+                    mock_savefig.return_value = None
+                    plot.two_point_sample(kernel)
+                    assert mock_subplots.called 
