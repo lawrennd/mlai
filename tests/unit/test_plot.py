@@ -602,7 +602,15 @@ class TestAdditionalPlotFunctions:
             mock_ax.__getitem__.return_value = mock_ax
             mock_ax.plot.return_value = [MagicMock()]
             mock_subplots.return_value = (mock_fig, [mock_ax, mock_ax])
-            with patch('matplotlib.pyplot.scatter'):
+            with patch('matplotlib.pyplot.scatter'), \
+                 patch('matplotlib.pyplot.Circle') as mock_circle, \
+                 patch('mlai.init_perceptron') as mock_init, \
+                 patch('mlai.update_perceptron') as mock_update, \
+                 patch('mlai.write_figure') as mock_write:
+                # Mock the perceptron functions to return proper types
+                mock_init.return_value = (np.array([1.0, 2.0], dtype=float), 3.0, np.array([1.0, 2.0], dtype=float))
+                mock_update.return_value = (np.array([1.0, 2.0], dtype=float), 3.0, np.array([1.0, 2.0], dtype=float), False)
+                mock_circle.return_value = MagicMock()
                 plot.perceptron(x_plus, x_minus, max_iters=10)
                 assert mock_subplots.called
     
