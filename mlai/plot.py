@@ -63,20 +63,27 @@ notation_map={'variance': r'\\alpha',
 
 def pred_range(x, portion=0.2, points=200, randomize=False):
     """
-    Generate a range of prediction points for plotting.
-
-    :param x: Input data (numpy array).
-    :param portion: Fraction of the data range to extend beyond min/max (default: 0.2).
+    Generate a range of prediction points based on the input array x.
+    :param x: Input array (1D or 2D, numeric).
+    :param portion: Fraction of the span to extend beyond min/max (default: 0.2).
     :param points: Number of points in the generated range (default: 200).
     :param randomize: If True, randomly shuffle the generated points (default: False).
     :returns: Numpy array of prediction points.
     """
-    span = x.max()-x.min()
-    xt=np.linspace(x.min()-portion*span, x.max()+portion*span, points)[:,np.newaxis]
+    x = np.asarray(x)
+    if x.size == 0:
+        raise ValueError("Input array x must not be empty.")
+    # Flatten to 1D if possible
+    if x.ndim > 1:
+        x = x.flatten()
+    if not np.issubdtype(x.dtype, np.number):
+        raise ValueError("Input array x must be numeric.")
+    span = np.max(x) - np.min(x)
+    xt = np.linspace(np.min(x) - portion * span, np.max(x) + portion * span, points)[:, np.newaxis]
     if not randomize:
         return xt
     else:
-        return xt + np.random.randn(points, 1)*span/float(points)
+        return xt + np.random.randn(points, 1) * span / float(points)
 
 # def write_plots(filename=filename, filebase, directory=None, width=700, height=500, kwargs):
 #     """Display a series of plots controlled by sliders. The function relies on Python string format functionality to index through a series of plots."""
