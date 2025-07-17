@@ -163,7 +163,7 @@ def matrix(A, ax=None,
     if type == 'image':
         handle =  ax.matshow(A)
     elif type == 'imagesc':
-        handle =  ax.images(A, [np.array([A.min(), 0]).min(), A.max()])
+        handle =  ax.images(A, [np.min(np.array([np.min(A), 0])), np.max(A)])
     elif type == 'values':
         for i in range(nrows):
             for j in range(ncols):
@@ -1099,9 +1099,9 @@ def over_determined_system(diagrams='../diagrams'):
     ctext = ax.text(0.15, c+0.15, '$c$',  horizontalalignment='center', verticalalignment='bottom', fontsize=20)
     xl = np.array([1.5, 2.5])
     yl = xl*m + c
-    mhand = ax.plot([xl[0], xl[1]], [yl.min(), yl.min()], color=[0, 0, 0])
-    mhand2 = ax.plot([xl.min(), xl.min()], [yl[0], yl[1]], color=[0, 0, 0])
-    mtext = ax.text(xl.mean(), yl.min()-0.2, '$m$',  horizontalalignment='center', verticalalignment='bottom',fontsize=20)
+    mhand = ax.plot([xl[0], xl[1]], [np.min(yl), np.min(yl)], color=[0, 0, 0])
+    mhand2 = ax.plot([np.min(xl), np.min(xl)], [yl[0], yl[1]], color=[0, 0, 0])
+    mtext = ax.text(xl.mean(), np.min(yl)-0.2, '$m$',  horizontalalignment='center', verticalalignment='bottom',fontsize=20)
     ma.write_figure('over_determined_system002.svg', directory=diagrams, transparent=True)
 
     a2 = ax.plot(x, y, '.', markersize=20, linewidth=3, color=[1, 0, 0])
@@ -1658,8 +1658,8 @@ def independent_height_weight(h=None, w=None, muh=1.7, varh=0.0225,
     xel = np.sin(theta)*np.sqrt(varh) + muh
     yel = np.cos(theta)*np.sqrt(varw) + muw
     ax[0].plot(xel, yel, '-', color=[1., 0., 1.], linewidth=3)
-    ax[0].set_xlim([h.min(), h.max()])
-    ax[0].set_ylim([w.min()+10, w.max()-10])
+    ax[0].set_xlim([np.min(h), np.max(h)])
+    ax[0].set_ylim([np.min(w)+10, np.max(w)-10])
     ax[0].set_yticks([65, 75, 85])
     ax[0].set_xticks([1.25, 1.7, 2.15])
     ax[0].set_xlabel('$h/m$', fontsize=20)
@@ -1738,8 +1738,8 @@ def correlated_height_weight(h=None, w=None, muh=1.7, varh=0.0225,
     yel = np.cos(theta)*np.sqrt(varw)
     vals = np.dot(R,np.vstack([xel, yel]))
     ax[0].plot(vals[0, :]+muh, vals[1, :]+muw, '-', color=[1., 0., 1.], linewidth=3)
-    ax[0].set_xlim([h.min(), h.max()])
-    ax[0].set_ylim([w.min()+10, w.max()-10])
+    ax[0].set_xlim([np.min(h), np.max(h)])
+    ax[0].set_ylim([np.min(w)+10, np.max(w)-10])
     ax[0].set_yticks([65, 75, 85])
     ax[0].set_xticks([1.25, 1.7, 2.15])
     ax[0].set_xlabel('$h/m$', fontsize=20)
@@ -2107,12 +2107,12 @@ def kern_circular_sample(K, mu=None, x=None,
 
     from matplotlib import animation
     if multiple:
-        x_lim = (x[:, 1].min(), x[:, 1].max())
+        x_lim = (np.min(x[:, 1]), np.max(x[:, 1]))
     else:
-        x_lim = (x.min(), x.max())
+        x_lim = (np.min(x), np.max(x))
     
-    y_lim = np.sqrt(2)*np.array([np.array([LR1.min(), LR2.min()]).min(),
-                        np.array([LR1.max(), LR2.max()]).max()])
+    y_lim = np.sqrt(2)*np.array([np.min(np.array([np.min(LR1), np.min(LR2)])),
+                        np.max(np.array([np.max(LR1), np.max(LR2)]))])
     
     if fig is None:
         fig, _ = plt.subplots(figsize=one_figsize)
@@ -2258,7 +2258,7 @@ def rejection_samples(kernel, x=None, num_few=20, num_many=1000,  diagrams='../d
     #ax.set_xticks(range(1, 26, 2))
     #ax.set_yticks([-1, 0, 1])
     ylim = [-4, 4]
-    xlim = [x.min(), x.max()]
+    xlim = [np.min(x), np.max(x)]
     ax.set_ylim(ylim)
     ax.set_xlim(xlim)
     ax.set_position([0., 0., 1., 1.])
