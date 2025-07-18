@@ -864,7 +864,7 @@ class TestAdditionalPlotFunctions:
             mock_basis_instance.function = test_function  # So __name__ is available
             mock_basis_class.return_value = mock_basis_instance
             # Mock numpy.random.normal to return proper shape
-            mock_normal.return_value = np.random.normal(size=(3, 1))
+            mock_normal.return_value = np.array([[0.1], [0.2], [0.3]], dtype=np.float64)
             with patch('matplotlib.pyplot.sca'):
                 plot.basis(test_function, x_min, x_max, mock_fig, mock_ax, loc, text)
                 assert mock_write_figure.called
