@@ -608,8 +608,8 @@ class TestAdditionalPlotFunctions:
                  patch('mlai.update_perceptron') as mock_update, \
                  patch('mlai.write_figure') as mock_write:
                 # Mock the perceptron functions to return proper types
-                mock_init.return_value = (np.array([1.0, 2.0], dtype=float), 3.0, np.array([1.0, 2.0], dtype=float))
-                mock_update.return_value = (np.array([1.0, 2.0], dtype=float), 3.0, np.array([1.0, 2.0], dtype=float), False)
+                mock_init.return_value = (np.array([1.0, 2.0], dtype=np.float64), 3.0, np.array([1.0, 2.0], dtype=np.float64))
+                mock_update.return_value = (np.array([1.0, 2.0], dtype=np.float64), 3.0, np.array([1.0, 2.0], dtype=np.float64), False)
                 mock_circle.return_value = MagicMock()
                 plot.perceptron(x_plus, x_minus, max_iters=10)
                 assert mock_subplots.called
@@ -855,13 +855,16 @@ class TestAdditionalPlotFunctions:
         with patch('matplotlib.pyplot.plot'), \
              patch('matplotlib.pyplot.savefig') as mock_savefig, \
              patch('mlai.Basis') as mock_basis_class, \
-             patch('mlai.write_figure') as mock_write_figure:
+             patch('mlai.write_figure') as mock_write_figure, \
+             patch('numpy.random.normal') as mock_normal:
             # Mock the Basis class to return expected Phi shape
             mock_basis_instance = MagicMock()
             mock_basis_instance.number = 3
             mock_basis_instance.Phi.return_value = np.ones((100, 3))  # 100 samples, 3 basis functions
             mock_basis_instance.function = test_function  # So __name__ is available
             mock_basis_class.return_value = mock_basis_instance
+            # Mock numpy.random.normal to return proper shape
+            mock_normal.return_value = np.random.normal(size=(3, 1))
             with patch('matplotlib.pyplot.sca'):
                 plot.basis(test_function, x_min, x_max, mock_fig, mock_ax, loc, text)
                 assert mock_write_figure.called
