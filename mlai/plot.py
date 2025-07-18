@@ -224,7 +224,7 @@ def matrix(A, ax=None,
                               y_lim[1]],
                              linewidth=bracket_width, color=np.array(bracket_color))
       
-    if highlight:
+    if highlight:       
         h_row = highlight_row if highlight_row is not None else ':'
         h_col = highlight_col if highlight_col is not None else ':'
         # Expand ':' to full range
@@ -254,7 +254,7 @@ def matrix(A, ax=None,
                               h_row[0]-0.5], color=highlight_color,
                                linewidth=highlight_width))
                     
-    if zoom:
+    if zoom:      
         z_row = zoom_row if zoom_row is not None else ':'
         z_col = zoom_col if zoom_col is not None else ':'
         # Expand ':' to full range
@@ -736,7 +736,7 @@ def bernoulli_urn(ax, diagrams='../diagrams'):
 def bayes_billiard(ax, diagrams='../diagrams'):
     """
     Plot a series of figures representing Thomas Bayes' billiard table for the Bernoulli distribution representation.
-
+    
     :param ax: Matplotlib axis to draw the plot on.
     :param diagrams: Directory to save the diagrams (default: '../diagrams').
     """
@@ -777,8 +777,8 @@ def bayes_billiard(ax, diagrams='../diagrams'):
                           directory=diagrams,
                           transparent=True)
         circle.remove()
-        
 
+            
 def hyperplane_coordinates(w, b, plot_limits):
     """
     Helper function for plotting the decision boundary of the perceptron.
@@ -1169,7 +1169,7 @@ def gaussian_of_height(diagrams='../diagrams'):
     ax2.set_xlabel('$h/m$', fontsize=20)
     ax2.set_ylabel('$p(h|\\mu, \\sigma^2)$', fontsize = 20)
     ma.write_figure(figure=f2, filename='gaussian_of_height.svg', directory=diagrams, transparent=True)
-    
+
 def marathon_fit(model, value, param_name, param_range,
                  xlim, fig, ax, x_val=None, y_val=None, objective=None,
                  diagrams='../diagrams', fontsize=20, objective_ylim=None,
@@ -1427,7 +1427,7 @@ def loo_fit(x, y, param_name, param_range,
 
 
 def cv_fit(x, y, param_name, param_range, model=LM, objective_ylim=None, 
-           xlim=None, plot_fit=marathon_fit, num_parts=5, diagrams='../diagrams', **kwargs):
+               xlim=None, plot_fit=marathon_fit, num_parts=5, diagrams='../diagrams', **kwargs):
     """
     Fit a model and show cross validation error.
 
@@ -2426,7 +2426,6 @@ def two_point_sample(kernel_function, diagrams='../diagrams'):
     ax[0].set_ylabel('$f$', fontsize=20)
     
     ax[0].plot(np.array(ind)+1, [f[0,ind[0]], f[0,ind[1]]], 'o', markersize=10, linewidth=5, color=hcolor)
-    ax[0]
     obj = matrix(K[ind][:, ind], ax=ax[1], type='values')
     ax[1].set_xlabel('$i$',fontsize=16)
     ax[1].set_ylabel('$i^\\prime$',fontsize=16)
@@ -3502,10 +3501,10 @@ def model_sample(model, output_dim=0, scale=1.0, offset=0.0,
     if GPY_AVAILABLE:
         import mlai.gp_tutorial as gpt
         _ = gpt.gpplot(xt.flatten(),
-               yt_mean[:, output_dim],
-               yt_mean[:, output_dim]-2*yt_sd.flatten(),
-               yt_mean[:, output_dim]+2*yt_sd.flatten(), 
-               ax=ax)
+                   yt_mean[:, output_dim],
+                   yt_mean[:, output_dim]-2*yt_sd.flatten(),
+                   yt_mean[:, output_dim]+2*yt_sd.flatten(), 
+                   ax=ax)
     else:
         ax.plot(xt.flatten(), yt_mean[:, output_dim], 'b-', linewidth=2)
         ax.fill_between(xt.flatten(), 
