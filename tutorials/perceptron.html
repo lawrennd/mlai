@@ -1,0 +1,264 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Perceptron Algorithm Tutorial &mdash; MLAI 0.1.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=92734c54"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"equationNumbers": {"autoNumber": "AMS"}}})</script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Basis Functions Tutorial" href="basis_functions.html" />
+    <link rel="prev" title="Logistic Regression Tutorial" href="logistic_regression.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            MLAI
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="linear_regression.html">Linear Regression Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logistic_regression.html">Logistic Regression Tutorial</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Perceptron Algorithm Tutorial</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#mathematical-background">Mathematical Background</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#implementation-in-mlai">Implementation in MLAI</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#training-the-perceptron">Training the Perceptron</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#visualizing-the-results">Visualizing the Results</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#key-concepts">Key Concepts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#limitations">Limitations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#extensions">Extensions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#further-reading">Further Reading</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="basis_functions.html">Basis Functions Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gp_tutorial.html">Gaussian Process Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deepgp_tutorial.html">Deep Gaussian Process Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mountain_car.html">Mountain Car Reinforcement Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#getting-started">Getting Started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#tutorial-structure">Tutorial Structure</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing to MLAI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tenets.html">Project Tenets</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Information:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../cip/index.html">Code Improvement Proposals (CIPs)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../backlog/index.html">Project Backlog</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">MLAI</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Tutorials</a></li>
+      <li class="breadcrumb-item active">Perceptron Algorithm Tutorial</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/tutorials/perceptron.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="perceptron-algorithm-tutorial">
+<h1>Perceptron Algorithm Tutorial<a class="headerlink" href="#perceptron-algorithm-tutorial" title="Link to this heading"></a></h1>
+<p>The perceptron is one of the earliest and simplest machine learning algorithms for binary classification. This tutorial will walk you through the mathematical foundations, implementation, and practical usage of the perceptron algorithm using MLAI.</p>
+<section id="mathematical-background">
+<h2>Mathematical Background<a class="headerlink" href="#mathematical-background" title="Link to this heading"></a></h2>
+<p>The perceptron algorithm is a linear classifier that learns to separate two classes of data points using a hyperplane. Given input data <span class="math notranslate nohighlight">\(\mathbf{x} \in \mathbb{R}^d\)</span> and binary labels <span class="math notranslate nohighlight">\(y \in \{-1, +1\}\)</span>, the perceptron learns a weight vector <span class="math notranslate nohighlight">\(\mathbf{w} \in \mathbb{R}^d\)</span> and bias <span class="math notranslate nohighlight">\(b \in \mathbb{R}\)</span> such that:</p>
+<div class="math notranslate nohighlight">
+\[f(\mathbf{x}) = \text{sign}(\mathbf{w}^T \mathbf{x} + b)\]</div>
+<p>The algorithm works by iteratively updating the weights when it makes a mistake:</p>
+<div class="math notranslate nohighlight">
+\[\mathbf{w}^{(t+1)} = \mathbf{w}^{(t)} + \alpha \cdot y_i \cdot \mathbf{x}_i\]</div>
+<p>where <span class="math notranslate nohighlight">\(\alpha\)</span> is the learning rate.</p>
+</section>
+<section id="implementation-in-mlai">
+<h2>Implementation in MLAI<a class="headerlink" href="#implementation-in-mlai" title="Link to this heading"></a></h2>
+<p>MLAI provides a simple implementation of the perceptron algorithm. Let’s explore how to use it:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">mlai.mlai</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mlai</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+
+<span class="c1"># Generate some linearly separable data</span>
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">n_samples</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">n_features</span> <span class="o">=</span> <span class="mi">2</span>
+
+<span class="c1"># Create two classes</span>
+<span class="n">X_plus</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">n_samples</span><span class="o">//</span><span class="mi">2</span><span class="p">,</span> <span class="n">n_features</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="n">X_minus</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">n_samples</span><span class="o">//</span><span class="mi">2</span><span class="p">,</span> <span class="n">n_features</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">])</span>
+
+<span class="c1"># Combine the data</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">X_plus</span><span class="p">,</span> <span class="n">X_minus</span><span class="p">])</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_samples</span><span class="o">//</span><span class="mi">2</span><span class="p">),</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_samples</span><span class="o">//</span><span class="mi">2</span><span class="p">)])</span>
+
+<span class="c1"># Initialize perceptron weights</span>
+<span class="n">w</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">mlai</span><span class="o">.</span><span class="n">init_perceptron</span><span class="p">(</span><span class="n">X_plus</span><span class="p">,</span> <span class="n">X_minus</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initial weights: </span><span class="si">{</span><span class="n">w</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initial bias: </span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="training-the-perceptron">
+<h2>Training the Perceptron<a class="headerlink" href="#training-the-perceptron" title="Link to this heading"></a></h2>
+<p>Now let’s train the perceptron on our data:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Training parameters</span>
+<span class="n">max_iterations</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">learning_rate</span> <span class="o">=</span> <span class="mf">0.1</span>
+
+<span class="c1"># Training loop</span>
+<span class="k">for</span> <span class="n">iteration</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_iterations</span><span class="p">):</span>
+    <span class="c1"># Update weights for one epoch</span>
+    <span class="n">w</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">x_selected</span><span class="p">,</span> <span class="n">updated</span> <span class="o">=</span> <span class="n">mlai</span><span class="o">.</span><span class="n">update_perceptron</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">X_plus</span><span class="p">,</span> <span class="n">X_minus</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">updated</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Converged after </span><span class="si">{</span><span class="n">iteration</span><span class="si">}</span><span class="s2"> iterations&quot;</span><span class="p">)</span>
+        <span class="k">break</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Final weights: </span><span class="si">{</span><span class="n">w</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Final bias: </span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="visualizing-the-results">
+<h2>Visualizing the Results<a class="headerlink" href="#visualizing-the-results" title="Link to this heading"></a></h2>
+<p>Instead of manually plotting the decision boundary, you can use MLAI’s built-in perceptron visualization tools for a more informative plot. These tools show the decision boundary, the weight vector, and histograms of the projections for each class.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">mlai.plot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plot</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+
+<span class="c1"># Prepare the figure and axes</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+
+<span class="c1"># Initialize the perceptron plot</span>
+<span class="n">handles</span> <span class="o">=</span> <span class="n">plot</span><span class="o">.</span><span class="n">init_perceptron</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span><span class="p">,</span> <span class="n">X_plus</span><span class="p">,</span> <span class="n">X_minus</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+<span class="c1"># During training, you can update the plot after each weight update:</span>
+<span class="k">for</span> <span class="n">iteration</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_iterations</span><span class="p">):</span>
+    <span class="n">w</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">x_selected</span><span class="p">,</span> <span class="n">updated</span> <span class="o">=</span> <span class="n">mlai</span><span class="o">.</span><span class="n">update_perceptron</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">X_plus</span><span class="p">,</span> <span class="n">X_minus</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">)</span>
+    <span class="n">handles</span> <span class="o">=</span> <span class="n">plot</span><span class="o">.</span><span class="n">update_perceptron</span><span class="p">(</span><span class="n">handles</span><span class="p">,</span> <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span><span class="p">,</span> <span class="n">X_plus</span><span class="p">,</span> <span class="n">X_minus</span><span class="p">,</span> <span class="n">iteration</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">pause</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>  <span class="c1"># Pause to visualize the update</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">updated</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Converged after </span><span class="si">{</span><span class="n">iteration</span><span class="si">}</span><span class="s2"> iterations&quot;</span><span class="p">)</span>
+        <span class="k">break</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>This approach provides a dynamic and educational visualization of how the perceptron algorithm updates its decision boundary and weight vector during training.</p>
+</section>
+<section id="key-concepts">
+<h2>Key Concepts<a class="headerlink" href="#key-concepts" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p><strong>Linear Separability</strong>: The perceptron only works when the data is linearly separable. If the classes cannot be separated by a hyperplane, the algorithm will not converge.</p></li>
+<li><p><strong>Convergence</strong>: The perceptron convergence theorem states that if the data is linearly separable, the perceptron will converge in a finite number of steps.</p></li>
+<li><p><strong>Learning Rate</strong>: The learning rate controls how much the weights are updated on each mistake. A larger learning rate leads to faster convergence but may cause instability.</p></li>
+<li><p><strong>Bias Term</strong>: The bias term allows the decision boundary to not pass through the origin, making the model more flexible.</p></li>
+</ol>
+</section>
+<section id="limitations">
+<h2>Limitations<a class="headerlink" href="#limitations" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Only works for linearly separable data</p></li>
+<li><p>Sensitive to the order of training examples</p></li>
+<li><p>May not find the optimal separating hyperplane</p></li>
+<li><p>Binary classification only</p></li>
+</ul>
+</section>
+<section id="extensions">
+<h2>Extensions<a class="headerlink" href="#extensions" title="Link to this heading"></a></h2>
+<p>The perceptron algorithm has inspired many modern machine learning techniques:</p>
+<ul class="simple">
+<li><p><strong>Support Vector Machines (SVMs)</strong>: Find the optimal separating hyperplane</p></li>
+<li><p><strong>Neural Networks</strong>: Multi-layer perceptrons for complex decision boundaries</p></li>
+<li><p><strong>Online Learning</strong>: Update weights incrementally as new data arrives</p></li>
+</ul>
+</section>
+<section id="further-reading">
+<h2>Further Reading<a class="headerlink" href="#further-reading" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://en.wikipedia.org/wiki/Perceptron">Perceptron Algorithm</a> on Wikipedia</p></li>
+<li><p><a class="reference external" href="https://psycnet.apa.org/record/1958-00856-001">Rosenblatt’s Original Paper</a></p></li>
+<li><p><a class="reference external" href="https://en.wikipedia.org/wiki/Perceptron_convergence_theorem">Perceptron Convergence Theorem</a></p></li>
+</ul>
+<p>This tutorial demonstrates the fundamental concepts of linear classification and provides a foundation for understanding more advanced machine learning algorithms.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="logistic_regression.html" class="btn btn-neutral float-left" title="Logistic Regression Tutorial" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="basis_functions.html" class="btn btn-neutral float-right" title="Basis Functions Tutorial" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2018-2025, Neil D. Lawrence.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
