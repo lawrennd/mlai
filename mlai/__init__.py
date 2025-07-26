@@ -1,3 +1,6 @@
+# Import core functionality
+from . import mlai
+
 # Check for GPy availability
 GPY_AVAILABLE = True
 try:

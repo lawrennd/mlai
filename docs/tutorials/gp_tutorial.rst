@@ -1,6 +1,6 @@
 Gaussian Process Tutorial
 ========================
-
+ 
 .. automodule:: mlai.gp_tutorial
    :members:
    :undoc-members:

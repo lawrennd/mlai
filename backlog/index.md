@@ -16,7 +16,7 @@ This file provides an overview of all current backlog items organized by categor
 
 ### Proposed
 
-- [Ensure Tutorials are Shared in Documentation and Integration with Tests is Documented](documentation/2025-07-16_tutorial-documentation-integration.md)
+*No tasks currently proposed.*
 
 
 ## Infrastructure
@@ -50,7 +50,7 @@ This file provides an overview of all current backlog items organized by categor
 
 ### Proposed
 
-- [Build Comprehensive Tests for plot.py](features/2025-07-16_plot-py-testing.md)
+*No tasks currently proposed.*
 
 
 ## Bugs

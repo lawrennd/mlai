@@ -1,5 +1,5 @@
 CIP-0001: Documentation Improvements with Sphinx
 ===============================================
-
+ 
 .. include:: ../../cip/cip0001.md
    :parser: myst_parser.sphinx_ 

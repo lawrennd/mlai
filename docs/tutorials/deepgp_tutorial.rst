@@ -1,6 +1,6 @@
 Deep Gaussian Process Tutorial
 ==============================
-
+ 
 .. automodule:: mlai.deepgp_tutorial
    :members:
    :undoc-members:

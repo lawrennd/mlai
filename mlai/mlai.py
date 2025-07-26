@@ -200,13 +200,13 @@ def init_perceptron(x_plus, x_minus, seed=1000001):
         # generate a random point from the positives
         index = np.random.randint(0, x_plus.shape[0])
         x_select = x_plus[index, :]
-        w = x_plus[index, :] # set the normal vector to that point.
+        w = x_plus[index, :].astype(float)  # set the normal vector to plus that point
         b = 1
     else:
         # generate a random point from the negatives
         index = np.random.randint(0, x_minus.shape[0])
         x_select = x_minus[index, :]
-        w = -x_minus[index, :] # set the normal vector to minus that point.
+        w = -x_minus[index, :].astype(float)  # set the normal vector to minus that point.
         b = -1
     return w, b, x_select
 
