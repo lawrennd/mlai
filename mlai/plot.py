@@ -798,7 +798,7 @@ def hyperplane_coordinates(w, b, plot_limits):
         x0 = -(b + x1*w[1])/w[0]
     return x0, x1
 
-def init_perceptron(f, ax, x_plus, x_minus, w, b, fontsize=18):
+def init_perceptron_plot(f, ax, x_plus, x_minus, w, b, fontsize=18):
     """
     Initialize a plot for showing the perceptron decision boundary.
 
@@ -843,7 +843,7 @@ def init_perceptron(f, ax, x_plus, x_minus, w, b, fontsize=18):
     ax[1].legend(loc='upper right')
     return h
 
-def update_perceptron(h, f, ax, x_plus, x_minus, i, w, b):
+def update_perceptron_plot(h, f, ax, x_plus, x_minus, i, w, b):
     """
     Update plots after decision boundary has changed.
 
@@ -2779,7 +2779,7 @@ def perceptron(x_plus, x_minus, learn_rate=0.1, max_iters=10000,
     iterations = 0
     setup=True
     f2, ax2 = plt.subplots(1, 2, figsize=two_figsize)
-    handle = init_perceptron(f2, ax2, x_plus, x_minus, w, b)
+    handle = init_perceptron_plot(f2, ax2, x_plus, x_minus, w, b)
     handle['plane'].set_visible(False)
     handle['arrow'].set_visible(False)
     handle['circle'] = plt.Circle((x_select[0], x_select[1]), 0.25, color='b', fill=False)
@@ -2803,7 +2803,7 @@ def perceptron(x_plus, x_minus, learn_rate=0.1, max_iters=10000,
             ma.write_figure(figure=f2, filename='perceptron{samp:0>3}.svg'.format(samp=count), directory=diagrams, transparent=True)     
             ma.write_figure(figure=f2, filename='perceptron{samp:0>3}.png'.format(samp=count), bbox_inches=extent, directory=diagrams, transparent=True)        
             count+=1
-            handle = update_perceptron(handle, f2, ax2, x_plus, x_minus, updates, w, b)
+            handle = update_perceptron_plot(handle, f2, ax2, x_plus, x_minus, updates, w, b)
             ma.write_figure(filename='perceptron{samp:0>3}.svg'.format(samp=count),
                               figure=f2,
                               directory=diagrams,
