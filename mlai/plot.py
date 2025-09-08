@@ -1063,6 +1063,43 @@ def regression_contour_sgd(x, y, learn_rate=0.01, m_center=1.4, c_center=-3.1, m
                               directory=diagrams)
     return count
 
+def regression_contour_coordinate_descent(x, y, m_center=1.4, c_center=-3.1, m_star = 0.0, c_star = -5.0, max_iters=100, diagrams='../diagrams'):
+    """
+    Plot evolution of the solution of linear regression via coordinate descent.
+
+    :param x: Input data points.
+    :param y: Target values.
+    :param m_center: Center value for slope parameter (default: 1.4).
+    :param c_center: Center value for intercept parameter (default: -3.1).
+    :param m_star: Initial slope value (default: 0.0).
+    :param c_star: Initial intercept value (default: -5.0).
+    :param max_iters: Maximum number of iterations (default: 100).
+    :param diagrams: Directory to save the plots (default: '../diagrams').
+    :returns: Number of frames generated.
+    """
+    m_vals, c_vals, E_grid = contour_error(x, y, m_center, c_center, samps=100)
+
+    f, ax = plt.subplots(1, 2, figsize=two_figsize) # this is to create 'side by side axes'
+    handle = init_regression(f, ax, x, y, m_vals, c_vals, E_grid, m_star, c_star)
+    count=0
+    ma.write_figure('regression_coordinate_descent_contour_fit{count:0>3}.svg'.format(count=count),
+                      directory=diagrams)
+    
+    for i in range(max_iters): # do max_iters iterations (parameter updates)
+        # Coordinate descent updates
+        # Update m: m = ((y - c)*x).sum()/(x*x).sum()
+        m_star = ((y - c_star) * x).sum() / (x * x).sum()
+        
+        # Update c: c = (y-m*x).sum()/y.shape[0]
+        c_star = (y - m_star * x).sum() / y.shape[0]
+
+        if i<10 or ((i<100 and not i % 10) or (not i % 100)): 
+            handle = update_regression(handle, f, ax, m_star, c_star, i)
+            count+=1
+            ma.write_figure('regression_coordinate_descent_contour_fit{count:0>3}.svg'.format(count=count),
+                              directory=diagrams)
+    return count
+
 def over_determined_system(diagrams='../diagrams'):
     """
     Visualize what happens in an over determined system with linear regression.

@@ -704,6 +704,22 @@ class TestAdditionalPlotFunctions:
             with patch('matplotlib.pyplot.contour'):
                 plot.regression_contour_sgd(x, y, max_iters=10)
 
+    def test_regression_contour_coordinate_descent(self):
+        """Test regression_contour_coordinate_descent function."""
+        x = np.array([1, 2, 3])
+        y = np.array([2, 4, 6])
+        with patch('matplotlib.pyplot.subplots') as mock_subplots:
+            mock_fig = MagicMock()
+            mock_ax = [MagicMock(), MagicMock()]
+            mock_ax[0].contour.return_value = MagicMock()
+            mock_ax[1].plot.return_value = [MagicMock()]
+            mock_subplots.return_value = (mock_fig, mock_ax)
+            with patch('matplotlib.pyplot.contour'):
+                result = plot.regression_contour_coordinate_descent(x, y, max_iters=10)
+                # Should return the count of frames generated
+                assert isinstance(result, int)
+                assert result >= 0
+
     def test_over_determined_system(self):
         """Test over_determined_system function."""
         with patch('matplotlib.pyplot.subplots') as mock_subplots:
