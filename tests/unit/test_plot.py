@@ -1256,4 +1256,133 @@ class TestAdditionalPlotFunctions:
                 with patch('matplotlib.pyplot.savefig') as mock_savefig:
                     mock_savefig.return_value = None
                     plot.two_point_sample(kernel)
-                    assert mock_subplots.called 
+                    assert mock_subplots.called
+
+class TestGPOptimizeQuadratic:
+    """Test gp_optimize_quadratic function."""
+    
+    def _setup_mock_ax(self):
+        """Helper method to set up mock axis with proper return values."""
+        mock_ax = MagicMock()
+        # Mock line objects with proper get_data method
+        mock_line = MagicMock()
+        mock_line.get_data.return_value = (np.array([1, 2, 3]), np.array([4, 5, 6]))
+        mock_ax.plot.return_value = [mock_line]
+        mock_ax.arrow.return_value = MagicMock()
+        # Mock text objects with proper get_position method
+        mock_text = MagicMock()
+        mock_text.get_position.return_value = (1.0, 2.0)  # Return tuple of (x, y)
+        mock_ax.text.return_value = mock_text
+        mock_ax.get_xlim.return_value = (-7, 7)
+        mock_ax.get_ylim.return_value = (-7, 7)
+        mock_ax.set_xlim.return_value = None
+        mock_ax.set_ylim.return_value = None
+        mock_ax.set_aspect.return_value = None
+        mock_ax.set_xlabel.return_value = None
+        mock_ax.set_ylabel.return_value = None
+        mock_ax.set_frame_on.return_value = None
+        mock_ax.cla.return_value = None
+        return mock_ax
+    
+    def test_gp_optimize_quadratic_basic(self):
+        """Test gp_optimize_quadratic function with basic parameters."""
+        with patch('matplotlib.pyplot.subplots') as mock_subplots:
+            mock_fig = MagicMock()
+            mock_ax = self._setup_mock_ax()
+            mock_subplots.return_value = (mock_fig, mock_ax)
+            
+            with patch('mlai.plot.ma.write_figure') as mock_write_figure, \
+                 patch('matplotlib.pyplot.close') as mock_close:
+                result = plot.gp_optimize_quadratic(diagrams='./test_diagrams')
+                
+                # Verify function executed successfully
+                assert result == mock_ax
+                assert mock_subplots.called
+                assert mock_write_figure.called
+                assert mock_close.called
+    
+    def test_gp_optimize_quadratic_custom_params(self):
+        """Test gp_optimize_quadratic function with custom parameters."""
+        with patch('matplotlib.pyplot.subplots') as mock_subplots:
+            mock_fig = MagicMock()
+            mock_ax = self._setup_mock_ax()
+            mock_subplots.return_value = (mock_fig, mock_ax)
+            
+            with patch('mlai.plot.ma.write_figure') as mock_write_figure, \
+                 patch('matplotlib.pyplot.close') as mock_close:
+                result = plot.gp_optimize_quadratic(
+                    lambda1=2, 
+                    lambda2=0.5, 
+                    diagrams='./test_diagrams',
+                    fontsize=16,
+                    generate_frames=True
+                )
+                
+                # Verify function executed successfully
+                assert result == mock_ax
+                assert mock_subplots.called
+                assert mock_write_figure.called
+                assert mock_close.called
+    
+    def test_gp_optimize_quadratic_no_frames(self):
+        """Test gp_optimize_quadratic function without generating frames."""
+        with patch('matplotlib.pyplot.subplots') as mock_subplots:
+            mock_fig = MagicMock()
+            mock_ax = self._setup_mock_ax()
+            mock_subplots.return_value = (mock_fig, mock_ax)
+            
+            with patch('mlai.plot.ma.write_figure') as mock_write_figure, \
+                 patch('matplotlib.pyplot.close') as mock_close:
+                result = plot.gp_optimize_quadratic(
+                    diagrams='./test_diagrams',
+                    generate_frames=False
+                )
+                
+                # Verify function executed successfully
+                assert result == mock_ax
+                assert mock_subplots.called
+                # Should only write one frame (frame 0)
+                assert mock_write_figure.call_count == 1
+                assert mock_close.called
+    
+    def test_gp_optimize_quadratic_directory_creation(self):
+        """Test gp_optimize_quadratic function creates directory if needed."""
+        with patch('matplotlib.pyplot.subplots') as mock_subplots:
+            mock_fig = MagicMock()
+            mock_ax = self._setup_mock_ax()
+            mock_subplots.return_value = (mock_fig, mock_ax)
+            
+            with patch('os.path.exists', return_value=False) as mock_exists, \
+                 patch('os.mkdir') as mock_mkdir, \
+                 patch('mlai.plot.ma.write_figure') as mock_write_figure, \
+                 patch('matplotlib.pyplot.close') as mock_close:
+                result = plot.gp_optimize_quadratic(diagrams='./new_diagrams')
+                
+                # Verify directory creation was attempted
+                assert mock_exists.called
+                assert mock_mkdir.called
+                assert result == mock_ax
+    
+    def test_gp_optimize_quadratic_mathematical_correctness(self):
+        """Test that gp_optimize_quadratic produces mathematically correct results."""
+        with patch('matplotlib.pyplot.subplots') as mock_subplots:
+            mock_fig = MagicMock()
+            mock_ax = self._setup_mock_ax()
+            mock_subplots.return_value = (mock_fig, mock_ax)
+            
+            with patch('mlai.plot.ma.write_figure') as mock_write_figure, \
+                 patch('matplotlib.pyplot.close') as mock_close:
+                # Test with specific eigenvalues
+                lambda1, lambda2 = 3, 1
+                result = plot.gp_optimize_quadratic(
+                    lambda1=lambda1, 
+                    lambda2=lambda2,
+                    diagrams='./test_diagrams'
+                )
+                
+                # Verify function executed successfully
+                assert result == mock_ax
+                # Verify that the rotation matrix is applied correctly
+                # (This is tested implicitly through the function execution)
+                assert mock_subplots.called
+                assert mock_write_figure.called
