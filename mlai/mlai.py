@@ -1479,6 +1479,14 @@ class GP(ProbMapModel):
         self.logdetK = np.linalg.det(self.K+self.sigma2*np.eye(self.K.shape[0]))
         self.Kinvy = self.Kinv@self.y
         self.yKinvy = (self.y*self.Kinvy).sum()
+    
+    def update_kernel_matrix(self):
+        """
+        Update the kernel matrix when kernel parameters change.
+        This should be called after changing kernel parameters.
+        """
+        self.K = self.kernel.K(self.X, self.X)
+        self.update_inverse()
 
     def fit(self):
         """

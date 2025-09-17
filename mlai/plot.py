@@ -3884,19 +3884,13 @@ def gp_optimize_quadratic(lambda1=3, lambda2=1,
             pos = label.get_position()
             pos_rot = R @ np.array(pos)
             label.set_position(pos_rot)
-        
-        # Rotate data point
-        data_x, data_y = data_handle.get_data()
-        data_rot = R @ np.array([data_x[0], data_y[0]])
-        data_handle.set_data([data_rot[0]], [data_rot[1]])
-        
+                
         # Update axis labels for rotated view
         ax.set_xlabel(r'$y_1$', fontsize=fontsize)
         ax.set_ylabel(r'$y_2$', fontsize=fontsize)
         
         ma.write_figure('gp-optimise-quadratic002.svg', directory=diagrams, transparent=True)
     
-    plt.close(fig)
     return ax
 
 

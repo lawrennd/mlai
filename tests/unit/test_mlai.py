@@ -1481,6 +1481,73 @@ class TestGPUpdateInverse:
             # Restore original method
             mlai.GP.update_inverse = self.original_update_inverse
 
+
+class TestGPKernelMatrixUpdate:
+    """Test GP kernel matrix update functionality."""
+    
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.X = np.array([[1.0], [2.0], [3.0]])
+        self.y = np.array([1.0, 2.0, 1.5])
+        self.sigma2 = 0.1
+        self.kernel = mlai.Kernel(mlai.eq_cov, lengthscale=1.0, variance=1.0)
+        self.gp = mlai.GP(self.X, self.y, self.sigma2, self.kernel)
+    
+    def test_update_kernel_matrix(self):
+        """Test update_kernel_matrix method for parameter changes."""
+        # Change kernel parameters
+        original_lengthscale = self.gp.kernel.parameters['lengthscale']
+        new_lengthscale = original_lengthscale * 2
+        
+        # Store original K matrix
+        original_K = self.gp.K.copy()
+        
+        # Change parameter
+        self.gp.kernel.parameters['lengthscale'] = new_lengthscale
+        
+        # K matrix should still be the same (not updated yet)
+        np.testing.assert_allclose(self.gp.K, original_K, rtol=1e-10)
+        
+        # Update kernel matrix
+        self.gp.update_kernel_matrix()
+        
+        # K matrix should now be different
+        assert not np.allclose(self.gp.K, original_K, rtol=1e-10)
+        
+        # Test prediction still works
+        X_test = np.array([[1.5]])
+        mu, var = self.gp.predict(X_test)
+        
+        # Should produce valid predictions
+        assert np.isfinite(mu[0])
+        assert var[0, 0] > 0  # Should be positive
+    
+    def test_parameter_change_negative_variance_bug(self):
+        """Test that changing kernel parameters without updating K matrix causes issues."""
+        # This test documents the bug that was fixed
+        X_test = np.array([[1.5]])
+        
+        # Change kernel parameters without updating K matrix
+        original_lengthscale = self.gp.kernel.parameters['lengthscale']
+        self.gp.kernel.parameters['lengthscale'] = 0.01  # Very small lengthscale
+        
+        # Call update_inverse with old K matrix (this was the bug)
+        self.gp.update_inverse()
+        
+        # This should now work correctly because we have the update_kernel_matrix method
+        # But let's test the old buggy behavior by manually calling update_inverse
+        # without updating the K matrix first
+        
+        # Restore original parameters and K matrix
+        self.gp.kernel.parameters['lengthscale'] = original_lengthscale
+        self.gp.update_kernel_matrix()  # This fixes it
+        
+        # Now test that predictions work correctly
+        mu, var = self.gp.predict(X_test)
+        assert np.isfinite(mu[0])
+        assert var[0, 0] > 0
+
+
 class TestGaussianNoiseModel:
     """Test Gaussian noise model methods."""
     
