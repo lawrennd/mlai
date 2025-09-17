@@ -36,6 +36,9 @@ Each CIP can have one of the following statuses:
 ## Current CIPs
 
 - [CIP-0001](./cip0001.md): 
+- [CIP-0002](./cip0002.md): 
+- [CIP-0003](./cip0003.md): 
+- [CIP-0004](./cip0004.md): Replace MATLAB GP Optimization Visualization with Python
 
 ## Creating a Good CIP
 
