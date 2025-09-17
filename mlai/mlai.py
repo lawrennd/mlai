@@ -1642,24 +1642,6 @@ class Kernel():
         raise NotImplementedError
 
     
-def exponentiated_quadratic(x, x_prime, variance=1., lengthscale=1.):
-    """
-    Exponentiated quadratic covariance function.
-    
-    :param x: First data point
-    :type x: numpy.ndarray
-    :param x_prime: Second data point
-    :type x_prime: numpy.ndarray
-    :param variance: Overall variance of the covariance
-    :type variance: float, optional
-    :param lengthscale: Lengthscale parameter
-    :type lengthscale: float, optional
-    :returns: Covariance value
-    :rtype: float
-    """
-    r = np.linalg.norm(x-x_prime, 2)
-    return variance*np.exp((-0.5*r*r)/lengthscale**2)        
-
 def eq_cov(x, x_prime, variance=1., lengthscale=1.):
     """
     Exponentiated quadratic covariance function.
@@ -1778,9 +1760,60 @@ def icm_cov(x, x_prime, B, subkernel, **kwargs):
     :returns: Covariance value
     :rtype: float
     """
-    i = x[0]
-    i_prime = x_prime[0]
+    # Validate and cast first column to integer for indexing
+    i_float = x[0]
+    i_prime_float = x_prime[0]
+    
+    # Check if values are integer-valued (even if stored as float)
+    if not (i_float == int(i_float) and i_prime_float == int(i_prime_float)):
+        raise ValueError(f"First column of x must be integer-valued for indexing. Got x[0]={i_float}, x_prime[0]={i_prime_float}")
+    
+    # Cast to integer for indexing
+    i = int(i_float)
+    i_prime = int(i_prime_float)
+    
     return B[i, i_prime]*subkernel(x[1:], x_prime[1:], **kwargs)
+
+def lmc_cov(x, x_prime, B_list, subkernel_list, **kwargs):
+    """
+    Linear Model of Coregionalisation. Combines multiple ICM components.
+    
+    The LMC is defined as: k(x, x') = Σ_q B_q[i, i'] * k_q(x[1:], x'[1:])
+    where B_q are coregionalization matrices and k_q are subkernels.
+    
+    This is implemented as a sum of ICM components using add_cov.
+    Each ICM component handles its own integer validation.
+    
+    :param x: First data point
+    :type x: numpy.ndarray
+    :param x_prime: Second data point
+    :type x_prime: numpy.ndarray
+    :param B_list: List of coregionalization matrices
+    :type B_list: list of numpy.ndarray
+    :param subkernel_list: List of sub-kernel functions
+    :type subkernel_list: list of functions
+    :param **kwargs: Additional arguments for the sub-kernels
+    :type **kwargs: dict
+    :returns: Covariance value
+    :rtype: float
+    """
+    if len(B_list) != len(subkernel_list):
+        raise ValueError(f"Number of coregionalization matrices ({len(B_list)}) must match number of subkernels ({len(subkernel_list)})")
+    
+    # Create ICM components - each will handle its own validation
+    icm_components = []
+    icm_kwargs = []
+    
+    for B, subkernel in zip(B_list, subkernel_list):
+        # Create an ICM component using the actual icm_cov function
+        def icm_component(x_inner, x_prime_inner, **inner_kwargs):
+            return icm_cov(x_inner, x_prime_inner, B, subkernel, **inner_kwargs)
+        
+        icm_components.append(icm_component)
+        icm_kwargs.append(kwargs)
+    
+    # Use add_cov to sum the ICM components
+    return add_cov(x, x_prime, icm_components, icm_kwargs)
 
 def slfm_cov(x, x_prime, W, subkernel, **kwargs):
     """

@@ -353,11 +353,11 @@ class TestKernelFunctions:
     """Test kernel function implementations."""
     
     def test_exponentiated_quadratic_kernel(self):
-        """Test exponentiated quadratic kernel."""
+        """Test exponentiated quadratic kernel (eq_cov)."""
         x = np.array([1, 2])
         x_prime = np.array([2, 3])
         
-        result = mlai.exponentiated_quadratic(x, x_prime, variance=1.0, lengthscale=1.0)
+        result = mlai.eq_cov(x, x_prime, variance=1.0, lengthscale=1.0)
         assert isinstance(result, (int, float))
         assert result > 0  # Kernel should be positive
     
@@ -436,7 +436,7 @@ class TestGaussianProcess:
         X = np.array([[1, 2], [3, 4]])
         y = np.array([1, 2])
         sigma2 = 0.1
-        kernel = mlai.Kernel(mlai.exponentiated_quadratic)
+        kernel = mlai.Kernel(mlai.eq_cov)
         
         gp = mlai.GP(X, y, sigma2, kernel)
         assert gp.X.shape == (2, 2)
@@ -449,7 +449,7 @@ class TestGaussianProcess:
         X = np.array([[1], [2], [3]])
         y = np.array([1, 4, 9])  # Quadratic relationship
         sigma2 = 0.1
-        kernel = mlai.Kernel(mlai.exponentiated_quadratic)
+        kernel = mlai.Kernel(mlai.eq_cov)
         
         gp = mlai.GP(X, y, sigma2, kernel)
         gp.fit()
@@ -462,7 +462,7 @@ class TestGaussianProcess:
         X = np.array([[1], [2]])
         y = np.array([1, 4])
         sigma2 = 0.1
-        kernel = mlai.Kernel(mlai.exponentiated_quadratic)
+        kernel = mlai.Kernel(mlai.eq_cov)
         
         gp = mlai.GP(X, y, sigma2, kernel)
         gp.fit()
@@ -799,11 +799,11 @@ class TestAdditionalKernelFunctions:
     """Test additional kernel functions that were not previously covered."""
     
     def test_exponentiated_quadratic_kernel(self):
-        """Test exponentiated_quadratic kernel function."""
+        """Test exponentiated_quadratic kernel function (eq_cov)."""
         x = np.array([1, 2])
         x_prime = np.array([2, 3])
         
-        result = mlai.exponentiated_quadratic(x, x_prime, variance=2.0, lengthscale=1.5)
+        result = mlai.eq_cov(x, x_prime, variance=2.0, lengthscale=1.5)
         assert isinstance(result, (int, float))
         assert result > 0
     
@@ -863,6 +863,117 @@ class TestAdditionalKernelFunctions:
         
         result = mlai.icm_cov(x, x_prime, B, subkernel)
         assert isinstance(result, (int, float))
+    
+    def test_icm_cov_integer_validation(self):
+        """Test icm_cov with integer-valued floats."""
+        # Test with integer-valued floats (should work)
+        x = np.array([0.0, 1, 2])  # First element is float but integer-valued
+        x_prime = np.array([1.0, 2, 3])  # First element is float but integer-valued
+        B = np.array([[1.0, 0.5], [0.5, 1.0]])  # Coregionalization matrix
+        
+        def subkernel(x, x_prime, **kwargs):
+            return np.dot(x, x_prime)
+        
+        result = mlai.icm_cov(x, x_prime, B, subkernel)
+        assert isinstance(result, (int, float))
+    
+    def test_icm_cov_non_integer_validation(self):
+        """Test icm_cov with non-integer values (should raise ValueError)."""
+        # Test with non-integer values (should raise ValueError)
+        x = np.array([0.5, 1, 2])  # First element is non-integer
+        x_prime = np.array([1, 2, 3])
+        B = np.array([[1.0, 0.5], [0.5, 1.0]])  # Coregionalization matrix
+        
+        def subkernel(x, x_prime, **kwargs):
+            return np.dot(x, x_prime)
+        
+        with pytest.raises(ValueError, match="First column of x must be integer-valued for indexing"):
+            mlai.icm_cov(x, x_prime, B, subkernel)
+        
+        # Test with x_prime having non-integer first element
+        x = np.array([0, 1, 2])
+        x_prime = np.array([1.7, 2, 3])  # First element is non-integer
+        
+        with pytest.raises(ValueError, match="First column of x must be integer-valued for indexing"):
+            mlai.icm_cov(x, x_prime, B, subkernel)
+    
+    def test_lmc_cov_kernel(self):
+        """Test lmc_cov kernel function with multiple components."""
+        x = np.array([0, 1, 2])  # First element is output index
+        x_prime = np.array([1, 2, 3])  # First element is output index
+        
+        # Define multiple coregionalization matrices and subkernels
+        B1 = np.array([[1.0, 0.5], [0.5, 1.0]])  # First component
+        B2 = np.array([[0.8, 0.3], [0.3, 0.8]])  # Second component
+        
+        def subkernel1(x, x_prime, **kwargs):
+            return np.dot(x, x_prime)  # Linear kernel
+        
+        def subkernel2(x, x_prime, **kwargs):
+            return np.exp(-0.5 * np.sum((x - x_prime)**2))  # RBF-like kernel
+        
+        B_list = [B1, B2]
+        subkernel_list = [subkernel1, subkernel2]
+        
+        result = mlai.lmc_cov(x, x_prime, B_list, subkernel_list)
+        assert isinstance(result, (int, float))
+        assert result > 0  # Should be positive for valid covariance
+    
+    def test_lmc_cov_single_component(self):
+        """Test lmc_cov with single component (should behave like icm_cov)."""
+        x = np.array([0, 1, 2])
+        x_prime = np.array([1, 2, 3])
+        B = np.array([[1.0, 0.5], [0.5, 1.0]])
+        
+        def subkernel(x, x_prime, **kwargs):
+            return np.dot(x, x_prime)
+        
+        # Test LMC with single component
+        lmc_result = mlai.lmc_cov(x, x_prime, [B], [subkernel])
+        
+        # Test ICM with same parameters
+        icm_result = mlai.icm_cov(x, x_prime, B, subkernel)
+        
+        # Results should be identical
+        assert abs(lmc_result - icm_result) < 1e-10
+    
+    def test_lmc_cov_mismatched_components(self):
+        """Test lmc_cov with mismatched number of B matrices and subkernels."""
+        x = np.array([0, 1, 2])
+        x_prime = np.array([1, 2, 3])
+        B1 = np.array([[1.0, 0.5], [0.5, 1.0]])
+        B2 = np.array([[0.8, 0.3], [0.3, 0.8]])
+        
+        def subkernel(x, x_prime, **kwargs):
+            return np.dot(x, x_prime)
+        
+        # Test with mismatched lists
+        with pytest.raises(ValueError, match="Number of coregionalization matrices"):
+            mlai.lmc_cov(x, x_prime, [B1, B2], [subkernel])  # 2 B matrices, 1 subkernel
+    
+    def test_lmc_cov_integer_validation(self):
+        """Test lmc_cov with integer-valued floats."""
+        x = np.array([0.0, 1, 2])  # First element is float but integer-valued
+        x_prime = np.array([1.0, 2, 3])  # First element is float but integer-valued
+        B = np.array([[1.0, 0.5], [0.5, 1.0]])
+        
+        def subkernel(x, x_prime, **kwargs):
+            return np.dot(x, x_prime)
+        
+        result = mlai.lmc_cov(x, x_prime, [B], [subkernel])
+        assert isinstance(result, (int, float))
+    
+    def test_lmc_cov_non_integer_validation(self):
+        """Test lmc_cov with non-integer values (should raise ValueError)."""
+        x = np.array([0.5, 1, 2])  # First element is non-integer
+        x_prime = np.array([1, 2, 3])
+        B = np.array([[1.0, 0.5], [0.5, 1.0]])
+        
+        def subkernel(x, x_prime, **kwargs):
+            return np.dot(x, x_prime)
+        
+        with pytest.raises(ValueError, match="First column of x must be integer-valued for indexing"):
+            mlai.lmc_cov(x, x_prime, [B], [subkernel])
     
     def test_slfm_cov_kernel(self):
         """Test slfm_cov kernel function."""
@@ -1042,7 +1153,7 @@ class TestGaussianProcessMethods:
         X = np.array([[1], [2]])
         y = np.array([1, 2])
         sigma2 = 0.1
-        kernel = mlai.Kernel(mlai.exponentiated_quadratic)
+        kernel = mlai.Kernel(mlai.eq_cov)
         gp = mlai.GP(X, y, sigma2, kernel)
         
         X_test = np.array([[1.5]])
@@ -1058,7 +1169,7 @@ class TestGaussianProcessMethods:
         X = np.array([[1], [2]])
         y = np.array([1, 2])
         sigma2 = 0.1
-        kernel = mlai.Kernel(mlai.exponentiated_quadratic)
+        kernel = mlai.Kernel(mlai.eq_cov)
         gp = mlai.GP(X, y, sigma2, kernel)
         
         mlai.update_inverse(gp)
@@ -1079,7 +1190,7 @@ class TestGPPredict:
         self.X = np.array([[1.0], [2.0], [3.0]])
         self.y = np.array([1.0, 2.0, 1.5])
         self.sigma2 = 0.1
-        self.kernel = mlai.Kernel(mlai.exponentiated_quadratic)
+        self.kernel = mlai.Kernel(mlai.eq_cov)
         self.gp = mlai.GP(self.X, self.y, self.sigma2, self.kernel)
     
     def test_predict_single_point(self):
@@ -1162,7 +1273,7 @@ class TestGPPredict:
         """Test prediction with different kernel functions."""
         # Test kernels that work properly
         kernels = [
-            mlai.Kernel(mlai.exponentiated_quadratic),
+            mlai.Kernel(mlai.eq_cov),
             mlai.Kernel(mlai.linear_cov)
         ]
         
@@ -1234,7 +1345,7 @@ class TestGPUpdateInverse:
         self.X = np.array([[1.0], [2.0], [3.0]])
         self.y = np.array([1.0, 2.0, 1.5])
         self.sigma2 = 0.1
-        self.kernel = mlai.Kernel(mlai.exponentiated_quadratic)
+        self.kernel = mlai.Kernel(mlai.eq_cov)
         self.gp = mlai.GP(self.X, self.y, self.sigma2, self.kernel)
         
         # Store the original update_inverse method
@@ -1647,7 +1758,7 @@ class TestContourDataFunction:
         X = np.array([[1], [2]])
         y = np.array([1, 2])
         sigma2 = 0.1
-        kernel = mlai.Kernel(mlai.exponentiated_quadratic)
+        kernel = mlai.Kernel(mlai.eq_cov)
         gp = mlai.GP(X, y, sigma2, kernel)
         
         data = {'Y': y}
