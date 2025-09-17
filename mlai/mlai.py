@@ -161,10 +161,10 @@ def write_figure(filename, figure=None, directory=None, frameon=None, **kwargs):
 ##########          Week 2          ##########
 def init_perceptron(x_plus, x_minus, seed=1000001):
     """
-    Initialize the perceptron algorithm with random weights and bias.
+    Initialise the perceptron algorithm with random weights and bias.
     
     The perceptron is a simple binary classifier that learns a linear decision boundary.
-    This function initializes the weight vector w and bias b by randomly selecting
+    This function initialises the weight vector w and bias b by randomly selecting
     a point from either the positive or negative class and setting the normal vector
     accordingly.
     
@@ -195,7 +195,8 @@ def init_perceptron(x_plus, x_minus, seed=1000001):
     """
     np.random.seed(seed=seed)
     # flip a coin (i.e. generate a random number and check if it is greater than 0.5)
-    choose_plus = np.random.rand(1)>0.5
+    plus_portion = x_plus.shape[0]/(x_plus.shape[0] + x_minus.shape[0])
+    choose_plus = np.random.rand(1)<plus_portion
     if choose_plus:
         # generate a random point from the positives
         index = np.random.randint(0, x_plus.shape[0])
@@ -253,7 +254,8 @@ def update_perceptron(w, b, x_plus, x_minus, learn_rate):
         >>> w_new, b_new, x_select, updated = update_perceptron(w, b, x_plus, x_minus, 0.1)
     """
     # select a point at random from the data
-    choose_plus = np.random.rand(1)>0.5
+    plus_portion = x_plus.shape[0]/(x_plus.shape[0] + x_minus.shape[0])
+    choose_plus = np.random.rand(1)<plus_portion
     updated=False
     if choose_plus:
         # choose a point from the positive data
@@ -1191,7 +1193,7 @@ class BLM(LM):
         This method performs QR decomposition on the augmented basis matrix
         that includes the prior regularization term.
         """
-        self.Q, self.R = np.linalg.qr(vstack([self.Phi, np.sqrt(self.sigma2/self.alpha)*np.eye(self.basis.number)]))
+        self.Q, self.R = np.linalg.qr(np.vstack([self.Phi, np.sqrt(self.sigma2/self.alpha)*np.eye(self.basis.number)]))
 
     def fit(self):
         """
@@ -1531,7 +1533,7 @@ class GP(ProbMapModel):
         A = self.Kinv@K_star
         mu_f = A.T@self.y
         k_starstar = self.kernel.diag(X_test)
-        c_f = k_starstar - (A*K_star).sum(0)[:, None]
+        c_f = k_starstar - (A*K_star).sum(0)[:, np.newaxis]
         return mu_f, c_f
         
 def posterior_f(self, X_test):
@@ -1549,17 +1551,22 @@ def update_inverse(self):
     """
     Update the inverse covariance in a numerically more stable manner
     """
-    # Perform Cholesky decomposition on matrix
-    self.R = la.cholesky(self.K + self.sigma2*self.K.shape[0])
+    # Perform Cholesky decomposition on matrix (scipy returns upper triangular)
+    self.R = la.cholesky(self.K + self.sigma2*np.eye(self.K.shape[0]))
     # compute the log determinant from Cholesky decomposition
     self.logdetK = 2*np.log(np.diag(self.R)).sum()
     # compute y^\top K^{-1}y from Cholesky factor
-    self.Rinvy = la.solve_triangular(self.R, self.y)
+    # For K = R^T R, we have K^{-1} = R^{-1} R^{-T}
+    # So y^T K^{-1} y = y^T R^{-1} R^{-T} y = ||R^{-T} y||^2
+    self.Rinvy = la.solve_triangular(self.R, self.y, trans='T')
     self.yKinvy = (self.Rinvy**2).sum()
     
     # compute the inverse of the upper triangular Cholesky factor
     self.Rinv = la.solve_triangular(self.R, np.eye(self.K.shape[0]))
     self.Kinv = self.Rinv@self.Rinv.T
+    
+    # Add missing Kinvy attribute for compatibility with predict method
+    self.Kinvy = self.Kinv@self.y
 
 
 class Kernel():
@@ -1788,6 +1795,7 @@ def slfm_cov(x, x_prime, W, subkernel, **kwargs):
     B = W@W.T
     return icm_cov(x, x_prime, B, subkernel, **kwargs)
 
+    
 def add_cov(x, x_prime, kernargs):
     """
     Additive covariance function.

@@ -1120,15 +1120,13 @@ class TestGPPredict:
         """Test prediction at training points (should have low variance)."""
         mu, var = self.gp.predict(self.X)
         
-        # At training points, variance should be close to noise level
-        # But it might be slightly different due to numerical precision
-        expected_var = self.sigma2
-        # Allow for some tolerance - the variance should be close to noise level
+        # At training points, variance should be positive and less than noise level
+        # The variance represents posterior uncertainty after observing training data
         assert np.all(var.flatten() > 0)  # Should be positive
-        assert np.all(var.flatten() <= expected_var * 2)  # Should not be too large
-        assert np.all(var.flatten() >= expected_var * 0.5)  # Should not be too small
+        assert np.all(var.flatten() < self.sigma2)  # Should be less than noise level
+        assert np.all(var.flatten() > 0.01)  # Should not be too small (numerical stability)
         
-        # Mean should be close to training targets
+        # Mean should be close to training targets (but not exactly equal due to noise)
         np.testing.assert_allclose(mu, self.y, rtol=1e-1)
     
     def test_predict_far_from_training(self):
@@ -1162,9 +1160,10 @@ class TestGPPredict:
     
     def test_predict_different_kernels(self):
         """Test prediction with different kernel functions."""
-        # Only test kernels that work properly
+        # Test kernels that work properly
         kernels = [
-            mlai.Kernel(mlai.exponentiated_quadratic)
+            mlai.Kernel(mlai.exponentiated_quadratic),
+            mlai.Kernel(mlai.linear_cov)
         ]
         
         # Add other kernels if they exist and work
@@ -1362,17 +1361,9 @@ class TestGPUpdateInverse:
             yKinvy_manual = self.y.T @ gp_chol.Kinv @ self.y
             yKinvy_cholesky = (gp_chol.Rinvy**2).sum()
             
-            # Should be equal (but there might be a bug, so we'll document it)
-            # TODO: This test reveals a bug - the Cholesky calculation is incorrect
-            # For now, we'll just check that both values are reasonable
-            assert np.isfinite(yKinvy_manual)
-            assert np.isfinite(yKinvy_cholesky)
-            assert np.isfinite(gp_chol.yKinvy)
-            
-            # The values should be positive
-            assert yKinvy_manual > 0
-            assert yKinvy_cholesky > 0
-            assert gp_chol.yKinvy > 0
+            # Should be equal now that we fixed the Cholesky calculation
+            np.testing.assert_allclose(yKinvy_cholesky, yKinvy_manual, rtol=1e-10)
+            np.testing.assert_allclose(gp_chol.yKinvy, yKinvy_cholesky, rtol=1e-10)
             
         finally:
             # Restore original method
