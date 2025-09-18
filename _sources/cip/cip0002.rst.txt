@@ -1,0 +1,5 @@
+CIP-0002: Comprehensive Test Framework with pytest
+=================================================
+ 
+.. include:: ../../cip/cip0002.md
+   :parser: myst_parser.sphinx_ 
