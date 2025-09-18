@@ -2348,33 +2348,23 @@ def _multi_output_sample_plot(kernel, x=None, num_outputs=2, num_samps=3,
     K = kernel.K(x_multi, x_multi)
     
     # Sample from the GP
-    samples = np.random.multivariate_normal(np.zeros(len(x_multi)), K, num_samps)
+    y = np.random.multivariate_normal(np.zeros(len(x_multi)), K)[:, np.newaxis]
     
-    # Create visualization
-    fig, axes = plt.subplots(num_outputs, 1, figsize=(10, 4*num_outputs))
-    if num_outputs == 1:
-        axes = [axes]
+    # Create visualisation
+    fig, ax = plt.subplots(figsize=one_figsize)
     
-    colors = plt.cm.Set1(np.linspace(0, 1, num_samps))
+    colors = plt.cm.Set1(np.linspace(0, 1, num_outputs))
     
     for output_idx in range(num_outputs):
-        ax = axes[output_idx]
-        
         # Extract samples for this output
         start_idx = output_idx * len(x)
         end_idx = (output_idx + 1) * len(x)
+        ax.plot(x.flatten(), y[start_idx:end_idx, :].flatten(), 
+                color=colors[output_idx], 
+                alpha=0.7, linewidth=2)
         
-        for samp_idx in range(num_samps):
-            y = samples[samp_idx, start_idx:end_idx]
-            ax.plot(x.flatten(), y, color=colors[samp_idx], 
-                   alpha=0.7, linewidth=2)
-        
-        ax.set_title(f'Output {output_idx} Samples', fontsize=14)
-        ax.set_xlabel('Input $x$')
-        ax.set_ylabel(f'Output {output_idx}')
         ax.grid(True, alpha=0.3)
-        ax.legend()
-    
+        
     plt.tight_layout()
     
     # Save plot
@@ -2385,7 +2375,7 @@ def _multi_output_sample_plot(kernel, x=None, num_outputs=2, num_samps=3,
     
     ma.write_figure(filename + '.svg', directory=diagrams, transparent=True)
 
-    return fig, axes
+    return fig, ax
 
 def _multi_output_animate_covariance_function(kernel, x=None, num_outputs=2, num_samps=5,
                                              diagrams='../diagrams'):
@@ -2417,27 +2407,20 @@ def _multi_output_animate_covariance_function(kernel, x=None, num_outputs=2, num
     K = kernel.K(x_multi, x_multi)
     
     # Create figure with subplots for each output
-    fig, axes = plt.subplots(num_outputs, 1, figsize=(10, 4*num_outputs))
-    if num_outputs == 1:
-        axes = [axes]
+   # Create visualisation
+    fig, ax = plt.subplots(figsize=one_figsize)
+    colors = plt.cm.Set1(np.linspace(0, 1, num_outputs))
     
-    # Initialize empty line objects for animation
-    lines = []
-    for output_idx in range(num_outputs):
-        ax = axes[output_idx]
-        ax.set_xlim(x.min(), x.max())
-        ax.set_ylim(-3, 3)  # Will be adjusted based on samples
-        ax.set_title(f'Output {output_idx} Samples', fontsize=14)
-        ax.set_xlabel('Input $x$')
-        ax.set_ylabel(f'Output {output_idx}')
-        ax.grid(True, alpha=0.3)
+    ax.set_xlim(x.min(), x.max())
+    ax.set_ylim(-3, 3)  # Will be adjusted based on samples
+    ax.grid(True, alpha=0.3)
         
+    # Initialize empty line objects for animation
+    output_lines = []
+    for output_idx in range(num_outputs):
         # Create empty lines for each sample
-        output_lines = []
-        for samp_idx in range(num_samps):
-            line, = ax.plot([], [], alpha=0.7, linewidth=2)
-            output_lines.append(line)
-        lines.append(output_lines)
+        line, = ax.plot([], [], alpha=0.7, linewidth=2, color=colors[output_idx])
+        output_lines.append(line)
     
     # Set up great circle tour (similar to kern_circular_sample)
     num_theta = 48
@@ -2478,8 +2461,7 @@ def _multi_output_animate_covariance_function(kernel, x=None, num_outputs=2, num
     y_margin = 0.1 * (y_max - y_min)
     y_lim = np.array([y_min - y_margin, y_max + y_margin])
     
-    for ax in axes:
-        ax.set_ylim(y_lim)
+    ax.set_ylim(y_lim)
     
     def animate(frame):
         # Great circle tour: interpolate between R1 and R2 using trigonometric functions
@@ -2495,17 +2477,13 @@ def _multi_output_animate_covariance_function(kernel, x=None, num_outputs=2, num
             start_idx = output_idx * len(x)
             end_idx = (output_idx + 1) * len(x)
             
-            for samp_idx in range(num_samps):
-                # Create different samples by adding phase shifts to the great circle tour
-                # Each sample gets a different phase offset
-                sample_theta = theta + samp_idx * tau / num_samps
-                sample_xc = np.cos(sample_theta)
-                sample_yc = np.sin(sample_theta)
-                sample_y = sample_xc * LR1[start_idx:end_idx, 0] + sample_yc * LR2[start_idx:end_idx, 0]
+            xc = np.cos(theta)
+            yc = np.sin(theta)
+            y = xc * LR1[start_idx:end_idx, 0] + yc * LR2[start_idx:end_idx, 0]
                 
-                lines[output_idx][samp_idx].set_data(x.flatten(), sample_y)
+            output_lines[output_idx].set_data(x.flatten(), y)
         
-        return [line for output_lines in lines for line in output_lines]
+        return output_lines
     
     # Create animation
     anim = animation.FuncAnimation(fig, animate, frames=num_theta, interval=50, blit=True)
@@ -2572,8 +2550,6 @@ def multi_output_covariance_func(kernel, x=None, num_outputs=2,
     fhand = open(ma.filename_join(shortname + '_covariance.html', diagrams), 'w')
     fhand.write(out)
     fhand.close()
-    
-    return K, anim
 
 # Public wrapper functions for individual components
 def multi_output_covariance_heatmap(kernel, x=None, num_outputs=2, shortname=None, diagrams='../diagrams'):
