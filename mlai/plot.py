@@ -2504,11 +2504,24 @@ def _multi_output_animate_covariance_function(kernel, x=None, num_outputs=2, num
     LR1 = np.dot(L, R1)
     LR2 = np.dot(L, R2)
     
-    # Adjust y-limits based on the range of possible values
-    y_lim = np.sqrt(2) * np.array([
-        np.min([np.min(LR1.flatten()), np.min(LR2.flatten())]),
-        np.max([np.max(LR1.flatten()), np.max(LR2.flatten())])
-    ])
+    # Calculate proper y-limits for the great circle tour
+    # During the animation, we compute y = xc * LR1 + yc * LR2
+    # where xc and yc are cosine and sine values between -1 and 1
+    # The maximum possible value is sqrt(LR1^2 + LR2^2) when xc and yc are aligned
+    # Let's compute the actual range by sampling a few points in the great circle
+    
+    # Sample a few points to get the actual range
+    test_thetas = np.linspace(0, 2*np.pi, 100)
+    all_values = []
+    for theta in test_thetas:
+        xc = np.cos(theta)
+        yc = np.sin(theta)
+        y_test = xc * LR1 + yc * LR2
+        all_values.extend(y_test.flatten())
+    
+    y_min, y_max = np.min(all_values), np.max(all_values)
+    y_margin = 0.1 * (y_max - y_min)
+    y_lim = np.array([y_min - y_margin, y_max + y_margin])
     
     for ax in axes:
         ax.set_ylim(y_lim)
