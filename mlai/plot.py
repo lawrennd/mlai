@@ -2277,7 +2277,7 @@ def animate_covariance_function(kernel_function,
     
 def _multi_output_covariance_heatmap(kernel, x=None, num_outputs=2,
                                     shortname=None, longname=None, comment=None,
-                                    diagrams='../diagrams', add_suffix=True):
+                                    diagrams='../diagrams'):
     """
     Plot multi-output covariance function showing cross-covariances.
     
@@ -2293,69 +2293,30 @@ def _multi_output_covariance_heatmap(kernel, x=None, num_outputs=2,
         os.mkdir(diagrams)
     
     if x is None:
-        n = 100
+        n = 200
         x = np.linspace(-1, 1, n)[:, np.newaxis]
-    
+        
     # Create multi-output input data
     # For each output i, create inputs [i, x1, x2, ...]
     x_multi = []
     for i in range(num_outputs):
-        for x_val in x:
+        for x_val in x: 
             if x_val.ndim == 1:
                 x_multi.append([i] + x_val.tolist())
             else:
                 x_multi.append([i] + x_val.flatten().tolist())
     x_multi = np.array(x_multi)
     
-    # Compute full covariance matrix
-    K = kernel.K(x_multi, x_multi)
+    K2 = kernel.K(x_multi[::10, :])
+    fig, ax = plt.subplots(figsize=one_figsize)
+    hcolor = [1., 0., 1.]
+    obj = matrix(K2, ax=ax, type='image',
+                 bracket_style='boxes', colormap='gray')
+    return fig, ax
     
-    # Create visualization
-    fig, axes = plt.subplots(num_outputs, num_outputs, figsize=(12, 10))
-    if num_outputs == 1:
-        axes = [[axes]]
-    
-    for i in range(num_outputs):
-        for j in range(num_outputs):
-            ax = axes[i, j]
-            
-            # Extract covariance between output i and output j
-            start_i = i * len(x)
-            end_i = (i + 1) * len(x)
-            start_j = j * len(x)
-            end_j = (j + 1) * len(x)
-            
-            K_ij = K[start_i:end_i, start_j:end_j]
-            
-            # Plot as heatmap
-            im = ax.imshow(K_ij, cmap='viridis', aspect='auto')
-            ax.set_title(f'Output {i} ↔ Output {j}', fontsize=14)
-            ax.set_xlabel('Input position' if j == num_outputs-1 else '')
-            ax.set_ylabel('Input position' if i == num_outputs-1 else '')
-            
-            # Add colorbar
-            plt.colorbar(im, ax=ax)
-    
-    plt.tight_layout()
-    
-    # Save plot
-    if shortname is not None:
-        if add_suffix:
-            filename = shortname + '_multi_output_covariance'
-        else:
-            filename = shortname + '_covariance'
-    else:
-        filename = 'multi_output_covariance'
-    
-    plt.savefig(os.path.join(diagrams, filename + '.png'), 
-                dpi=150, bbox_inches='tight')
-    plt.savefig(os.path.join(diagrams, filename + '.pdf'), 
-                bbox_inches='tight')
-    
-    return fig, axes
-
+    ma.write_figure(shortname + '_covariance.svg', directory=diagrams, transparent=True)
 def _multi_output_sample_plot(kernel, x=None, num_outputs=2, num_samps=3,
-                             shortname=None, diagrams='../diagrams', add_suffix=True):
+                             shortname=None, diagrams='../diagrams'):
     """
     Plot samples from multi-output kernel showing different outputs.
     
@@ -2406,7 +2367,7 @@ def _multi_output_sample_plot(kernel, x=None, num_outputs=2, num_samps=3,
         for samp_idx in range(num_samps):
             y = samples[samp_idx, start_idx:end_idx]
             ax.plot(x.flatten(), y, color=colors[samp_idx], 
-                   alpha=0.7, linewidth=2, label=f'Sample {samp_idx+1}')
+                   alpha=0.7, linewidth=2)
         
         ax.set_title(f'Output {output_idx} Samples', fontsize=14)
         ax.set_xlabel('Input $x$')
@@ -2418,18 +2379,12 @@ def _multi_output_sample_plot(kernel, x=None, num_outputs=2, num_samps=3,
     
     # Save plot
     if shortname is not None:
-        if add_suffix:
-            filename = shortname + '_multi_output_samples'
-        else:
-            filename = shortname + '_samples'
+        filename = shortname + '_samples'
     else:
         filename = 'multi_output_samples'
     
-    plt.savefig(os.path.join(diagrams, filename + '.png'), 
-                dpi=150, bbox_inches='tight')
-    plt.savefig(os.path.join(diagrams, filename + '.pdf'), 
-                bbox_inches='tight')
-    
+    ma.write_figure(filename + '.svg', directory=diagrams, transparent=True)
+
     return fig, axes
 
 def _multi_output_animate_covariance_function(kernel, x=None, num_outputs=2, num_samps=5,
@@ -2579,12 +2534,10 @@ def multi_output_covariance_func(kernel, x=None, num_outputs=2,
         shortname = 'multi_output'
     
     # Create static covariance heatmap (save as {shortname}_covariance)
-    fig1, axes1 = _multi_output_covariance_heatmap(kernel, x, num_outputs, shortname, longname, comment, diagrams, add_suffix=False)
-    plt.close(fig1)
+    fig1, axes1 = _multi_output_covariance_heatmap(kernel, x, num_outputs, shortname, longname, comment, diagrams)
     
     # Create static sample plot (save as {shortname}_samples)  
-    fig2, axes2 = _multi_output_sample_plot(kernel, x, num_outputs, num_samps, shortname, diagrams, add_suffix=False)
-    plt.close(fig2)
+    fig2, axes2 = _multi_output_sample_plot(kernel, x, num_outputs, num_samps, shortname, diagrams)
     
     # Create animation
     K, anim = _multi_output_animate_covariance_function(kernel, x, num_outputs, num_samps, diagrams)
@@ -2596,29 +2549,6 @@ def multi_output_covariance_func(kernel, x=None, num_outputs=2,
                       writer='imagemagick',
                       fps=30)
     
-    # Create black and white SVG covariance matrix visualization (like original covariance_func)
-    # Take every 10th sample for the matrix visualization
-    if x is None:
-        n = 200
-        x = np.linspace(-1, 1, n)[:, np.newaxis]
-    
-    x_multi = []
-    for i in range(num_outputs):
-        for x_val in x[::10]:  # Take every 10th sample like original
-            if x_val.ndim == 1:
-                x_multi.append([i] + x_val.tolist())
-            else:
-                x_multi.append([i] + x_val.flatten().tolist())
-    x_multi = np.array(x_multi)
-    
-    K2 = kernel.K(x_multi, x_multi)
-    fig, ax = plt.subplots(figsize=one_figsize)
-    hcolor = [1., 0., 1.]
-    obj = matrix(K2, ax=ax, type='image',
-                 bracket_style='boxes', colormap='gray')
-    
-    ma.write_figure(shortname + '_covariance.svg', directory=diagrams, transparent=True)
-    plt.close(fig)
     
     # Create HTML output similar to covariance_func
     if kernel.name is not None:
@@ -2639,7 +2569,7 @@ def multi_output_covariance_func(kernel, x=None, num_outputs=2,
     if comment is not None:
         out += '<p><center>' + comment + '</center></p>'
     
-    fhand = open(ma.filename_join(shortname + '_multi_output.html', diagrams), 'w')
+    fhand = open(ma.filename_join(shortname + '_covariance.html', diagrams), 'w')
     fhand.write(out)
     fhand.close()
     
