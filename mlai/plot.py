@@ -2596,6 +2596,30 @@ def multi_output_covariance_func(kernel, x=None, num_outputs=2,
                       writer='imagemagick',
                       fps=30)
     
+    # Create black and white SVG covariance matrix visualization (like original covariance_func)
+    # Take every 10th sample for the matrix visualization
+    if x is None:
+        n = 200
+        x = np.linspace(-1, 1, n)[:, np.newaxis]
+    
+    x_multi = []
+    for i in range(num_outputs):
+        for x_val in x[::10]:  # Take every 10th sample like original
+            if x_val.ndim == 1:
+                x_multi.append([i] + x_val.tolist())
+            else:
+                x_multi.append([i] + x_val.flatten().tolist())
+    x_multi = np.array(x_multi)
+    
+    K2 = kernel.K(x_multi, x_multi)
+    fig, ax = plt.subplots(figsize=one_figsize)
+    hcolor = [1., 0., 1.]
+    obj = matrix(K2, ax=ax, type='image',
+                 bracket_style='boxes', colormap='gray')
+    
+    ma.write_figure(shortname + '_covariance.svg', directory=diagrams, transparent=True)
+    plt.close(fig)
+    
     # Create HTML output similar to covariance_func
     if kernel.name is not None:
         out = '<h2>' + kernel.name + ' Multi-Output Covariance</h2>'
@@ -2608,9 +2632,8 @@ def multi_output_covariance_func(kernel, x=None, num_outputs=2,
         out += '<p><center>' + kernel.formula + '</center></p>'
     
     out += '<table>\\n'
-    out += '  <tr><td><img src="' + ma.filename_join(shortname + '_covariance', diagrams) + '.png"></td></tr>\\n'
+    out += '  <tr><td><img src="' + ma.filename_join(shortname + '_covariance', diagrams) + '.svg"></td><td><img src="' + ma.filename_join(shortname + '_covariance', diagrams) + '.gif"></td></tr>\\n'
     out += '  <tr><td><img src="' + ma.filename_join(shortname + '_samples', diagrams) + '.png"></td></tr>\\n'
-    out += '  <tr><td><img src="' + ma.filename_join(shortname + '_covariance', diagrams) + '.gif"></td></tr>\\n'
     out += '</table>'
     
     if comment is not None:
