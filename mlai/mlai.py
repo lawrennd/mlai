@@ -1873,9 +1873,12 @@ def prod_kern(x, x_prime, kernargs):
         k*=kernel(x, x_prime, **kwargs)
     return k
 
-def relu_cov(x, x_prime, variance=1., scale=1., w=1., b=5., alpha=0.):
+def relu_cov(x, x_prime, variance=1., scale=1., w=1., b=5., alpha=1e-6):
     """
-    Covariance function for a ReLU based neural network.
+    Covariance function for a ReLU based neural network (arc-cosine kernel).
+    
+    This implements the arc-cosine kernel which is the covariance function
+    for ReLU neural networks in the infinite width limit.
     
     :param x: First data point
     :type x: numpy.ndarray
@@ -1883,34 +1886,47 @@ def relu_cov(x, x_prime, variance=1., scale=1., w=1., b=5., alpha=0.):
     :type x_prime: numpy.ndarray
     :param variance: Overall scale of the covariance
     :type variance: float, optional
-    :param scale: Overall scale of the weights on the input.
+    :param scale: Overall scale of the weights on the input
     :type scale: float, optional
-    :param w: Overall scale of the bias on the input
+    :param w: Weight scale parameter
     :type w: float, optional
-    :param b: Smoothness of the relu activation
+    :param b: Bias parameter
+    :type b: float, optional
+    :param alpha: Small positive constant for numerical stability
     :type alpha: float, optional
     :returns: Covariance value
     :rtype: float
     """
-    def h(costheta, inner, s, a):
-        """
-        Helper function
-        """
-        cos2th = costheta*costheta
-        return (1-(2*s*s-1)*cos2th)/np.sqrt(a/inner + 1 - s*s*cos2th)*s
-
-    inner = np.dot(x, x_prime)*w + b
-    inner_1 = np.dot(x, x)*w + b
-    inner_2 = np.dot(x_prime, x_prime)*w + b
-    norm_1 = np.sqrt(inner_1 + alpha)
-    norm_2 = np.sqrt(inner_2 + alpha)
-    norm = norm_1*norm_2
-    s = np.sqrt(inner_1)/norm_1
-    s_prime = np.sqrt(inner_2)/norm_2
-    arg = np.clip(inner/norm, -1, 1) # clip as numerically can be > 1
-    arg2 = np.clip(inner/np.sqrt(inner_1*inner_2), -1, 1) # clip as numerically can be > 1
-    theta = np.arccos(arg)
-    return variance*0.5*((1. - theta/np.pi)*inner + h(arg2, inner_2, s, alpha)/np.pi + h(arg2, inner_1, s_prime, alpha)/np.pi) 
+    # Compute dot products with scaling
+    x_scaled = x * scale
+    x_prime_scaled = x_prime * scale
+    
+    # Compute the inner products
+    inner = np.dot(x_scaled, x_prime_scaled) + b
+    inner_1 = np.dot(x_scaled, x_scaled) + b
+    inner_2 = np.dot(x_prime_scaled, x_prime_scaled) + b
+    
+    # Add small constant for numerical stability
+    inner_1 = inner_1 + alpha
+    inner_2 = inner_2 + alpha
+    
+    # Compute norms
+    norm_1 = np.sqrt(inner_1)
+    norm_2 = np.sqrt(inner_2)
+    
+    # Compute cosine of angle between vectors
+    cos_theta = inner / (norm_1 * norm_2)
+    
+    # Clip to avoid numerical issues
+    cos_theta = np.clip(cos_theta, -1.0, 1.0)
+    
+    # Compute the arc-cosine kernel
+    theta = np.arccos(cos_theta)
+    
+    # The arc-cosine kernel formula
+    k_relu = (norm_1 * norm_2) / (2 * np.pi) * (np.pi - theta)
+    
+    return variance * k_relu 
 
 
 def polynomial_cov(x, x_prime, variance=1., degree=2., w=1., b=1.):
