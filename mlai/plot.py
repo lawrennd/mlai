@@ -27,6 +27,7 @@ Some functions expect models following the MLAI interface (e.g., LM, GP).
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 import IPython
 from mpl_toolkits.mplot3d import Axes3D
 
@@ -2274,6 +2275,353 @@ def animate_covariance_function(kernel_function,
                                    fig=fig, num_samps=num_samps,
                                    multiple=multiple)
     
+def _multi_output_covariance_heatmap(kernel, x=None, num_outputs=2,
+                                    shortname=None, longname=None, comment=None,
+                                    diagrams='../diagrams', add_suffix=True):
+    """
+    Plot multi-output covariance function showing cross-covariances.
+    
+    :param kernel: Multi-output kernel function (e.g., icm_cov, lmc_cov)
+    :param x: Input data (optional)
+    :param num_outputs: Number of outputs to visualize
+    :param shortname: Short name for the kernel (optional)
+    :param longname: Long name for the kernel (optional) 
+    :param comment: Comment to display (optional)
+    :param diagrams: Directory to save the plot (default: '../diagrams')
+    """
+    if not os.path.exists(diagrams):
+        os.mkdir(diagrams)
+    
+    if x is None:
+        n = 100
+        x = np.linspace(-1, 1, n)[:, np.newaxis]
+    
+    # Create multi-output input data
+    # For each output i, create inputs [i, x1, x2, ...]
+    x_multi = []
+    for i in range(num_outputs):
+        for x_val in x:
+            if x_val.ndim == 1:
+                x_multi.append([i] + x_val.tolist())
+            else:
+                x_multi.append([i] + x_val.flatten().tolist())
+    x_multi = np.array(x_multi)
+    
+    # Compute full covariance matrix
+    K = kernel.K(x_multi, x_multi)
+    
+    # Create visualization
+    fig, axes = plt.subplots(num_outputs, num_outputs, figsize=(12, 10))
+    if num_outputs == 1:
+        axes = [[axes]]
+    
+    for i in range(num_outputs):
+        for j in range(num_outputs):
+            ax = axes[i, j]
+            
+            # Extract covariance between output i and output j
+            start_i = i * len(x)
+            end_i = (i + 1) * len(x)
+            start_j = j * len(x)
+            end_j = (j + 1) * len(x)
+            
+            K_ij = K[start_i:end_i, start_j:end_j]
+            
+            # Plot as heatmap
+            im = ax.imshow(K_ij, cmap='viridis', aspect='auto')
+            ax.set_title(f'Output {i} ↔ Output {j}', fontsize=14)
+            ax.set_xlabel('Input position' if j == num_outputs-1 else '')
+            ax.set_ylabel('Input position' if i == num_outputs-1 else '')
+            
+            # Add colorbar
+            plt.colorbar(im, ax=ax)
+    
+    plt.tight_layout()
+    
+    # Save plot
+    if shortname is not None:
+        if add_suffix:
+            filename = shortname + '_multi_output_covariance'
+        else:
+            filename = shortname + '_covariance'
+    else:
+        filename = 'multi_output_covariance'
+    
+    plt.savefig(os.path.join(diagrams, filename + '.png'), 
+                dpi=150, bbox_inches='tight')
+    plt.savefig(os.path.join(diagrams, filename + '.pdf'), 
+                bbox_inches='tight')
+    
+    return fig, axes
+
+def _multi_output_sample_plot(kernel, x=None, num_outputs=2, num_samps=3,
+                             shortname=None, diagrams='../diagrams', add_suffix=True):
+    """
+    Plot samples from multi-output kernel showing different outputs.
+    
+    :param kernel: Multi-output kernel function (e.g., icm_cov, lmc_cov)
+    :param x: Input data (optional)
+    :param num_outputs: Number of outputs to visualize
+    :param num_samps: Number of samples to draw
+    :param shortname: Short name for the kernel (optional)
+    :param diagrams: Directory to save the plot (default: '../diagrams')
+    """
+    if not os.path.exists(diagrams):
+        os.mkdir(diagrams)
+    
+    if x is None:
+        n = 200
+        x = np.linspace(-1, 1, n)[:, np.newaxis]
+    
+    # Create multi-output input data
+    x_multi = []
+    for i in range(num_outputs):
+        for x_val in x:
+            if x_val.ndim == 1:
+                x_multi.append([i] + x_val.tolist())
+            else:
+                x_multi.append([i] + x_val.flatten().tolist())
+    x_multi = np.array(x_multi)
+    
+    # Compute full covariance matrix
+    K = kernel.K(x_multi, x_multi)
+    
+    # Sample from the GP
+    samples = np.random.multivariate_normal(np.zeros(len(x_multi)), K, num_samps)
+    
+    # Create visualization
+    fig, axes = plt.subplots(num_outputs, 1, figsize=(10, 4*num_outputs))
+    if num_outputs == 1:
+        axes = [axes]
+    
+    colors = plt.cm.Set1(np.linspace(0, 1, num_samps))
+    
+    for output_idx in range(num_outputs):
+        ax = axes[output_idx]
+        
+        # Extract samples for this output
+        start_idx = output_idx * len(x)
+        end_idx = (output_idx + 1) * len(x)
+        
+        for samp_idx in range(num_samps):
+            y = samples[samp_idx, start_idx:end_idx]
+            ax.plot(x.flatten(), y, color=colors[samp_idx], 
+                   alpha=0.7, linewidth=2, label=f'Sample {samp_idx+1}')
+        
+        ax.set_title(f'Output {output_idx} Samples', fontsize=14)
+        ax.set_xlabel('Input $x$')
+        ax.set_ylabel(f'Output {output_idx}')
+        ax.grid(True, alpha=0.3)
+        ax.legend()
+    
+    plt.tight_layout()
+    
+    # Save plot
+    if shortname is not None:
+        if add_suffix:
+            filename = shortname + '_multi_output_samples'
+        else:
+            filename = shortname + '_samples'
+    else:
+        filename = 'multi_output_samples'
+    
+    plt.savefig(os.path.join(diagrams, filename + '.png'), 
+                dpi=150, bbox_inches='tight')
+    plt.savefig(os.path.join(diagrams, filename + '.pdf'), 
+                bbox_inches='tight')
+    
+    return fig, axes
+
+def _multi_output_animate_covariance_function(kernel, x=None, num_outputs=2, num_samps=5,
+                                             diagrams='../diagrams'):
+    """
+    Create animation of multi-output covariance function samples using great circle tour.
+    
+    :param kernel: Multi-output kernel function (e.g., icm_cov, lmc_cov)
+    :param x: Input data (optional)
+    :param num_outputs: Number of outputs to visualize
+    :param num_samps: Number of samples to draw
+    :param diagrams: Directory to save the plot (default: '../diagrams')
+    :returns: Animation object
+    """
+    if x is None:
+        n = 200
+        x = np.linspace(-1, 1, n)[:, np.newaxis]
+    
+    # Create multi-output input data
+    x_multi = []
+    for i in range(num_outputs):
+        for x_val in x:
+            if x_val.ndim == 1:
+                x_multi.append([i] + x_val.tolist())
+            else:
+                x_multi.append([i] + x_val.flatten().tolist())
+    x_multi = np.array(x_multi)
+    
+    # Compute full covariance matrix
+    K = kernel.K(x_multi, x_multi)
+    
+    # Create figure with subplots for each output
+    fig, axes = plt.subplots(num_outputs, 1, figsize=(10, 4*num_outputs))
+    if num_outputs == 1:
+        axes = [axes]
+    
+    # Initialize empty line objects for animation
+    lines = []
+    for output_idx in range(num_outputs):
+        ax = axes[output_idx]
+        ax.set_xlim(x.min(), x.max())
+        ax.set_ylim(-3, 3)  # Will be adjusted based on samples
+        ax.set_title(f'Output {output_idx} Samples', fontsize=14)
+        ax.set_xlabel('Input $x$')
+        ax.set_ylabel(f'Output {output_idx}')
+        ax.grid(True, alpha=0.3)
+        
+        # Create empty lines for each sample
+        output_lines = []
+        for samp_idx in range(num_samps):
+            line, = ax.plot([], [], alpha=0.7, linewidth=2)
+            output_lines.append(line)
+        lines.append(output_lines)
+    
+    # Set up great circle tour (similar to kern_circular_sample)
+    num_theta = 48
+    tau = 2 * np.pi
+    
+    # Generate two random vectors for the great circle tour
+    R1 = np.random.normal(size=(len(x_multi), 1))
+    R2 = np.random.normal(size=(len(x_multi), 1))
+    
+    # Orthogonalize R2 with respect to R1
+    U1 = R1 / np.sqrt(np.sum(R1 * R1, axis=0))
+    R2 = R2 - U1 * np.sum(R2 * U1, axis=0)
+    R2 = R2 * np.sqrt(np.sum(R1 * R1, axis=0)) / np.sqrt(np.sum(R2 * R2, axis=0))
+    
+    # Cholesky decomposition for sampling
+    L = np.linalg.cholesky(K + np.diag(np.ones(K.shape[0])) * 1e-6)
+    
+    # Transform the random vectors
+    LR1 = np.dot(L, R1)
+    LR2 = np.dot(L, R2)
+    
+    # Adjust y-limits based on the range of possible values
+    y_lim = np.sqrt(2) * np.array([
+        np.min([np.min(LR1.flatten()), np.min(LR2.flatten())]),
+        np.max([np.max(LR1.flatten()), np.max(LR2.flatten())])
+    ])
+    
+    for ax in axes:
+        ax.set_ylim(y_lim)
+    
+    def animate(frame):
+        # Great circle tour: interpolate between R1 and R2 using trigonometric functions
+        theta = float(frame) / num_theta * tau
+        xc = np.cos(theta)
+        yc = np.sin(theta)
+        
+        # Generate samples using the great circle tour
+        y = xc * LR1 + yc * LR2
+        
+        # Update each output's samples
+        for output_idx in range(num_outputs):
+            start_idx = output_idx * len(x)
+            end_idx = (output_idx + 1) * len(x)
+            
+            for samp_idx in range(num_samps):
+                # Create different samples by adding phase shifts to the great circle tour
+                # Each sample gets a different phase offset
+                sample_theta = theta + samp_idx * tau / num_samps
+                sample_xc = np.cos(sample_theta)
+                sample_yc = np.sin(sample_theta)
+                sample_y = sample_xc * LR1[start_idx:end_idx, 0] + sample_yc * LR2[start_idx:end_idx, 0]
+                
+                lines[output_idx][samp_idx].set_data(x.flatten(), sample_y)
+        
+        return [line for output_lines in lines for line in output_lines]
+    
+    # Create animation
+    anim = animation.FuncAnimation(fig, animate, frames=num_theta, interval=50, blit=True)
+    
+    return K, anim
+
+def multi_output_covariance_func(kernel, x=None, num_outputs=2,
+                                shortname=None, longname=None, comment=None,
+                                num_samps=5, diagrams='../diagrams'):
+    """
+    Complete multi-output covariance function visualization with both static plots and animation.
+    
+    :param kernel: Multi-output kernel function (e.g., icm_cov, lmc_cov)
+    :param x: Input data (optional)
+    :param num_outputs: Number of outputs to visualize
+    :param shortname: Short name for the kernel (optional)
+    :param longname: Long name for the kernel (optional) 
+    :param comment: Comment to display (optional)
+    :param num_samps: Number of samples for animation (default: 5)
+    :param diagrams: Directory to save the plot (default: '../diagrams')
+    """
+    if not os.path.exists(diagrams):
+        os.mkdir(diagrams)
+    
+    if shortname is None:
+        shortname = 'multi_output'
+    
+    # Create static covariance heatmap (save as {shortname}_covariance)
+    fig1, axes1 = _multi_output_covariance_heatmap(kernel, x, num_outputs, shortname, longname, comment, diagrams, add_suffix=False)
+    plt.close(fig1)
+    
+    # Create static sample plot (save as {shortname}_samples)  
+    fig2, axes2 = _multi_output_sample_plot(kernel, x, num_outputs, num_samps, shortname, diagrams, add_suffix=False)
+    plt.close(fig2)
+    
+    # Create animation
+    K, anim = _multi_output_animate_covariance_function(kernel, x, num_outputs, num_samps, diagrams)
+    
+    # Save animation as {shortname}_covariance.gif (expected by includecovariance macro)
+    ma.write_animation(anim,
+                      shortname + '_covariance.gif',
+                      directory=diagrams,
+                      writer='imagemagick',
+                      fps=30)
+    
+    # Create HTML output similar to covariance_func
+    if kernel.name is not None:
+        out = '<h2>' + kernel.name + ' Multi-Output Covariance</h2>'
+        out += '\\n\n'
+    else:
+        out = '<h2>Multi-Output Covariance</h2>'
+        out += '\\n\n'
+    
+    if kernel.formula is not None:
+        out += '<p><center>' + kernel.formula + '</center></p>'
+    
+    out += '<table>\\n'
+    out += '  <tr><td><img src="' + ma.filename_join(shortname + '_covariance', diagrams) + '.png"></td></tr>\\n'
+    out += '  <tr><td><img src="' + ma.filename_join(shortname + '_samples', diagrams) + '.png"></td></tr>\\n'
+    out += '  <tr><td><img src="' + ma.filename_join(shortname + '_covariance', diagrams) + '.gif"></td></tr>\\n'
+    out += '</table>'
+    
+    if comment is not None:
+        out += '<p><center>' + comment + '</center></p>'
+    
+    fhand = open(ma.filename_join(shortname + '_multi_output.html', diagrams), 'w')
+    fhand.write(out)
+    fhand.close()
+    
+    return K, anim
+
+# Public wrapper functions for individual components
+def multi_output_covariance_heatmap(kernel, x=None, num_outputs=2, shortname=None, diagrams='../diagrams'):
+    """Public wrapper for multi-output covariance heatmap visualization."""
+    return _multi_output_covariance_heatmap(kernel, x, num_outputs, shortname, None, None, diagrams)
+
+def multi_output_sample_plot(kernel, x=None, num_outputs=2, num_samps=3, shortname=None, diagrams='../diagrams'):
+    """Public wrapper for multi-output sample plot visualization."""
+    return _multi_output_sample_plot(kernel, x, num_outputs, num_samps, shortname, diagrams)
+
+def multi_output_animate_covariance_function(kernel, x=None, num_outputs=2, num_samps=5, diagrams='../diagrams'):
+    """Public wrapper for multi-output animated covariance function."""
+    return _multi_output_animate_covariance_function(kernel, x, num_outputs, num_samps, diagrams)
+
 def covariance_func(kernel, x=None,
                     shortname=None, longname=None, comment=None,
                     num_samps=5, diagrams='../diagrams', multiple=False):
