@@ -30,6 +30,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import IPython
 from mpl_toolkits.mplot3d import Axes3D
+from scipy.stats import norm
 
 
 try:
@@ -1258,6 +1259,67 @@ def gaussian_of_height(diagrams='../diagrams'):
     ax2.set_xlabel('$h/m$', fontsize=20)
     ax2.set_ylabel(r'$p(h|\mu, \sigma^2)$', fontsize = 20)
     ma.write_figure(figure=f2, filename='gaussian_of_height.svg', directory=diagrams, transparent=True)
+
+def gaussian_volume_1D(directory='../diagrams'):
+    """
+    Plot Gaussian volumes in 1D with shaded regions representing different probability areas.
+    
+    This function creates a visualization of a 1D Gaussian distribution with three distinct
+    shaded regions representing different probability masses:
+    
+    - Yolk (65.8%): Central region from -0.95 to 0.95 standard deviations
+    - Iron Sulfide (4.8%): Intermediate regions from 0.95 to 1.05 and -1.05 to -0.95 std devs
+    - White (29.4%): Outer regions beyond ±1.05 standard deviations
+    
+    The visualization is inspired by the composition of an egg, where different regions
+    represent different probability masses of the Gaussian distribution.
+    
+    Returns:
+        None: Saves the plot as 'gaussian-volume-1D-shaded.svg' in the './dimred' directory
+        
+    Note:
+        The function uses scipy.stats.norm for the Gaussian probability density function.
+        The plot includes grid lines and proper axis labels for clarity.
+    """
+    fig, ax = plt.subplots(figsize=one_figsize)
+
+    # 1D Gaussian
+    x1 = np.linspace(-3, 3, 500) 
+    y1 = norm.pdf(x1, 0, 1)
+    ax.plot(x1, y1, 'k-', linewidth=1) # Reduced linewidth for better visibility of shading
+
+    # Calculate x-values for shading
+    # Inner area (yolk): 65.8% of the Gaussian from the mean outwards
+    # This corresponds to the area between -0.95 and 0.95 standard deviations
+    x_yolk = x1[(x1 >= -0.95) & (x1 <= 0.95)]
+    y_yolk = y1[(x1 >= -0.95) & (x1 <= 0.95)]
+    ax.fill_between(x_yolk, y_yolk, color='yellow', alpha=0.7, label='Yolk (65.8%)') # Using yellow for yolk
+
+    # Next area (iron sulfide): 4.8%
+    # This corresponds to the area between 0.95 and 1.05 standard deviations on each side
+    x_iron_sulfide_right = x1[(x1 > 0.95) & (x1 <= 1.05)]
+    y_iron_sulfide_right = y1[(x1 > 0.95) & (x1 <= 1.05)]
+    ax.fill_between(x_iron_sulfide_right, y_iron_sulfide_right, color=[0, 0.7, 0.5], alpha=0.7, label='Iron Sulfide (4.8%)')
+
+    x_iron_sulfide_left = x1[(x1 < -0.95) & (x1 >= -1.05)]
+    y_iron_sulfide_left = y1[(x1 < -0.95) & (x1 >= -1.05)]
+    ax.fill_between(x_iron_sulfide_left, y_iron_sulfide_left, color=[0, 0.7, 0.5], alpha=0.7) # No label for the second part of the same region
+
+    # Outside area (white): 29.4%
+    # This is the remaining area outside the yolk and iron sulfide regions
+    x_white_right = x1[x1 > 1.05]
+    y_white_right = y1[x1 > 1.05]
+    ax.fill_between(x_white_right, y_white_right, color='white', alpha=0.7, label='White (29.4%)')
+
+    x_white_left = x1[x1 < -1.05]
+    y_white_left = y1[x1 < -1.05]
+    ax.fill_between(x_white_left, y_white_left, color='white', alpha=0.7) # No label for the second part of the same region
+
+    ax.set_xlabel('$x$')
+    ax.set_ylabel('Density')
+    ax.grid(True, alpha=0.3)
+    ma.write_figure(filename='gaussian-volume-1D-shaded.svg', directory=directory, transparent=True)
+    
 
 def marathon_fit(model, value, param_name, param_range,
                  xlim, fig, ax, x_val=None, y_val=None, objective=None,

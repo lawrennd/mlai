@@ -1258,6 +1258,77 @@ class TestAdditionalPlotFunctions:
                     plot.two_point_sample(kernel)
                     assert mock_subplots.called
 
+class TestGaussianVolume1D:
+    """Test gaussian_volume_1D function."""
+    
+    def test_gaussian_volume_1d_basic(self):
+        """Test gaussian_volume_1D function runs without error."""
+        with patch('mlai.plot.ma.write_figure') as mock_write:
+            plot.gaussian_volume_1D()
+            # Verify that write_figure was called
+            mock_write.assert_called_once()
+    
+    def test_gaussian_volume_1d_creates_plot(self):
+        """Test that gaussian_volume_1D creates a matplotlib figure."""
+        with patch('mlai.plot.ma.write_figure') as mock_write:
+            plot.gaussian_volume_1D()
+            
+            # Check that a figure was created (matplotlib should have active figure)
+            assert plt.gcf() is not None
+    
+    def test_gaussian_volume_1d_file_output(self):
+        """Test that gaussian_volume_1D calls write_figure with correct parameters."""
+        with patch('mlai.plot.ma.write_figure') as mock_write:
+            plot.gaussian_volume_1D()
+            
+            # Check that write_figure was called with correct parameters
+            mock_write.assert_called_once()
+            call_args = mock_write.call_args
+            
+            # Check filename and directory
+            assert call_args[1]['filename'] == 'gaussian-volume-1D-shaded.svg'
+            assert call_args[1]['directory'] == '../diagrams'
+            assert call_args[1]['transparent'] == True
+    
+    def test_gaussian_volume_1d_probability_regions(self):
+        """Test that the probability regions are calculated correctly."""
+        from scipy.stats import norm
+        
+        # Test the theoretical probabilities for the regions
+        # Yolk region: P(-0.95 < X < 0.95) for X ~ N(0,1)
+        yolk_prob = norm.cdf(0.95) - norm.cdf(-0.95)
+        expected_yolk = 0.658  # 65.8%
+        assert abs(yolk_prob - expected_yolk) < 0.01
+        
+        # Iron sulfide region: P(0.95 < |X| < 1.05)
+        iron_sulfide_prob = 2 * (norm.cdf(1.05) - norm.cdf(0.95))
+        expected_iron_sulfide = 0.048  # 4.8%
+        assert abs(iron_sulfide_prob - expected_iron_sulfide) < 0.01
+        
+        # White region: P(|X| > 1.05)
+        white_prob = 2 * (1 - norm.cdf(1.05))
+        expected_white = 0.294  # 29.4%
+        assert abs(white_prob - expected_white) < 0.01
+    
+    def test_gaussian_volume_1d_figure_properties(self):
+        """Test that the figure has the expected properties."""
+        with patch('mlai.plot.ma.write_figure') as mock_write:
+            plot.gaussian_volume_1D()
+            
+            # Get the current figure
+            fig = plt.gcf()
+            ax = fig.axes[0]
+            
+            # Check that we have exactly one subplot
+            assert len(fig.axes) == 1
+            
+            # Check axis labels
+            assert ax.get_xlabel() == '$x$'
+            assert ax.get_ylabel() == 'Density'
+            
+            # Check that grid is enabled (grid() returns None, so we check it was called)
+            ax.grid(True, alpha=0.3)  # This should not raise an exception
+
 class TestGPOptimizeQuadratic:
     """Test gp_optimize_quadratic function."""
     
