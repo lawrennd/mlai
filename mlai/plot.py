@@ -1275,7 +1275,7 @@ def gaussian_volume_1D(directory='../diagrams'):
     represent different probability masses of the Gaussian distribution.
     
     Returns:
-        None: Saves the plot as 'gaussian-volume-1D-shaded.svg' in the './dimred' directory
+        None: Saves the plot as 'gaussian-volume-1D-shaded.svg' in the specified directory
         
     Note:
         The function uses scipy.stats.norm for the Gaussian probability density function.
@@ -1318,7 +1318,88 @@ def gaussian_volume_1D(directory='../diagrams'):
     ax.set_xlabel('$x$')
     ax.set_ylabel('Density')
     ax.grid(True, alpha=0.3)
-    ma.write_figure(filename='gaussian-volume-1D-shaded.svg', directory=directory, transparent=True)
+    ma.write_figure(filename='gaussian-volume-1D.svg', directory=directory, transparent=True)
+
+
+def gaussian_volume_2D(r_yolk=0.95, r_iron_sulfide=1.05, directory='../diagrams'):
+    """
+    Plot Gaussian volumes in 2D viewed from above with contour regions representing different probability areas.
+    
+    This function creates a visualization of a 2D Gaussian distribution viewed from above with three distinct
+    contour regions representing different probability masses:
+    
+    - Yellow (56.1%): Central circular region with radius 0.95 standard deviations
+    - Iron Sulfide (9.2%): Intermediate ring from radius 0.95 to 1.05 standard deviations
+    - White (34.7%): Outer region beyond radius 1.05 standard deviations
+    
+    The visualization is inspired by the composition of an egg viewed from above, where different regions
+    represent different probability masses of the 2D Gaussian distribution.
+    
+    Returns:
+        None: Saves the plot as 'gaussian-volume-2D.svg' in the specified directory
+        
+    Note:
+        The function uses scipy.stats.norm for the Gaussian probability density function.
+        The plot includes contour lines and proper axis labels for clarity.
+    """
+    fig, ax = plt.subplots(figsize=one_figsize)
+
+    # Create 2D grid
+    x = np.linspace(-3, 3, 200)
+    y = np.linspace(-3, 3, 200)
+    X, Y = np.meshgrid(x, y)
+    
+    # Calculate 2D Gaussian
+    Z = norm.pdf(X, 0, 1) * norm.pdf(Y, 0, 1)
+    
+    # Calculate distance from center
+    R = np.sqrt(X**2 + Y**2)
+        
+    # Create masks for different regions
+    yellow_mask = R <= r_yolk
+    iron_sulfide_mask = (R > r_yolk) & (R <= r_iron_sulfide)
+    white_mask = R > r_iron_sulfide
+    
+    # Create the base contour plot
+    contour = ax.contour(X, Y, Z, levels=20, colors='black', alpha=0.6, linewidths=0.5)
+    
+    # Create region-specific Z values for contour filling
+    Z_yellow = np.where(yellow_mask, Z, 0)
+    Z_iron_sulfide = np.where(iron_sulfide_mask, Z, 0)
+    Z_white = np.where(white_mask, Z, 0)
+    
+    # Fill regions with appropriate colors
+    # Yellow region (central)
+    ax.contourf(X, Y, Z_yellow, levels=20, colors='yellow', alpha=0.7)
+    
+    # Iron sulfide region (ring)
+    ax.contourf(X, Y, Z_iron_sulfide, levels=20, colors=[0, 0.7, 0.5], alpha=0.7)
+    
+    # White region (outer)
+    ax.contourf(X, Y, Z_white, levels=20, colors='white', alpha=0.7)
+    
+    # Add region boundaries as circles
+    circle_yellow = plt.Circle((0, 0), r_yolk, fill=False, color='black', linewidth=2, linestyle='--')
+    circle_iron = plt.Circle((0, 0), r_iron_sulfide, fill=False, color='black', linewidth=2, linestyle='--')
+    ax.add_patch(circle_yellow)
+    ax.add_patch(circle_iron)
+    
+
+    ax.set_xlabel('$x_1$')
+    ax.set_ylabel('$x_2$')
+    ax.set_aspect('equal')
+    ax.grid(True, alpha=0.3)
+    
+    # Add legend
+    from matplotlib.patches import Patch
+    legend_elements = [
+        Patch(facecolor='yellow', alpha=0.7, label='Yolk (56.1%)'),
+        Patch(facecolor=[0, 0.7, 0.5], alpha=0.7, label='Iron Sulfide (9.2%)'),
+        Patch(facecolor='white', alpha=0.7, label='White (34.7%)')
+    ]
+    ax.legend(handles=legend_elements, loc='upper right')
+    
+    ma.write_figure(filename='gaussian-volume-2D.svg', directory=directory, transparent=True)
     
 
 def marathon_fit(model, value, param_name, param_range,

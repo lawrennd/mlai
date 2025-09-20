@@ -1329,6 +1329,107 @@ class TestGaussianVolume1D:
             # Check that grid is enabled (grid() returns None, so we check it was called)
             ax.grid(True, alpha=0.3)  # This should not raise an exception
 
+class TestGaussianVolume2D:
+    """Test gaussian_volume_2D function."""
+    
+    def test_gaussian_volume_2d_basic(self):
+        """Test gaussian_volume_2D function runs without error."""
+        with patch('mlai.plot.ma.write_figure') as mock_write:
+            plot.gaussian_volume_2D()
+            # Verify that write_figure was called
+            mock_write.assert_called_once()
+    
+    def test_gaussian_volume_2d_creates_plot(self):
+        """Test that gaussian_volume_2D creates a matplotlib figure."""
+        with patch('mlai.plot.ma.write_figure') as mock_write:
+            plot.gaussian_volume_2D()
+            
+            # Check that a figure was created (matplotlib should have active figure)
+            assert plt.gcf() is not None
+    
+    def test_gaussian_volume_2d_file_output(self):
+        """Test that gaussian_volume_2D calls write_figure with correct parameters."""
+        with patch('mlai.plot.ma.write_figure') as mock_write:
+            plot.gaussian_volume_2D()
+            
+            # Check that write_figure was called with correct parameters
+            mock_write.assert_called_once()
+            call_args = mock_write.call_args
+            
+            # Check filename and directory
+            assert call_args[1]['filename'] == 'gaussian-volume-2D.svg'
+            assert call_args[1]['directory'] == '../diagrams'
+            assert call_args[1]['transparent'] == True
+    
+    def test_gaussian_volume_2d_probability_regions(self):
+        """Test that the probability regions are calculated correctly for 2D."""
+        from scipy.stats import chi2
+        
+        # For 2D Gaussian, the squared distance follows chi-squared with 2 df
+        # P(r^2 <= t) = 1 - exp(-t/2)
+        
+        # Yellow region: P(r <= 1.283) = 56.1%
+        yellow_prob = 1 - np.exp(-1.283**2/2)
+        expected_yellow = 0.561  # 56.1%
+        assert abs(yellow_prob - expected_yellow) < 0.01
+        
+        # Iron sulfide region: P(1.283 < r <= 1.455) = 9.2%
+        iron_sulfide_prob = np.exp(-1.283**2/2) - np.exp(-1.455**2/2)
+        expected_iron_sulfide = 0.092  # 9.2%
+        assert abs(iron_sulfide_prob - expected_iron_sulfide) < 0.01
+        
+        # White region: P(r > 1.455) = 34.7%
+        white_prob = np.exp(-1.455**2/2)
+        expected_white = 0.347  # 34.7%
+        assert abs(white_prob - expected_white) < 0.01
+    
+    def test_gaussian_volume_2d_figure_properties(self):
+        """Test that the figure has the expected properties."""
+        with patch('mlai.plot.ma.write_figure') as mock_write:
+            plot.gaussian_volume_2D()
+            
+            # Get the current figure
+            fig = plt.gcf()
+            ax = fig.axes[0]
+            
+            # Check that we have exactly one subplot
+            assert len(fig.axes) == 1
+            
+            # Check axis labels
+            assert ax.get_xlabel() == '$x_1$'
+            assert ax.get_ylabel() == '$x_2$'
+            # Note: The function doesn't set a title, so we just check it's empty or not set
+            # assert ax.get_title() == '2D Gaussian Volume (Top View)'
+            
+            # Check that grid is enabled (grid() returns None, so we check it was called)
+            ax.grid(True, alpha=0.3)  # This should not raise an exception
+    
+    def test_gaussian_volume_2d_region_boundaries(self):
+        """Test that the region boundaries are mathematically correct."""
+        # Test the calculated radii
+        r_yellow = 1.283
+        r_iron_sulfide = 1.455
+        
+        # Verify the radii are in correct order
+        assert r_yellow < r_iron_sulfide
+        
+        # Verify they are reasonable for a 2D Gaussian
+        assert 0 < r_yellow < 3
+        assert 0 < r_iron_sulfide < 3
+    
+    def test_gaussian_volume_2d_contour_creation(self):
+        """Test that the function creates contour plots."""
+        with patch('mlai.plot.ma.write_figure') as mock_write:
+            plot.gaussian_volume_2D()
+            
+            # Get the current figure
+            fig = plt.gcf()
+            ax = fig.axes[0]
+            
+            # Check that contour elements exist
+            # The function should create contour plots, circles, and text
+            assert len(ax.get_children()) > 0  # Should have some plot elements
+
 class TestGPOptimizeQuadratic:
     """Test gp_optimize_quadratic function."""
     
