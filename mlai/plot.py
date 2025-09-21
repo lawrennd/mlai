@@ -1260,7 +1260,7 @@ def gaussian_of_height(diagrams='../diagrams'):
     ax2.set_ylabel(r'$p(h|\mu, \sigma^2)$', fontsize = 20)
     ma.write_figure(figure=f2, filename='gaussian_of_height.svg', directory=diagrams, transparent=True)
 
-def gaussian_volume_1D(directory='../diagrams'):
+def gaussian_volume_1D(r_yolk=0.95, r_iron_sulfide=1.05, directory='../diagrams'):
     """
     Plot Gaussian volumes in 1D with shaded regions representing different probability areas.
     
@@ -1289,30 +1289,30 @@ def gaussian_volume_1D(directory='../diagrams'):
     ax.plot(x1, y1, 'k-', linewidth=1) # Reduced linewidth for better visibility of shading
 
     # Calculate x-values for shading
-    # Inner area (yolk): 65.8% of the Gaussian from the mean outwards
-    # This corresponds to the area between -0.95 and 0.95 standard deviations
-    x_yolk = x1[(x1 >= -0.95) & (x1 <= 0.95)]
-    y_yolk = y1[(x1 >= -0.95) & (x1 <= 0.95)]
+    # Inner area (yolk) of the Gaussian from the mean outwards
+    # This corresponds to the area between -r_yolk and r_yolk standard deviations
+    x_yolk = x1[(x1 >= -r_yolk) & (x1 <= r_yolk)]
+    y_yolk = y1[(x1 >= -r_yolk) & (x1 <= r_yolk)]
     ax.fill_between(x_yolk, y_yolk, color='yellow', alpha=0.7, label='Yolk (65.8%)') # Using yellow for yolk
 
-    # Next area (iron sulfide): 4.8%
-    # This corresponds to the area between 0.95 and 1.05 standard deviations on each side
-    x_iron_sulfide_right = x1[(x1 > 0.95) & (x1 <= 1.05)]
-    y_iron_sulfide_right = y1[(x1 > 0.95) & (x1 <= 1.05)]
+    # Next area (iron sulfide)
+    # This corresponds to the area between r_yolk and r_iron_sulfide standard deviations on each side
+    x_iron_sulfide_right = x1[(x1 > r_yolk) & (x1 <= r_iron_sulfide)]
+    y_iron_sulfide_right = y1[(x1 > r_yolk) & (x1 <= r_iron_sulfide)]
     ax.fill_between(x_iron_sulfide_right, y_iron_sulfide_right, color=[0, 0.7, 0.5], alpha=0.7, label='Iron Sulfide (4.8%)')
 
-    x_iron_sulfide_left = x1[(x1 < -0.95) & (x1 >= -1.05)]
-    y_iron_sulfide_left = y1[(x1 < -0.95) & (x1 >= -1.05)]
+    x_iron_sulfide_left = x1[(x1 < -r_yolk) & (x1 >= -r_iron_sulfide)]
+    y_iron_sulfide_left = y1[(x1 < -r_yolk) & (x1 >= -r_iron_sulfide)]
     ax.fill_between(x_iron_sulfide_left, y_iron_sulfide_left, color=[0, 0.7, 0.5], alpha=0.7) # No label for the second part of the same region
 
     # Outside area (white): 29.4%
     # This is the remaining area outside the yolk and iron sulfide regions
-    x_white_right = x1[x1 > 1.05]
-    y_white_right = y1[x1 > 1.05]
+    x_white_right = x1[x1 > r_iron_sulfide]
+    y_white_right = y1[x1 > r_iron_sulfide]
     ax.fill_between(x_white_right, y_white_right, color='white', alpha=0.7, label='White (29.4%)')
 
-    x_white_left = x1[x1 < -1.05]
-    y_white_left = y1[x1 < -1.05]
+    x_white_left = x1[x1 < -r_iron_sulfide]
+    y_white_left = y1[x1 < -r_iron_sulfide]
     ax.fill_between(x_white_left, y_white_left, color='white', alpha=0.7) # No label for the second part of the same region
 
     ax.set_xlabel('$x$')
@@ -4326,4 +4326,49 @@ def gp_optimize_quadratic(lambda1=3, lambda2=1,
     
     return ax
 
+
+
+
+def tsne_example(X, labels, perplexities=[5, 30, 50], random_state=42):
+    """Plot t-SNE embeddings with different perplexity values"""
+    from sklearn.manifold import TSNE
+    fig, axes = plt.subplots(1, len(perplexities), 
+                            figsize=(5*len(perplexities), 5))
+    
+    for ax, perplexity in zip(axes, perplexities):
+        tsne = TSNE(n_components=2, perplexity=perplexity, 
+                    random_state=random_state)
+        X_tsne = tsne.fit_transform(X)
+        ax.scatter(X_tsne[:, 0], X_tsne[:, 1], c=labels, 
+                  cmap=plt.cm.viridis)
+        ax.set_title(f'Perplexity = {perplexity}')
+
+
+
+
+def squared_distances(Y, shortname, description, directory="./diagrams", figsize=None):
+    """Plot squared distances between points in Y"""
+    if figsize is None:
+        figsize = big_figsize
+    
+    # Compute pairwise squared distances
+    from scipy.spatial.distance import pdist
+    distances = pdist(Y, metric='sqeuclidean')
+    
+    # Create histogram
+    fig, ax = plt.subplots(figsize=figsize)
+    n, bins, patches = ax.hist(distances, bins=50, density=True, alpha=0.7, color='blue')
+    
+    # Theoretical gamma distribution
+    from scipy.stats import gamma
+    d = Y.shape[1]  # dimension
+    mean_dist = np.mean(distances)
+    x_theory = np.linspace(0, np.max(distances), 100)
+    gamma_pdf = gamma.pdf(x_theory, d/2, scale=2*mean_dist/d)
+    ax.plot(x_theory, gamma_pdf, 'r-', linewidth=2)
+    
+    ax.set_xlabel('Squared Distance')
+    ax.set_ylabel('Density')
+    ax.grid(True, alpha=0.3)
+    ma.write_figure(f'{shortname}.svg', directory=directory, transparent=True)
 
