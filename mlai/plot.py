@@ -1321,86 +1321,160 @@ def gaussian_volume_1D(r_yolk=0.95, r_iron_sulfide=1.05, directory='../diagrams'
     ma.write_figure(filename='gaussian-volume-1D.svg', directory=directory, transparent=True)
 
 
-def gaussian_volume_2D(r_yolk=0.95, r_iron_sulfide=1.05, directory='../diagrams'):
+def gaussian_volume_2D(r_yolk=0.95, r_iron_sulfide=1.05, r_outer=3.0, directory='../diagrams'):
     """
-    Plot Gaussian volumes in 2D viewed from above with contour regions representing different probability areas.
+    Plot Gaussian volumes in 2D viewed from above using egg-shaped ellipses.
     
     This function creates a visualization of a 2D Gaussian distribution viewed from above with three distinct
-    contour regions representing different probability masses:
+    elliptical regions representing different probability masses:
     
-    - Yellow (56.1%): Central circular region with radius 0.95 standard deviations
-    - Iron Sulfide (9.2%): Intermediate ring from radius 0.95 to 1.05 standard deviations
-    - White (34.7%): Outer region beyond radius 1.05 standard deviations
+    - Yellow: Central elliptical region with radius r_yolk standard deviations
+    - Green: Intermediate elliptical ring from radius r_yolk to r_iron_sulfide standard deviations  
+    - White: Outer elliptical region beyond radius r_iron_sulfide of 3 standard deviations
     
     The visualization is inspired by the composition of an egg viewed from above, where different regions
-    represent different probability masses of the 2D Gaussian distribution.
+    represent different probability masses of the 2D Gaussian distribution. The ellipses are slightly eccentric to give them a more egg-like appearance.
     
     Returns:
         None: Saves the plot as 'gaussian-volume-2D.svg' in the specified directory
-        
-    Note:
-        The function uses scipy.stats.norm for the Gaussian probability density function.
-        The plot includes contour lines and proper axis labels for clarity.
     """
     fig, ax = plt.subplots(figsize=one_figsize)
 
-    # Create 2D grid
-    x = np.linspace(-3, 3, 200)
-    y = np.linspace(-3, 3, 200)
-    X, Y = np.meshgrid(x, y)
-    
-    # Calculate 2D Gaussian
-    Z = norm.pdf(X, 0, 1) * norm.pdf(Y, 0, 1)
-    
-    # Calculate distance from center
-    R = np.sqrt(X**2 + Y**2)
-        
-    # Create masks for different regions
-    yellow_mask = R <= r_yolk
-    iron_sulfide_mask = (R > r_yolk) & (R <= r_iron_sulfide)
-    white_mask = R > r_iron_sulfide
-    
-    # Create the base contour plot
-    contour = ax.contour(X, Y, Z, levels=20, colors='black', alpha=0.6, linewidths=0.5)
-    
-    # Create region-specific Z values for contour filling
-    Z_yellow = np.where(yellow_mask, Z, 0)
-    Z_iron_sulfide = np.where(iron_sulfide_mask, Z, 0)
-    Z_white = np.where(white_mask, Z, 0)
-    
-    # Fill regions with appropriate colors
-    # Yellow region (central)
-    ax.contourf(X, Y, Z_yellow, levels=20, colors='yellow', alpha=0.7)
-    
-    # Iron sulfide region (ring)
-    ax.contourf(X, Y, Z_iron_sulfide, levels=20, colors=[0, 0.7, 0.5], alpha=0.7)
-    
-    # White region (outer)
-    ax.contourf(X, Y, Z_white, levels=20, colors='white', alpha=0.7)
-    
-    # Add region boundaries as circles
-    circle_yellow = plt.Circle((0, 0), r_yolk, fill=False, color='black', linewidth=2, linestyle='--')
-    circle_iron = plt.Circle((0, 0), r_iron_sulfide, fill=False, color='black', linewidth=2, linestyle='--')
-    ax.add_patch(circle_yellow)
-    ax.add_patch(circle_iron)
-    
+    # Egg-like eccentricity: slightly wider than tall
+    width_factor = 1.1  # Make ellipses 10% wider than tall
+    height_factor = 1.0
+
+    # Draw the egg ellipses with boundaries
+    _draw_egg_ellipses(ax, r_yolk, r_iron_sulfide, r_outer, width_factor, height_factor, add_boundary=True)
 
     ax.set_xlabel('$x_1$')
     ax.set_ylabel('$x_2$')
     ax.set_aspect('equal')
     ax.grid(True, alpha=0.3)
     
+    # Set axis limits to show the full visualization
+    ax.set_xlim(-r_outer*1.2*width_factor, r_outer*1.2*width_factor)
+    ax.set_ylim(-r_outer*1.2*height_factor, r_outer*1.2*height_factor)
+    
     # Add legend
     from matplotlib.patches import Patch
     legend_elements = [
-        Patch(facecolor='yellow', alpha=0.7, label='Yolk (56.1%)'),
-        Patch(facecolor=[0, 0.7, 0.5], alpha=0.7, label='Iron Sulfide (9.2%)'),
-        Patch(facecolor='white', alpha=0.7, label='White (34.7%)')
+        Patch(facecolor='yellow', alpha=0.8, label='Yolk'),
+        Patch(facecolor=[0, 0.7, 0.5], alpha=0.8, label='Iron Sulfide'),
+        Patch(facecolor='white', alpha=0.8, label='White')
     ]
-    ax.legend(handles=legend_elements, loc='upper right')
     
     ma.write_figure(filename='gaussian-volume-2D.svg', directory=directory, transparent=True)
+
+
+def _draw_egg_ellipses(ax, r_yolk=0.95, r_iron_sulfide=1.05, r_outer=0.99, 
+                      width_factor=1.1, height_factor=1.0, add_boundary=True):
+    """
+    Helper function to draw the egg-shaped ellipses for both 2D and 3D visualizations.
     
+    Parameters:
+    -----------
+    ax : matplotlib axes
+        The axes to draw on
+    r_yolk : float
+        Radius of the yolk (yellow) region
+    r_iron_sulfide : float  
+        Radius of the iron sulfide (green) region
+    r_outer : float
+        Radius of the outer (white) region
+    width_factor : float
+        Factor to make ellipses wider (egg-like)
+    height_factor : float
+        Factor for ellipse height
+    add_boundary : bool
+        Whether to add black boundary line
+    """
+    from matplotlib.patches import Ellipse
+    
+    # Draw the outer white ellipse (background)
+    outer_ellipse = Ellipse((0, 0), r_outer*2*width_factor, r_outer*2*height_factor, 
+                           color='white', alpha=0.8, zorder=1)
+    ax.add_patch(outer_ellipse)
+    
+    # Draw the iron sulfide (green) ellipse
+    iron_ellipse = Ellipse((0, 0), r_iron_sulfide*2*width_factor, r_iron_sulfide*2*height_factor, 
+                          color=[0, 0.7, 0.5], alpha=1.0, zorder=2)
+    ax.add_patch(iron_ellipse)
+    
+    # Draw the yolk (yellow) ellipse
+    yolk_ellipse = Ellipse((0, 0), r_yolk*2*width_factor, r_yolk*2*height_factor, 
+                          color='yellow', alpha=1.0, zorder=3)
+    ax.add_patch(yolk_ellipse)
+    
+    if add_boundary:
+        # Add boundary ellipse only for the outer white region
+        ellipse_outer = Ellipse((0, 0), r_outer*2*width_factor, r_outer*2*height_factor, 
+                               fill=False, color='black', linewidth=2, linestyle='-', zorder=4)
+        ax.add_patch(ellipse_outer)
+
+
+def gaussian_volume_3D(r_yolk=0.95, r_iron_sulfide=1.05, r_outer=3.0, directory='../diagrams'):
+    """
+    Plot Gaussian volumes in 3D viewed from above using egg-shaped ellipses with a semi-transparent
+    white overlay to give a 3D depth effect.
+    
+    This function creates a visualization of a 3D Gaussian distribution viewed from above with three distinct
+    elliptical regions representing different probability masses, plus a semi-transparent white overlay
+    to simulate looking through the white of the egg:
+    
+    - Yellow: Central elliptical region with radius r_yolk standard deviations
+    - Green: Intermediate elliptical ring from radius r_yolk to r_iron_sulfide standard deviations  
+    - White: Outer elliptical region beyond radius r_iron_sulfide of 3 standard deviations 
+    - Semi-transparent white overlay: Gives the 3D depth effect
+    
+    The visualization is inspired by the composition of an egg viewed from above, where different regions
+    represent different probability masses of the 3D Gaussian distribution. The ellipses are slightly
+    eccentric to give them a more egg-like appearance.
+    
+    Returns:
+        None: Saves the plot as 'gaussian-volume-3D.svg' in the specified directory
+    """
+    from matplotlib.patches import Ellipse
+    
+    fig, ax = plt.subplots(figsize=one_figsize)
+
+    # Egg-like eccentricity: slightly wider than tall
+    width_factor = 1.1  # Make ellipses 10% wider than tall
+    height_factor = 1.0
+
+    # Draw the egg ellipses (without boundaries for cleaner 3D look)
+    _draw_egg_ellipses(ax, r_yolk, r_iron_sulfide, r_outer, width_factor, height_factor, add_boundary=True)
+    
+    # Add semi-transparent white overlay for 3D effect
+    overlay_ellipse = Ellipse((0, 0), r_outer*2*width_factor, r_outer*2*height_factor, 
+                             color='white', alpha=0.7, zorder=5)
+    ax.add_patch(overlay_ellipse)
+    
+    # Add white border after overlay to ensure it's visible
+    from matplotlib.patches import Ellipse
+    white_border = Ellipse((0, 0), r_outer*2*width_factor, r_outer*2*height_factor, 
+                          fill=False, color='black', linewidth=2, linestyle='-', zorder=6)
+    ax.add_patch(white_border)
+
+    ax.set_xlabel('$x_1$')
+    ax.set_ylabel('$x_2$')
+    ax.set_aspect('equal')
+    ax.grid(True, alpha=0.3)
+    
+    # Set axis limits to show the full visualization
+    ax.set_xlim(-r_outer*1.2*width_factor, r_outer*1.2*width_factor)
+    ax.set_ylim(-r_outer*1.2*height_factor, r_outer*1.2*height_factor)
+    
+    # Add legend
+    from matplotlib.patches import Patch
+    legend_elements = [
+        Patch(facecolor='yellow', alpha=0.8, label='Yolk'),
+        Patch(facecolor=[0, 0.7, 0.5], alpha=0.8, label='Iron Sulfide'),
+        Patch(facecolor='white', alpha=0.8, label='White')
+    ]
+    
+    ma.write_figure(filename='gaussian-volume-3D.svg', directory=directory, transparent=True)
+
 
 def marathon_fit(model, value, param_name, param_range,
                  xlim, fig, ax, x_val=None, y_val=None, objective=None,
