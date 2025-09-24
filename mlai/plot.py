@@ -3736,6 +3736,25 @@ class layer():
         self.text = text
 
 
+def neural_network(diagrams='../diagrams'):
+    """Draw a neural network."""
+    model = network()
+    model.add_layer(layer(width=4, label=r'x_{index}',
+                    observed=True, text=r'given $\mathbf{x}$'))
+    model.add_layer(layer(width=8, label='h_{{1, {index}}}',
+                    text=r'$\mathbf{h}_1=\boldsymbol{\phi}\left(\mathbf{W}_1\mathbf{x}\right)$'))
+    model.add_layer(layer(width=1, label='y',
+                    text=r'$y=\mathbf{w}_4^\top\mathbf{h}_3$',
+                    observed=True))
+    fig, ax = model.draw(grid_unit=3)
+    ma.write_figure('neural-network.svg',
+                      directory=diagrams,
+                      figure=fig,
+                      transparent=True)
+
+
+
+        
 def deep_nn(diagrams='../diagrams'):
     """Draw a deep neural network."""
     model = network()
@@ -3982,6 +4001,110 @@ def shared_gplvm():
     pgm.add_edge("X", "Y_2")
     pgm.add_edge("Z_1", "Y_1")
     pgm.add_edge("Z_2", "Y_2")
+    return pgm
+
+def ppca_graphical_model(directory='../diagrams'):
+    """
+    Plot graphical model of Probabilistic Principal Component Analysis (PPCA).
+    
+    The model shows:
+    - Y: Observed data (grayed/shaded)
+    - X: Latent variables (white)
+    - W: Weight matrix parameter (black dot)
+    - σ²: Noise variance parameter (black dot)
+    
+    Layout:
+    - Y is at the center
+    - X is above Y at -30° angle
+    - W is above Y at +30° angle  
+    - σ² is to the right of Y
+    """
+    # Create the graphical model
+    pgm = daft.PGM(shape=[2, 2.5],
+                   origin=[0, 0], 
+                   grid_unit=4, 
+                   node_unit=1.0, 
+                   observed_style='shaded',
+                   line_width=2)
+
+    # Central observed node Y
+    pgm.add_node(daft.Node("Y", r"$\mathbf{Y}$", 1, 1.5, observed=True))
+    
+    # Latent node X above at -30° angle
+    # Position: slightly left and above Y
+    pgm.add_node(daft.Node("X", r"$\mathbf{X}$", 0.7, 2))
+    
+    # Weight parameter W above at +30° angle  
+    # Position: slightly right and above Y
+    pgm.add_node(daft.Node("W", r"$\mathbf{W}$", 1.3, 2, fixed=True))
+    
+    # Noise variance parameter σ² to the right
+    pgm.add_node(daft.Node("sigma2", r"$\sigma^2$", 1.5, 1.5, fixed=True))
+    
+    # Add edges
+    pgm.add_edge("X", "Y")  # X influences Y
+    pgm.add_edge("W", "Y")  # W influences Y  
+    pgm.add_edge("sigma2", "Y")  # σ² influences Y
+    
+    # Render and save
+    ax = pgm.render()
+    ma.write_figure('ppca-graphical-model.svg', 
+                    directory=directory, 
+                    figure=ax.figure, 
+                    transparent=True)
+    
+    return pgm
+
+def dppca_graphical_model(directory='../diagrams'):
+    """
+    Plot graphical model of Dual Probabilistic Principal Component Analysis (DPPCA).
+    
+    The model shows:
+    - Y: Observed data (grayed/shaded)
+    - X: Latent variables (white)
+    - W: Weight matrix parameter (black dot)
+    - σ²: Noise variance parameter (black dot)
+    
+    Layout:
+    - Y is at the center
+    - X is above Y at -30° angle
+    - W is above Y at +30° angle  
+    - σ² is to the right of Y
+    """
+    # Create the graphical model
+    pgm = daft.PGM(shape=[2, 2.5],
+                   origin=[0, 0], 
+                   grid_unit=4, 
+                   node_unit=1.0, 
+                   observed_style='shaded',
+                   line_width=2)
+
+    # Central observed node Y
+    pgm.add_node(daft.Node("Y", r"$\mathbf{Y}$", 1, 1.5, observed=True))
+    
+    # Latent node X above at -30° angle
+    # Position: slightly left and above Y
+    pgm.add_node(daft.Node("X", r"$\mathbf{X}$", 0.7, 2, fixed=True))
+    
+    # Weight parameter W above at +30° angle  
+    # Position: slightly right and above Y
+    pgm.add_node(daft.Node("W", r"$\mathbf{W}$", 1.3, 2))
+    
+    # Noise variance parameter σ² to the right
+    pgm.add_node(daft.Node("sigma2", r"$\sigma^2$", 1.5, 1.5, fixed=True))
+    
+    # Add edges
+    pgm.add_edge("X", "Y")  # X influences Y
+    pgm.add_edge("W", "Y")  # W influences Y  
+    pgm.add_edge("sigma2", "Y")  # σ² influences Y
+    
+    # Render and save
+    ax = pgm.render()
+    ma.write_figure('dppca-graphical-model.svg', 
+                    directory=directory, 
+                    figure=ax.figure, 
+                    transparent=True)
+    
     return pgm
 
 def three_pillars_innovation(diagrams='./diagrams'):
@@ -4423,7 +4546,7 @@ def tsne_example(X, labels, perplexities=[5, 30, 50], random_state=42):
 def squared_distances(Y, shortname, description, directory="./diagrams", figsize=None):
     """Plot squared distances between points in Y"""
     if figsize is None:
-        figsize = big_figsize
+        figsize = wide_figsize
     
     # Compute pairwise squared distances
     from scipy.spatial.distance import pdist
@@ -4444,5 +4567,5 @@ def squared_distances(Y, shortname, description, directory="./diagrams", figsize
     ax.set_xlabel('Squared Distance')
     ax.set_ylabel('Density')
     ax.grid(True, alpha=0.3)
-    ma.write_figure(f'{shortname}.svg', directory=directory, transparent=True)
+    ma.write_figure(f'{shortname}_squared-distances.svg', directory=directory, transparent=True)
 

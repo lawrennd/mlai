@@ -720,6 +720,8 @@ def linear(x, **kwargs):
     """
     return np.hstack([np.ones((x.shape[0], 1)), np.asarray(x, dtype=float)])
 
+
+
 def polynomial(x, num_basis=4, data_limits=[-1., 1.]):
     """
     Define the polynomial basis function.
@@ -1120,8 +1122,140 @@ class NonparametricDropoutNeuralNetwork(SimpleDropoutNeuralNetwork):
         self.maxval+=new
         self.update_num+=1
         self.count[:self.maxval] += self.use[:self.maxval]
-        
 
+def relu_activation(x):
+    """
+    ReLU activation function.
+    
+    This function applies the ReLU (Rectified Linear Unit) activation
+    to the input array.
+    
+    :param x: Input array
+    :type x: numpy.ndarray
+    :returns: Activated array with ReLU applied
+    :rtype: numpy.ndarray
+    
+    Examples:
+        >>> x = np.array([-1, 0, 1])
+        >>> y = relu_activation(x)
+        >>> print(y)  # Output: [0, 0, 1]
+    """
+    return x*(x>0)
+
+
+def sigmoid_activation(x):
+    """
+    Sigmoid activation function.
+    
+    This function applies the sigmoid activation to the input array,
+    mapping values to the range (0, 1).
+    
+    :param x: Input array
+    :type x: numpy.ndarray
+    :returns: Activated array with sigmoid applied
+    :rtype: numpy.ndarray
+    
+    Examples:
+        >>> x = np.array([-1, 0, 1])
+        >>> y = sigmoid_activation(x)
+        >>> print(y)  # Output: [0.26894142, 0.5, 0.73105858]
+    """
+    return 1./(1.+np.exp(-x))
+
+def linear_activation(x):
+    """
+    Linear activation function (identity/null operation).
+    
+    This function applies a linear transformation to the input array,
+    effectively returning the input unchanged. This is useful for
+    output layers or when no activation is desired.
+    
+    :param x: Input array
+    :type x: numpy.ndarray
+    :returns: Input array unchanged
+    :rtype: numpy.ndarray
+    
+    Examples:
+        >>> x = np.array([-1, 0, 1])
+        >>> y = linear_activation(x)
+        >>> print(y)  # Output: [-1, 0, 1]
+    """
+    return x
+
+def soft_relu_activation(x):
+    """
+    Soft ReLU activation function (log(1 + exp(x))).
+    
+    This function applies the soft ReLU (also known as softplus) activation
+    to the input array. It is a smooth approximation to the ReLU function
+    that is differentiable everywhere.
+    
+    Mathematical formulation:
+    soft_relu(x) = log(1 + exp(x))
+    
+    :param x: Input array
+    :type x: numpy.ndarray
+    :returns: Activated array with soft ReLU applied
+    :rtype: numpy.ndarray
+    
+    Examples:
+        >>> x = np.array([-1, 0, 1])
+        >>> y = soft_relu_activation(x)
+        >>> print(y)  # Output: [0.31326169, 0.69314718, 1.31326169]
+    """
+    return np.log(1. + np.exp(x))
+
+class NeuralNetwork(Model):
+    """
+    Neural network model.
+
+    This class implements a neural network model with different basis functions and variable numbers of weight layers.
+
+    :param dimensions: dimensions of the model.
+    :type dimensions: list
+    :param activations: Activation functions for layers
+    :type activations: list
+    """
+
+    def __init__(self, dimensions, activations):
+        """
+        Initialise the neural network.
+        """
+        if len(dimensions) < 2:
+            raise ValueError("At least input and output layers must be specified.")
+        if len(activations) != len(dimensions) - 1:
+            raise ValueError("Number of activation functions must be one less than number of layers.")
+        self.dimensions = dimensions
+        self.activations = activations
+        self.weights = []
+        self.biases = []
+        for i in range(len(dimensions) - 1):
+            weight_matrix = np.random.normal(size=(dimensions[i], dimensions[i + 1])) * np.sqrt(2. / (dimensions[i]+1))
+            self.weights.append(weight_matrix)
+            bias_vector = np.random.normal(size=dimensions[i+1]) * np.sqrt(2./(dimensions[i]+1))
+            self.biases.append(bias_vector)
+            
+    def predict(self, x):
+        """
+        Compute output given current basis functions.
+        :param x: Input value
+        :type x: numpy.ndarray
+        :returns: Network output
+        :rtype: numpy.ndarray
+        """
+
+        nbatch = np.asarray(x).shape[0]
+        self.a = []
+        self.z = []
+        self.a.append(np.asarray(x, dtype=float))
+        self.z.append(np.asarray(x, dtype=float))
+
+        for i in range(len(self.weights)):
+            self.z.append(self.a[-1] @ self.weights[i] + self.biases[i])
+            self.a.append(self.activations[i](self.z[-1]))
+
+        return self.a[-1]
+        
     
 class BLM(LM):
     """
@@ -2462,7 +2596,7 @@ def ppca_svd(Y, q, center=True):
         Y_cent = Y - Y.mean(0)
     else:
         Y_cent = Y
-        
+    import scipy as sp
     # Comute singluar values, discard 'R' as we will assume orthogonal
     U, sqlambd, _ = sp.linalg.svd(Y_cent.T,full_matrices=False)
     lambd = (sqlambd**2)/Y.shape[0]
