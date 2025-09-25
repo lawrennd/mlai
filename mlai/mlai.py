@@ -1205,6 +1205,161 @@ def soft_relu_activation(x):
     """
     return np.log(1. + np.exp(x))
 
+class Activation:
+    """
+    Base class for activation functions with gradients.
+    
+    This class provides a framework for activation functions that include
+    both the forward pass and gradient computation, useful for neural networks
+    that require backpropagation.
+    """
+    
+    def __init__(self):
+        pass
+    
+    def forward(self, x):
+        """
+        Forward pass of the activation function.
+        
+        :param x: Input array
+        :type x: numpy.ndarray
+        :returns: Activated array
+        :rtype: numpy.ndarray
+        """
+        raise NotImplementedError
+    
+    def gradient(self, x):
+        """
+        Compute the gradient of the activation function.
+        
+        :param x: Input array
+        :type x: numpy.ndarray
+        :returns: Gradient array
+        :rtype: numpy.ndarray
+        """
+        raise NotImplementedError
+
+class LinearActivation(Activation):
+    """
+    Linear activation function (identity) with gradient.
+    
+    This activation function returns the input unchanged and has a gradient
+    of 1 everywhere. Useful for output layers or when no activation is desired.
+    """
+    
+    def forward(self, x):
+        """
+        Forward pass: returns input unchanged.
+        
+        :param x: Input array
+        :type x: numpy.ndarray
+        :returns: Input array unchanged
+        :rtype: numpy.ndarray
+        """
+        return x
+    
+    def gradient(self, x):
+        """
+        Gradient of linear activation (always 1).
+        
+        :param x: Input array
+        :type x: numpy.ndarray
+        :returns: Array of ones with same shape as input
+        :rtype: numpy.ndarray
+        """
+        return np.ones_like(x)
+
+class ReLUActivation(Activation):
+    """
+    ReLU activation function with gradient.
+    
+    ReLU (Rectified Linear Unit) activation function that returns max(0, x)
+    with appropriate gradient computation.
+    """
+    
+    def forward(self, x):
+        """
+        Forward pass: ReLU activation.
+        
+        :param x: Input array
+        :type x: numpy.ndarray
+        :returns: ReLU activated array
+        :rtype: numpy.ndarray
+        """
+        return x * (x > 0)
+    
+    def gradient(self, x):
+        """
+        Gradient of ReLU activation.
+        
+        :param x: Input array
+        :type x: numpy.ndarray
+        :returns: Gradient array (1 where x > 0, 0 elsewhere)
+        :rtype: numpy.ndarray
+        """
+        return (x > 0).astype(float)
+
+class SigmoidActivation(Activation):
+    """
+    Sigmoid activation function with gradient.
+    
+    Sigmoid activation function that maps inputs to (0, 1) range
+    with appropriate gradient computation.
+    """
+    
+    def forward(self, x):
+        """
+        Forward pass: sigmoid activation.
+        
+        :param x: Input array
+        :type x: numpy.ndarray
+        :returns: Sigmoid activated array
+        :rtype: numpy.ndarray
+        """
+        return 1. / (1. + np.exp(-x))
+    
+    def gradient(self, x):
+        """
+        Gradient of sigmoid activation.
+        
+        :param x: Input array
+        :type x: numpy.ndarray
+        :returns: Gradient array
+        :rtype: numpy.ndarray
+        """
+        s = self.forward(x)
+        return s * (1 - s)
+
+class SoftReLUActivation(Activation):
+    """
+    Soft ReLU (softplus) activation function with gradient.
+    
+    Soft ReLU is a smooth approximation to ReLU that is differentiable
+    everywhere. It computes log(1 + exp(x)) with appropriate gradient.
+    """
+    
+    def forward(self, x):
+        """
+        Forward pass: soft ReLU activation.
+        
+        :param x: Input array
+        :type x: numpy.ndarray
+        :returns: Soft ReLU activated array
+        :rtype: numpy.ndarray
+        """
+        return np.log(1. + np.exp(x))
+    
+    def gradient(self, x):
+        """
+        Gradient of soft ReLU activation.
+        
+        :param x: Input array
+        :type x: numpy.ndarray
+        :returns: Gradient array (sigmoid of input)
+        :rtype: numpy.ndarray
+        """
+        return 1. / (1. + np.exp(-x))
+
 class NeuralNetwork(Model):
     """
     Neural network model.
@@ -1212,9 +1367,9 @@ class NeuralNetwork(Model):
     This class implements a neural network model with different basis functions and variable numbers of weight layers.
 
     :param dimensions: dimensions of the model.
-    :type dimensions: list
+    :type dimensions: list[int]
     :param activations: Activation functions for layers
-    :type activations: list
+    :type activations: list[Activation]
     """
 
     def __init__(self, dimensions, activations):
@@ -1252,11 +1407,136 @@ class NeuralNetwork(Model):
 
         for i in range(len(self.weights)):
             self.z.append(self.a[-1] @ self.weights[i] + self.biases[i])
-            self.a.append(self.activations[i](self.z[-1]))
+            self.a.append(self.activations[i].forward(self.z[-1]))
 
         return self.a[-1]
-        
     
+    def backward(self, output_gradient):
+        """
+        Compute gradients using backpropagation through the network.
+        
+        This method implements the chain rule for computing gradients of the
+        loss function with respect to all weight matrices and biases in the network.
+        
+        Mathematical formulation:
+        For layer ℓ and weight matrix W_{ℓ-k}, the gradient is:
+        d f_ℓ / d w_{ℓ-k} = [∏_{i=0}^{k-1} W_{ℓ-i} Φ'_{ℓ-i-1}] φ_{ℓ-k-1}^T ⊗ I_{d_{ℓ-k}}
+        
+        where Φ' is the derivative matrix of the activation function.
+        
+        :param output_gradient: Gradient of the loss with respect to the output
+        :type output_gradient: numpy.ndarray
+        :returns: Dictionary containing gradients for weights and biases
+        :rtype: dict
+        """
+        # Initialize gradient storage
+        weight_gradients = []
+        bias_gradients = []
+        
+        # Start with the output gradient
+        delta = output_gradient
+        
+        # Backpropagate through each layer (from output to input)
+        for i in reversed(range(len(self.weights))):
+            # Get the activation derivative for this layer
+            activation_derivative = self.activations[i].gradient(self.z[i+1])
+            
+            # Compute gradient with respect to weights
+            # dL/dW_i = (dL/da_i) * (da_i/dz_i) * (dz_i/dW_i)
+            # where dz_i/dW_i = a_{i-1}^T
+            if i == 0:
+                # For first layer, use input
+                input_to_layer = self.a[0]
+            else:
+                input_to_layer = self.a[i]
+            
+            # Weight gradient: delta * activation_derivative * input^T
+            # delta is (batch_size, output_size), activation_derivative is (batch_size, output_size)
+            # input_to_layer is (batch_size, input_size)
+            # We need: (batch_size, output_size) * (batch_size, output_size) * (batch_size, input_size)^T
+            # = (output_size, input_size) for each sample, then sum over batch
+            # Weight matrix W_i has shape (input_size, output_size)
+            # So gradient should have shape (input_size, output_size)
+            weight_grad = np.zeros((self.weights[i].shape[0], self.weights[i].shape[1]))
+            for b in range(delta.shape[0]):
+                # delta[b] * activation_derivative[b] is (output_size,)
+                # input_to_layer[b] is (input_size,)
+                # outer product gives (output_size, input_size)
+                # But we need (input_size, output_size) to match weight matrix
+                weight_grad += np.outer(input_to_layer[b], delta[b] * activation_derivative[b])
+            weight_gradients.insert(0, weight_grad)
+            
+            # Bias gradient: delta * activation_derivative
+            # Sum over batch dimension
+            bias_grad = np.sum(delta * activation_derivative, axis=0)
+            bias_gradients.insert(0, bias_grad)
+            
+            # Propagate gradient backward through weights
+            # delta_{i-1} = W_i^T * (delta_i * activation_derivative_i)
+            if i > 0:
+                # delta is (batch_size, output_size), activation_derivative is (batch_size, output_size)
+                # W_i is (input_size, output_size), so W_i^T is (output_size, input_size)
+                # We need: (batch_size, output_size) @ (output_size, input_size) = (batch_size, input_size)
+                delta = (delta * activation_derivative) @ self.weights[i].T
+        
+        return {
+            'weight_gradients': weight_gradients,
+            'bias_gradients': bias_gradients
+        }
+    
+    def compute_gradient_for_layer(self, layer_idx, output_gradient):
+        """
+        Compute gradient for a specific layer using the chain rule formula.
+        
+        This implements the mathematical formula you derived:
+        d f_ℓ / d w_{ℓ-k} = [∏_{i=0}^{k-1} W_{ℓ-i} Φ'_{ℓ-i-1}] φ_{ℓ-k-1}^T ⊗ I_{d_{ℓ-k}}
+        
+        :param layer_idx: Index of the layer to compute gradient for
+        :type layer_idx: int
+        :param output_gradient: Gradient of the loss with respect to the output
+        :type output_gradient: numpy.ndarray
+        :returns: Gradient matrix for the specified layer
+        :rtype: numpy.ndarray
+        """
+        if layer_idx >= len(self.weights):
+            raise ValueError(f"Layer index {layer_idx} out of range. Network has {len(self.weights)} layers.")
+        
+        # Start with output gradient
+        gradient = output_gradient
+        
+        # Apply chain rule: multiply by weight matrices and activation derivatives
+        # from output layer down to the target layer
+        for i in reversed(range(layer_idx + 1, len(self.weights))):
+            # Get activation derivative for layer i
+            activation_derivative = self.activations[i].gradient(self.z[i+1])
+            
+            # Apply chain rule: gradient = W^T * (gradient * activation_derivative)
+            gradient = (gradient * activation_derivative) @ self.weights[i].T
+        
+        # Get activation derivative for target layer
+        activation_derivative = self.activations[layer_idx].gradient(self.z[layer_idx+1])
+        
+        # Get input to target layer
+        if layer_idx == 0:
+            input_to_layer = self.a[0]
+        else:
+            input_to_layer = self.a[layer_idx]
+        
+        # Compute final gradient using outer product
+        # This implements: φ_{ℓ-k-1}^T ⊗ I_{d_{ℓ-k}} part of the formula
+        # Sum over batch dimension
+        final_gradient = np.zeros((self.weights[layer_idx].shape[0], self.weights[layer_idx].shape[1]))
+        for b in range(gradient.shape[0]):
+            # gradient[b] * activation_derivative[b] is (output_size,)
+            # input_to_layer[b] is (input_size,)
+            # outer product gives (output_size, input_size)
+            # But we need (input_size, output_size) to match weight matrix
+            final_gradient += np.outer(input_to_layer[b], gradient[b] * activation_derivative[b])
+        
+        return final_gradient
+        
+ 
+
 class BLM(LM):
     """
     Bayesian Linear Model.

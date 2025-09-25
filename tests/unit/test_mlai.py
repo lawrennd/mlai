@@ -2151,4 +2151,474 @@ class TestWardsMethod:
         
         assert len(ward_4d.merges) == 2
         linkage_4d = ward_4d.get_linkage_matrix()
-        assert linkage_4d.shape == (2, 4) 
+        assert linkage_4d.shape == (2, 4)
+
+
+class TestActivationFunctions:
+    """Test activation function implementations."""
+    
+    def test_linear_activation(self):
+        """Test linear activation function."""
+        x = np.array([-1, 0, 1])
+        result = mlai.linear_activation(x)
+        expected = np.array([-1, 0, 1])
+        np.testing.assert_allclose(result, expected)
+    
+    def test_soft_relu_activation(self):
+        """Test soft ReLU activation function."""
+        x = np.array([-1, 0, 1])
+        result = mlai.soft_relu_activation(x)
+        # Soft ReLU should be positive for all inputs
+        assert np.all(result > 0)
+        # Should be approximately log(2) ≈ 0.693 for x=0
+        assert abs(result[1] - np.log(2)) < 1e-10
+    
+    def test_relu_activation(self):
+        """Test ReLU activation function."""
+        x = np.array([-1, 0, 1])
+        result = mlai.relu_activation(x)
+        expected = np.array([0, 0, 1])
+        np.testing.assert_allclose(result, expected)
+    
+    def test_sigmoid_activation(self):
+        """Test sigmoid activation function."""
+        x = np.array([-1, 0, 1])
+        result = mlai.sigmoid_activation(x)
+        # Sigmoid should be in (0, 1)
+        assert np.all(result > 0)
+        assert np.all(result < 1)
+        # Should be 0.5 for x=0
+        assert abs(result[1] - 0.5) < 1e-10
+
+
+class TestActivationClasses:
+    """Test activation class implementations with gradients."""
+    
+    def test_linear_activation_class(self):
+        """Test LinearActivation class."""
+        activation = mlai.LinearActivation()
+        x = np.array([-1, 0, 1])
+        
+        # Test forward pass
+        forward_result = activation.forward(x)
+        np.testing.assert_allclose(forward_result, x)
+        
+        # Test gradient
+        gradient_result = activation.gradient(x)
+        expected_gradient = np.ones_like(x)
+        np.testing.assert_allclose(gradient_result, expected_gradient)
+    
+    def test_relu_activation_class(self):
+        """Test ReLUActivation class."""
+        activation = mlai.ReLUActivation()
+        x = np.array([-1, 0, 1])
+        
+        # Test forward pass
+        forward_result = activation.forward(x)
+        expected_forward = np.array([0, 0, 1])
+        np.testing.assert_allclose(forward_result, expected_forward)
+        
+        # Test gradient
+        gradient_result = activation.gradient(x)
+        expected_gradient = np.array([0, 0, 1])
+        np.testing.assert_allclose(gradient_result, expected_gradient)
+    
+    def test_sigmoid_activation_class(self):
+        """Test SigmoidActivation class."""
+        activation = mlai.SigmoidActivation()
+        x = np.array([-1, 0, 1])
+        
+        # Test forward pass
+        forward_result = activation.forward(x)
+        assert np.all(forward_result > 0)
+        assert np.all(forward_result < 1)
+        
+        # Test gradient
+        gradient_result = activation.gradient(x)
+        # Gradient should be s * (1 - s) where s is sigmoid
+        expected_gradient = forward_result * (1 - forward_result)
+        np.testing.assert_allclose(gradient_result, expected_gradient)
+    
+    def test_soft_relu_activation_class(self):
+        """Test SoftReLUActivation class."""
+        activation = mlai.SoftReLUActivation()
+        x = np.array([-1, 0, 1])
+        
+        # Test forward pass
+        forward_result = activation.forward(x)
+        assert np.all(forward_result > 0)
+        
+        # Test gradient
+        gradient_result = activation.gradient(x)
+        # Gradient should be sigmoid(x)
+        expected_gradient = 1. / (1. + np.exp(-x))
+        np.testing.assert_allclose(gradient_result, expected_gradient)
+
+
+class TestNeuralNetworkWithBackpropagation:
+    """Test neural network with backpropagation functionality."""
+    
+    def test_neural_network_initialization(self):
+        """Test NeuralNetwork initialization with activation classes."""
+        dimensions = [2, 4, 3, 1]
+        activations = [mlai.ReLUActivation(), mlai.SigmoidActivation(), mlai.LinearActivation()]
+        
+        network = mlai.NeuralNetwork(dimensions, activations)
+        
+        assert len(network.weights) == 3
+        assert len(network.biases) == 3
+        assert len(network.activations) == 3
+        
+        # Check weight shapes
+        assert network.weights[0].shape == (2, 4)
+        assert network.weights[1].shape == (4, 3)
+        assert network.weights[2].shape == (3, 1)
+        
+        # Check bias shapes
+        assert network.biases[0].shape == (4,)
+        assert network.biases[1].shape == (3,)
+        assert network.biases[2].shape == (1,)
+    
+    def test_neural_network_initialization_errors(self):
+        """Test NeuralNetwork initialization error handling."""
+        # Test with too few dimensions
+        with pytest.raises(ValueError, match="At least input and output layers"):
+            mlai.NeuralNetwork([2], [])
+        
+        # Test with mismatched activations
+        with pytest.raises(ValueError, match="Number of activation functions"):
+            mlai.NeuralNetwork([2, 4, 1], [mlai.ReLUActivation()])
+    
+    def test_neural_network_forward_pass(self):
+        """Test neural network forward pass."""
+        dimensions = [2, 3, 1]
+        activations = [mlai.ReLUActivation(), mlai.LinearActivation()]
+        
+        network = mlai.NeuralNetwork(dimensions, activations)
+        
+        # Test with single sample
+        x = np.array([[1, 2]])
+        output = network.predict(x)
+        
+        assert output.shape == (1, 1)
+        assert np.isfinite(output[0, 0])
+        
+        # Test with multiple samples
+        x_batch = np.array([[1, 2], [3, 4]])
+        output_batch = network.predict(x_batch)
+        
+        assert output_batch.shape == (2, 1)
+        assert np.all(np.isfinite(output_batch))
+    
+    def test_neural_network_backward_pass(self):
+        """Test neural network backward pass."""
+        dimensions = [2, 3, 1]
+        activations = [mlai.ReLUActivation(), mlai.LinearActivation()]
+        
+        network = mlai.NeuralNetwork(dimensions, activations)
+        
+        # Forward pass first
+        x = np.array([[1, 2]])
+        output = network.predict(x)
+        
+        # Backward pass
+        output_gradient = np.array([[0.5]])
+        gradients = network.backward(output_gradient)
+        
+        # Check that gradients are returned
+        assert 'weight_gradients' in gradients
+        assert 'bias_gradients' in gradients
+        
+        # Check gradient shapes
+        assert len(gradients['weight_gradients']) == 2  # 2 weight matrices for [2, 3, 1] network
+        assert len(gradients['bias_gradients']) == 2     # 2 bias vectors for [2, 3, 1] network
+        
+        # Check that gradients have correct shapes
+        assert gradients['weight_gradients'][0].shape == (2, 3)
+        assert gradients['weight_gradients'][1].shape == (3, 1)
+        assert gradients['bias_gradients'][0].shape == (3,)
+        assert gradients['bias_gradients'][1].shape == (1,)
+    
+    def test_neural_network_compute_gradient_for_layer(self):
+        """Test compute_gradient_for_layer method."""
+        dimensions = [2, 3, 2, 1]
+        activations = [mlai.ReLUActivation(), mlai.SigmoidActivation(), mlai.LinearActivation()]
+        
+        network = mlai.NeuralNetwork(dimensions, activations)
+        
+        # Forward pass first
+        x = np.array([[1, 2]])
+        output = network.predict(x)
+        
+        # Test gradient for first layer
+        output_gradient = np.array([[0.5]])
+        layer_0_gradient = network.compute_gradient_for_layer(0, output_gradient)
+        
+        assert layer_0_gradient.shape == (2, 3)
+        assert np.all(np.isfinite(layer_0_gradient))
+        
+        # Test gradient for second layer
+        layer_1_gradient = network.compute_gradient_for_layer(1, output_gradient)
+        
+        assert layer_1_gradient.shape == (3, 2)
+        assert np.all(np.isfinite(layer_1_gradient))
+        
+        # Test gradient for third layer
+        layer_2_gradient = network.compute_gradient_for_layer(2, output_gradient)
+        
+        assert layer_2_gradient.shape == (2, 1)
+        assert np.all(np.isfinite(layer_2_gradient))
+    
+    def test_neural_network_compute_gradient_for_layer_errors(self):
+        """Test compute_gradient_for_layer error handling."""
+        dimensions = [2, 3, 1]
+        activations = [mlai.ReLUActivation(), mlai.LinearActivation()]
+        
+        network = mlai.NeuralNetwork(dimensions, activations)
+        
+        # Forward pass first
+        x = np.array([[1, 2]])
+        output = network.predict(x)
+        
+        # Test with invalid layer index
+        output_gradient = np.array([[0.5]])
+        with pytest.raises(ValueError, match="Layer index 5 out of range"):
+            network.compute_gradient_for_layer(5, output_gradient)
+    
+    def test_neural_network_gradient_consistency(self):
+        """Test that backward and compute_gradient_for_layer give consistent results."""
+        dimensions = [2, 3, 1]
+        activations = [mlai.ReLUActivation(), mlai.LinearActivation()]
+        
+        network = mlai.NeuralNetwork(dimensions, activations)
+        
+        # Forward pass
+        x = np.array([[1, 2]])
+        output = network.predict(x)
+        
+        # Get gradients using backward method
+        output_gradient = np.array([[0.5]])
+        all_gradients = network.backward(output_gradient)
+        
+        # Get gradients using compute_gradient_for_layer
+        layer_0_grad = network.compute_gradient_for_layer(0, output_gradient)
+        layer_1_grad = network.compute_gradient_for_layer(1, output_gradient)
+        
+        # Should be consistent
+        np.testing.assert_allclose(all_gradients['weight_gradients'][0], layer_0_grad, rtol=1e-10)
+        np.testing.assert_allclose(all_gradients['weight_gradients'][1], layer_1_grad, rtol=1e-10)
+    
+    def test_neural_network_different_activations(self):
+        """Test neural network with different activation functions."""
+        dimensions = [2, 4, 1]
+        activations = [mlai.SoftReLUActivation(), mlai.LinearActivation()]
+        
+        network = mlai.NeuralNetwork(dimensions, activations)
+        
+        # Forward pass
+        x = np.array([[1, 2]])
+        output = network.predict(x)
+        
+        assert output.shape == (1, 1)
+        assert np.isfinite(output[0, 0])
+        
+        # Backward pass
+        output_gradient = np.array([[0.5]])
+        gradients = network.backward(output_gradient)
+        
+        # Check that gradients are finite
+        for grad in gradients['weight_gradients']:
+            assert np.all(np.isfinite(grad))
+        for grad in gradients['bias_gradients']:
+            assert np.all(np.isfinite(grad))
+    
+    def test_neural_network_mathematical_consistency(self):
+        """Test mathematical consistency of gradient computation."""
+        # Create a simple network for testing
+        dimensions = [1, 2, 1]
+        activations = [mlai.LinearActivation(), mlai.LinearActivation()]
+        
+        network = mlai.NeuralNetwork(dimensions, activations)
+        
+        # Set known weights for testing
+        # For dimensions [1, 2, 1], we need:
+        # weights[0]: (1, 2) - input_size=1, output_size=2
+        # weights[1]: (2, 1) - input_size=2, output_size=1
+        network.weights[0] = np.array([[1.0, 2.0]])     # (1, 2)
+        network.weights[1] = np.array([[3.0], [4.0]])   # (2, 1)
+        network.biases[0] = np.array([0.0, 0.0])        # (2,)
+        network.biases[1] = np.array([0.0])             # (1,)
+        
+        # Forward pass
+        x = np.array([[2.0]])
+        output = network.predict(x)
+        
+        # Manual computation: x=2, W1=[[1],[2]], b1=[0,0], W2=[[3,4]], b2=[0]
+        # z1 = x*W1 + b1 = 2*[[1],[2]] + [0,0] = [[2],[4]]
+        # a1 = LinearActivation(z1) = [[2],[4]]
+        # z2 = a1*W2 + b2 = [[2],[4]]*[[3,4]] + [0] = [2*3 + 4*4] = [22]
+        # a2 = LinearActivation(z2) = [22]
+        expected_output = np.array([[22.0]])
+        np.testing.assert_allclose(output, expected_output, rtol=1e-10)
+        
+        # Test gradient computation
+        output_gradient = np.array([[1.0]])
+        gradients = network.backward(output_gradient)
+        
+        # For linear activations, gradients should be straightforward
+        # dL/dW2 = dL/da2 * da2/dz2 * dz2/dW2 = 1 * 1 * a1^T = [[2],[4]]
+        # But our implementation returns (input_size, output_size) = (2, 1)
+        expected_w2_grad = np.array([[2.0], [4.0]])
+        np.testing.assert_allclose(gradients['weight_gradients'][1], expected_w2_grad, rtol=1e-10)
+    
+    def test_neural_network_batch_processing(self):
+        """Test neural network with batch processing."""
+        dimensions = [2, 3, 1]
+        activations = [mlai.ReLUActivation(), mlai.LinearActivation()]
+        
+        network = mlai.NeuralNetwork(dimensions, activations)
+        
+        # Test with batch of samples
+        x_batch = np.array([[1, 2], [3, 4], [5, 6]])
+        output_batch = network.predict(x_batch)
+        
+        assert output_batch.shape == (3, 1)
+        assert np.all(np.isfinite(output_batch))
+        
+        # Test backward pass with batch
+        output_gradient_batch = np.array([[0.5], [0.3], [0.7]])
+        gradients = network.backward(output_gradient_batch)
+        
+        # Check that gradients are computed correctly for batch
+        assert len(gradients['weight_gradients']) == 2
+        assert len(gradients['bias_gradients']) == 2
+        
+        # All gradients should be finite
+        for grad in gradients['weight_gradients']:
+            assert np.all(np.isfinite(grad))
+        for grad in gradients['bias_gradients']:
+            assert np.all(np.isfinite(grad))
+    
+    def test_neural_network_edge_cases(self):
+        """Test neural network edge cases."""
+        # Test with very small network
+        dimensions = [1, 1]
+        activations = [mlai.LinearActivation()]
+        
+        network = mlai.NeuralNetwork(dimensions, activations)
+        
+        x = np.array([[1.0]])
+        output = network.predict(x)
+        
+        assert output.shape == (1, 1)
+        assert np.isfinite(output[0, 0])
+        
+        # Test backward pass
+        output_gradient = np.array([[1.0]])
+        gradients = network.backward(output_gradient)
+        
+        assert len(gradients['weight_gradients']) == 1
+        assert len(gradients['bias_gradients']) == 1
+        assert gradients['weight_gradients'][0].shape == (1, 1)
+        assert gradients['bias_gradients'][0].shape == (1,)
+    
+    def test_neural_network_numerical_stability(self):
+        """Test numerical stability of gradient computation."""
+        dimensions = [2, 10, 1]
+        activations = [mlai.SigmoidActivation(), mlai.LinearActivation()]
+        
+        network = mlai.NeuralNetwork(dimensions, activations)
+        
+        # Test with various input ranges
+        test_inputs = [
+            np.array([[0.0, 0.0]]),
+            np.array([[1.0, 1.0]]),
+            np.array([[-1.0, -1.0]]),
+            np.array([[10.0, 10.0]]),
+            np.array([[-10.0, -10.0]])
+        ]
+        
+        for x in test_inputs:
+            # Forward pass
+            output = network.predict(x)
+            assert np.all(np.isfinite(output))
+            
+            # Backward pass
+            output_gradient = np.array([[1.0]])
+            gradients = network.backward(output_gradient)
+            
+            # All gradients should be finite
+            for grad in gradients['weight_gradients']:
+                assert np.all(np.isfinite(grad))
+            for grad in gradients['bias_gradients']:
+                assert np.all(np.isfinite(grad))
+    
+    def test_neural_network_activation_derivatives(self):
+        """Test that activation derivatives are computed correctly."""
+        # Test with known activation functions
+        x = np.array([[-1.0, 0.0, 1.0]])
+        
+        # Test ReLU
+        relu_act = mlai.ReLUActivation()
+        relu_forward = relu_act.forward(x)
+        relu_gradient = relu_act.gradient(x)
+        
+        expected_relu_forward = np.array([[0.0, 0.0, 1.0]])
+        expected_relu_gradient = np.array([[0.0, 0.0, 1.0]])
+        
+        np.testing.assert_allclose(relu_forward, expected_relu_forward)
+        np.testing.assert_allclose(relu_gradient, expected_relu_gradient)
+        
+        # Test Sigmoid
+        sigmoid_act = mlai.SigmoidActivation()
+        sigmoid_forward = sigmoid_act.forward(x)
+        sigmoid_gradient = sigmoid_act.gradient(x)
+        
+        # Gradient should be s * (1 - s) where s is sigmoid
+        expected_sigmoid_gradient = sigmoid_forward * (1 - sigmoid_forward)
+        np.testing.assert_allclose(sigmoid_gradient, expected_sigmoid_gradient)
+        
+        # Test Soft ReLU
+        soft_relu_act = mlai.SoftReLUActivation()
+        soft_relu_forward = soft_relu_act.forward(x)
+        soft_relu_gradient = soft_relu_act.gradient(x)
+        
+        # Gradient should be sigmoid(x)
+        expected_soft_relu_gradient = 1. / (1. + np.exp(-x))
+        np.testing.assert_allclose(soft_relu_gradient, expected_soft_relu_gradient)
+    
+    def test_neural_network_gradient_flow(self):
+        """Test that gradients flow correctly through the network."""
+        dimensions = [2, 3, 2, 1]
+        activations = [mlai.ReLUActivation(), mlai.SigmoidActivation(), mlai.LinearActivation()]
+        
+        network = mlai.NeuralNetwork(dimensions, activations)
+        
+        # Forward pass
+        x = np.array([[1.0, 2.0]])
+        output = network.predict(x)
+        
+        # Test that intermediate values are stored
+        assert hasattr(network, 'a')
+        assert hasattr(network, 'z')
+        assert len(network.a) == 4  # input + 3 hidden layers
+        assert len(network.z) == 4  # input + 3 hidden layers
+        
+        # Test backward pass
+        output_gradient = np.array([[1.0]])
+        gradients = network.backward(output_gradient)
+        
+        # Check that all gradients have correct shapes
+        assert gradients['weight_gradients'][0].shape == (2, 3)
+        assert gradients['weight_gradients'][1].shape == (3, 2)
+        assert gradients['weight_gradients'][2].shape == (2, 1)
+        
+        assert gradients['bias_gradients'][0].shape == (3,)
+        assert gradients['bias_gradients'][1].shape == (2,)
+        assert gradients['bias_gradients'][2].shape == (1,)
+        
+        # All gradients should be finite
+        for grad in gradients['weight_gradients']:
+            assert np.all(np.isfinite(grad))
+        for grad in gradients['bias_gradients']:
+            assert np.all(np.isfinite(grad)) 
