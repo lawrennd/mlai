@@ -3771,7 +3771,7 @@ def deep_nn(directory='../diagrams'):
                     observed=True))
     fig, ax = model.draw()
     ma.write_figure('deep-nn2.svg',
-                      directory=diagrams,
+                      directory=directory,
                       figure=fig,
                       transparent=True)
 
@@ -3780,13 +3780,13 @@ def deep_nn(directory='../diagrams'):
         model.layers[i].text=text
     fig, ax = model.draw()
     ma.write_figure('deep-nn1.svg',
-                      directory=diagrams,
+                      directory=directory,
                       figure=fig,
                       transparent=True)
 
 
     
-def deep_nn_bottleneck(diagrams='../diagrams'):
+def deep_nn_bottleneck(directory='../diagrams'):
     """Draw a deep neural network with bottleneck layers."""
     model = network()
     model.add_layer(layer(width=6, label='x_{index}',
@@ -3810,7 +3810,7 @@ def deep_nn_bottleneck(diagrams='../diagrams'):
                     observed=True))
     fig, ax = model.draw()
     ma.write_figure('deep-nn-bottleneck2.svg',
-                      directory=diagrams,
+                      directory=directory,
                       figure=fig,
                       transparent=True)
 
@@ -3819,7 +3819,7 @@ def deep_nn_bottleneck(diagrams='../diagrams'):
                 'hidden layer 3', 'output layer']
     fig, ax = model.draw()
     ma.write_figure('deep-nn-bottleneck1.svg',
-                      directory=diagrams,
+                      directory=directory,
                       figure=fig,
                       transparent=True)
     for i, text in enumerate(new_text):
@@ -3844,7 +3844,7 @@ def box(lim_val=0.5, side_length=25):
 def stack_gp_sample(kernel=None,
                     latent_dims=[2, 2, 2, 2, 2],
                     side_length=25, lim_val=0.5, num_samps=5,figsize=(1.4, 7),
-                    diagrams='../diagrams'):
+                    directory='../diagrams'):
     """Draw a sample from a deep Gaussian process."""
 
     if kernel is None:
@@ -3889,7 +3889,7 @@ def stack_gp_sample(kernel=None,
             ax[j].set_axis_off()
         file_name = 'stack-gp-sample-' + kern[0].name + '-' + str(i) + '.svg'
         ma.write_figure(file_name,
-                          directory=diagrams,
+                          directory=directory,
                           figure=fig,
                           transparent=True)
 
@@ -3914,7 +3914,7 @@ def stack_gp_sample(kernel=None,
                 ax[j].set_axis_off()
             file_name = 'stack-gp-sample-squash-' + str(i) + '.svg'
             ma.write_figure(file_name,
-                              directory=diagrams,
+                              directory=directory,
                               figure=fig,
                               transparent=True)
 
@@ -4107,7 +4107,7 @@ def dppca_graphical_model(directory='../diagrams'):
     
     return pgm
 
-def three_pillars_innovation(diagrams='./diagrams'):
+def three_pillars_innovation(directory='./diagrams'):
     """Plot graphical model of three pillars of successful innovation"""
     pgm = daft.PGM(shape=[4, 2.5],
                    origin=[0, 0], 
@@ -4124,14 +4124,14 @@ def three_pillars_innovation(diagrams='./diagrams'):
     pgm.add_node(daft.Node("innovate", "innovate", 2, 1.75, aspect=aspect))
     ax=pgm.render()
     ma.write_figure('three-pillars-innovation001.svg',
-                      directory=diagrams,
+                      directory=directory,
                       figure=ax.figure,
                       transparent=True)
     pgm.add_node(daft.Node("resolve", "resolve", 3, 0.75, aspect=aspect))
     pgm.add_edge("resolve", "innovate", directed=False)
     ax=pgm.render()
     ma.write_figure('three-pillars-innovation002.svg',
-                      directory=diagrams,
+                      directory=directory,
                       figure=ax.figure,
                       transparent=True)
     pgm.add_node(daft.Node("deploy", "deploy", 1, 0.75, aspect=aspect))
@@ -4139,7 +4139,7 @@ def three_pillars_innovation(diagrams='./diagrams'):
     pgm.add_edge("deploy", "resolve", directed=False)
     ax=pgm.render()
     ma.write_figure('three-pillars-innovation003.svg',
-                      directory=diagrams,
+                      directory=directory,
                       figure=ax.figure,
                       transparent=True)
     matplotlib.rc('font', size=orig_font_size)
@@ -4252,7 +4252,7 @@ def model_sample(model, output_dim=0, scale=1.0, offset=0.0,
         ax.plot(model.Z, np.ones(model.Z.shape)*ax.get_ylim()[0], marker='^', linestyle=None, markersize=20)
     return ax
 
-def multiple_optima(ax=None, gene_number=937, resolution=80, model_restarts=10, seed=10000, max_iters=300, optimize=True, fontsize=20, diagrams='./diagrams'):
+def multiple_optima(ax=None, gene_number=937, resolution=80, model_restarts=10, seed=10000, max_iters=300, optimize=True, fontsize=20, directory='./diagrams'):
     """
     Show an example of a multimodal error surface for Gaussian process
     regression. Gene 937 has bimodal behaviour where the noisy mode is
@@ -4298,7 +4298,7 @@ def multiple_optima(ax=None, gene_number=937, resolution=80, model_restarts=10, 
     ax.set_ylabel(r'$\log_{10}$ SNR', fontsize=fontsize)
 
     ma.write_figure('multiple-optima000.svg',
-                      directory=diagrams,
+                      directory=directory,
                       figure=ax.figure,
                       transparent=True)
     
@@ -4339,7 +4339,7 @@ def multiple_optima(ax=None, gene_number=937, resolution=80, model_restarts=10, 
     ax.set_ylim(ylim)
 
     ma.write_figure('multiple-optima001.svg',
-                      directory=diagrams,
+                      directory=directory,
                       figure=ax.figure,
                       transparent=True)
     
@@ -4360,7 +4360,7 @@ def multiple_optima(ax=None, gene_number=937, resolution=80, model_restarts=10, 
 #             handle.set('xdata', new[0, :])
 #             handle.set('ydata', new[1, :])
 
-def google_trends(terms, initials, diagrams='./diagrams'):
+def google_trends(terms, initials, directory='./diagrams'):
     """Plot google trends data for a number of different terms."""
     import pods
     import matplotlib.dates as mdates
@@ -4369,7 +4369,7 @@ def google_trends(terms, initials, diagrams='./diagrams'):
     fig, ax = plt.subplots(figsize=wide_figsize)
     data['data frame'].plot(ax=ax, rot=45)
     ma.write_figure(initials+'-google-trends.svg',
-                      directory=diagrams,
+                      directory=directory,
                       transparent=True)
 
     handles = ax.get_lines()
@@ -4378,13 +4378,13 @@ def google_trends(terms, initials, diagrams='./diagrams'):
     for i, handle in enumerate(handles):
         handle.set_visible(True)
         ma.write_figure('{initials}-google-trends{sample:0>3}.svg'.format(initials=initials,sample=i),
-                          directory=diagrams,
+                          directory=directory,
                           transparent=True)
     return ax
 
 
 def gp_optimize_quadratic(lambda1=3, lambda2=1, 
-                         diagrams='../diagrams', 
+                         directory='../diagrams', 
                          fontsize=20,
                          plot_width=0.6,
                          generate_frames=True):
@@ -4397,13 +4397,13 @@ def gp_optimize_quadratic(lambda1=3, lambda2=1,
     
     :param lambda1: First eigenvalue of covariance matrix (default: 3).
     :param lambda2: Second eigenvalue of covariance matrix (default: 1).
-    :param diagrams: Directory to save the plots (default: '../diagrams').
+    :param directory: Directory to save the plots (default: '../diagrams').
     :param fontsize: Font size for labels (default: 20).
     :param plot_width: Relative width for LaTeX integration (default: 0.6).
     :param generate_frames: Whether to generate all 3 animation frames (default: True).
     """
-    if not os.path.exists(diagrams):
-        os.mkdir(diagrams)
+    if not os.path.exists(directory):
+        os.mkdir(directory)
     
     # Color definitions
     black_color = [0., 0., 0.]
@@ -4471,7 +4471,7 @@ def gp_optimize_quadratic(lambda1=3, lambda2=1,
     ax.plot(xlim, [ylim[0], ylim[0]], color=black_color, linewidth=1)
     
     # Save frame 0
-    ma.write_figure('gp-optimise-quadratic000.svg', directory=diagrams, transparent=True)
+    ma.write_figure('gp-optimise-quadratic000.svg', directory=directory, transparent=True)
     
     if generate_frames:
         # Frame 1: Add data point
@@ -4479,7 +4479,7 @@ def gp_optimize_quadratic(lambda1=3, lambda2=1,
         data_handle = ax.plot(y_data[0], y_data[1], 'x', markersize=10, 
                              markeredgewidth=3, color=black_color)[0]
         
-        ma.write_figure('gp-optimise-quadratic001.svg', directory=diagrams, transparent=True)
+        ma.write_figure('gp-optimise-quadratic001.svg', directory=directory, transparent=True)
         
         # Frame 2: Rotated coordinate system
         # Apply rotation to all elements
@@ -4519,7 +4519,7 @@ def gp_optimize_quadratic(lambda1=3, lambda2=1,
         ax.set_xlabel(r'$y_1$', fontsize=fontsize)
         ax.set_ylabel(r'$y_2$', fontsize=fontsize)
         
-        ma.write_figure('gp-optimise-quadratic002.svg', directory=diagrams, transparent=True)
+        ma.write_figure('gp-optimise-quadratic002.svg', directory=directory, transparent=True)
     
     return ax
 
