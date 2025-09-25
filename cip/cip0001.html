@@ -1,0 +1,409 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CIP-0001: Documentation Improvements with Sphinx &mdash; MLAI 0.1.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=92734c54"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CIP-0002: Comprehensive Test Framework with pytest" href="cip0002.html" />
+    <link rel="prev" title="Code Improvement Proposals (CIPs)" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            MLAI
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing to MLAI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tenets.html">Project Tenets</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Information:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Code Improvement Proposals (CIPs)</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">CIP-0001: Documentation Improvements with Sphinx</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#cip-0001-documentation-improvements-with-sphinx">CIP-0001: Documentation Improvements with Sphinx</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#summary">Summary</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#motivation">Motivation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#detailed-description">Detailed Description</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#implementation-plan">Implementation Plan</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#backward-compatibility">Backward Compatibility</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#testing-strategy">Testing Strategy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#related-requirements">Related Requirements</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#implementation-status">Implementation Status</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#progress-updates">Progress Updates</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="cip0002.html">CIP-0002: Comprehensive Test Framework with pytest</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#what-are-cips">What are CIPs?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#cip-process">CIP Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#current-status">Current Status</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../backlog/index.html">Project Backlog</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">MLAI</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Code Improvement Proposals (CIPs)</a></li>
+      <li class="breadcrumb-item active">CIP-0001: Documentation Improvements with Sphinx</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/cip/cip0001.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="cip-0001-documentation-improvements-with-sphinx">
+<h1>CIP-0001: Documentation Improvements with Sphinx<a class="headerlink" href="#cip-0001-documentation-improvements-with-sphinx" title="Link to this heading"></a></h1>
+<dl class="field-list simple">
+<dt class="field-odd">author<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Neil Lawrence</p>
+</dd>
+<dt class="field-even">created<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">2025-07-09</span></code></p>
+</dd>
+<dt class="field-odd">id<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">0001</span></code></p>
+</dd>
+<dt class="field-even">last_updated<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">2025-07-09</span></code></p>
+</dd>
+<dt class="field-odd">status<span class="colon">:</span></dt>
+<dd class="field-odd"><p>in-progress</p>
+</dd>
+<dt class="field-even">tags<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">[&quot;cip&quot;,</span> <span class="pre">&quot;documentation&quot;,</span> <span class="pre">&quot;sphinx&quot;,</span> <span class="pre">&quot;readme&quot;]</span></code></p>
+</dd>
+<dt class="field-odd">title<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">Documentation</span> <span class="pre">Improvements</span> <span class="pre">with</span> <span class="pre">Sphinx</span></code></p>
+</dd>
+</dl>
+<section id="cip-0001-documentation-improvements-with-sphinx">
+<h2>CIP-0001: Documentation Improvements with Sphinx<a class="headerlink" href="#cip-0001-documentation-improvements-with-sphinx" title="Link to this heading"></a></h2>
+<section id="summary">
+<h3>Summary<a class="headerlink" href="#summary" title="Link to this heading"></a></h3>
+<p>This CIP proposes comprehensive documentation improvements for the MLAI package, including setting up Sphinx documentation generation, enhancing the README.md, and creating proper API documentation for all modules.</p>
+</section>
+<section id="motivation">
+<h3>Motivation<a class="headerlink" href="#motivation" title="Link to this heading"></a></h3>
+<p>The current documentation is minimal and insufficient for users and contributors. The README.md contains only a single sentence, and there’s no structured documentation system in place. This makes it difficult for:</p>
+<ul class="simple">
+<li><p>New users to understand how to use the MLAI package</p></li>
+<li><p>Contributors to understand the codebase structure</p></li>
+<li><p>Educators to find relevant teaching materials</p></li>
+<li><p>Developers to maintain and extend the codebase</p></li>
+</ul>
+<p>A proper documentation system with Sphinx will provide:</p>
+<ul class="simple">
+<li><p>Auto-generated API documentation</p></li>
+<li><p>Structured tutorials and guides</p></li>
+<li><p>Better discoverability of features</p></li>
+<li><p>Professional presentation for educational use</p></li>
+</ul>
+</section>
+<section id="detailed-description">
+<h3>Detailed Description<a class="headerlink" href="#detailed-description" title="Link to this heading"></a></h3>
+<section id="current-state-analysis">
+<h4>Current State Analysis<a class="headerlink" href="#current-state-analysis" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p>README.md contains only a single sentence description</p></li>
+<li><p>No API documentation exists</p></li>
+<li><p>No installation or usage instructions</p></li>
+<li><p>No examples or tutorials</p></li>
+<li><p>No contribution guidelines</p></li>
+</ul>
+</section>
+<section id="proposed-improvements">
+<h4>Proposed Improvements<a class="headerlink" href="#proposed-improvements" title="Link to this heading"></a></h4>
+<section id="enhanced-readme-md">
+<h5>1. Enhanced README.md<a class="headerlink" href="#enhanced-readme-md" title="Link to this heading"></a></h5>
+<ul class="simple">
+<li><p>Comprehensive project description</p></li>
+<li><p>Installation instructions</p></li>
+<li><p>Quick start guide with examples</p></li>
+<li><p>Project structure overview</p></li>
+<li><p>Contributing guidelines</p></li>
+<li><p>License information</p></li>
+<li><p>Links to documentation</p></li>
+</ul>
+</section>
+<section id="sphinx-documentation-setup">
+<h5>2. Sphinx Documentation Setup<a class="headerlink" href="#sphinx-documentation-setup" title="Link to this heading"></a></h5>
+<ul class="simple">
+<li><p>Configure Sphinx for Python documentation</p></li>
+<li><p>Set up automatic API documentation generation</p></li>
+<li><p>Create documentation structure with:</p>
+<ul>
+<li><p>User guide</p></li>
+<li><p>API reference</p></li>
+<li><p>Tutorials</p></li>
+<li><p>Installation guide</p></li>
+<li><p>Contributing guide</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="module-documentation">
+<h5>3. Module Documentation<a class="headerlink" href="#module-documentation" title="Link to this heading"></a></h5>
+<ul class="simple">
+<li><p>Add docstrings to all Python modules</p></li>
+<li><p>Create tutorials for each major feature</p></li>
+<li><p>Document the teaching/lecturing aspects</p></li>
+<li><p>Include mathematical explanations where relevant</p></li>
+</ul>
+</section>
+<section id="documentation-hosting">
+<h5>4. Documentation Hosting<a class="headerlink" href="#documentation-hosting" title="Link to this heading"></a></h5>
+<ul class="simple">
+<li><p>Set up Read the Docs integration</p></li>
+<li><p>Configure automatic documentation builds</p></li>
+<li><p>Ensure documentation is accessible online</p></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="implementation-plan">
+<h3>Implementation Plan<a class="headerlink" href="#implementation-plan" title="Link to this heading"></a></h3>
+<section id="phase-1-foundation-week-1">
+<h4>Phase 1: Foundation (Week 1)<a class="headerlink" href="#phase-1-foundation-week-1" title="Link to this heading"></a></h4>
+<ol class="arabic simple">
+<li><p><em>Set up Sphinx environment</em>:</p>
+<ul class="simple">
+<li><p>Install Sphinx and required extensions</p></li>
+<li><p>Create <code class="docutils literal notranslate"><span class="pre">docs/</span></code> directory structure</p></li>
+<li><p>Configure <code class="docutils literal notranslate"><span class="pre">conf.py</span></code> for MLAI project</p></li>
+<li><p>Set up basic documentation theme</p></li>
+</ul>
+</li>
+<li><p><em>Enhance README.md</em>:</p>
+<ul class="simple">
+<li><p>Write comprehensive project description</p></li>
+<li><p>Add installation instructions</p></li>
+<li><p>Include quick start examples</p></li>
+<li><p>Add project structure overview</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="phase-2-core-documentation">
+<h4>Phase 2: Core Documentation<a class="headerlink" href="#phase-2-core-documentation" title="Link to this heading"></a></h4>
+<ol class="arabic simple" start="3">
+<li><p><em>Create documentation structure</em>:</p>
+<ul class="simple">
+<li><p>User guide with tutorials</p></li>
+<li><p>API reference documentation</p></li>
+<li><p>Installation and setup guide</p></li>
+<li><p>Contributing guidelines</p></li>
+</ul>
+</li>
+<li><p><em>Add module docstrings</em>:</p>
+<ul class="simple">
+<li><p>Document all public functions and classes</p></li>
+<li><p>Add type hints where missing</p></li>
+<li><p>Include usage examples in docstrings</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="phase-3-advanced-features">
+<h4>Phase 3: Advanced Features<a class="headerlink" href="#phase-3-advanced-features" title="Link to this heading"></a></h4>
+<ol class="arabic simple" start="5">
+<li><p><em>Set up automatic documentation</em>:</p>
+<ul class="simple">
+<li><p>Configure GitHub Actions for doc builds</p></li>
+<li><p>Set up Read the Docs integration</p></li>
+<li><p>Add documentation badges to README</p></li>
+</ul>
+</li>
+<li><p><em>Create tutorials</em>:</p>
+<ul class="simple">
+<li><p>Machine learning tutorial using MLAI</p></li>
+<li><p>Gaussian Process tutorial</p></li>
+<li><p>Deep GP tutorial</p></li>
+<li><p>Mountain Car example tutorial</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="phase-4-polish-and-launch">
+<h4>Phase 4: Polish and Launch<a class="headerlink" href="#phase-4-polish-and-launch" title="Link to this heading"></a></h4>
+<ol class="arabic simple" start="7">
+<li><p><em>Final review and testing</em>:</p>
+<ul class="simple">
+<li><p>Test all documentation links</p></li>
+<li><p>Verify code examples work</p></li>
+<li><p>Review for clarity and completeness</p></li>
+</ul>
+</li>
+<li><p><em>Launch and announce</em>:</p>
+<ul class="simple">
+<li><p>Deploy to Read the Docs</p></li>
+<li><p>Update all references to documentation</p></li>
+<li><p>Announce to users and contributors</p></li>
+</ul>
+</li>
+</ol>
+</section>
+</section>
+<section id="backward-compatibility">
+<h3>Backward Compatibility<a class="headerlink" href="#backward-compatibility" title="Link to this heading"></a></h3>
+<p>This change is purely additive and will not affect any existing functionality. All existing code will continue to work as before. The only changes are:</p>
+<ul class="simple">
+<li><p>Enhanced README.md (replaces existing minimal version)</p></li>
+<li><p>Addition of documentation files and directories</p></li>
+<li><p>Addition of documentation dependencies</p></li>
+</ul>
+</section>
+<section id="testing-strategy">
+<h3>Testing Strategy<a class="headerlink" href="#testing-strategy" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Verify all code examples in documentation run successfully</p></li>
+<li><p>Test documentation builds locally and on CI</p></li>
+<li><p>Validate all internal links work correctly</p></li>
+<li><p>Test Read the Docs integration</p></li>
+<li><p>Review documentation with potential users</p></li>
+</ul>
+</section>
+<section id="related-requirements">
+<h3>Related Requirements<a class="headerlink" href="#related-requirements" title="Link to this heading"></a></h3>
+<p>This CIP addresses the following requirements:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#tenets/"><span class="xref myst">VibeSafe tenets/</span></a> - Professional documentation standards</p></li>
+<li><p><a class="reference internal" href="#backlog/"><span class="xref myst">Backlog tasks</span></a> - Documentation improvement tasks</p></li>
+</ul>
+<p>Specifically, it implements solutions for:</p>
+<ul class="simple">
+<li><p>Professional project presentation</p></li>
+<li><p>User onboarding and education</p></li>
+<li><p>Contributor enablement</p></li>
+<li><p>Educational material organization</p></li>
+</ul>
+</section>
+<section id="implementation-status">
+<h3>Implementation Status<a class="headerlink" href="#implementation-status" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>[x] Set up Sphinx environment</p></li>
+<li><p>[x] Enhance README.md</p></li>
+<li><p>[x] Create documentation structure</p></li>
+<li><p>[x] Add module docstrings</p></li>
+<li><p>[x] Set up automatic documentation builds</p></li>
+<li><p>[ ] Create tutorials</p></li>
+<li><p>[x] Deploy to Read the Docs</p></li>
+<li><p>[ ] Final review and testing</p></li>
+</ul>
+</section>
+<section id="progress-updates">
+<h3>Progress Updates<a class="headerlink" href="#progress-updates" title="Link to this heading"></a></h3>
+<section id="id1">
+<h4>2025-07-09<a class="headerlink" href="#id1" title="Link to this heading"></a></h4>
+<p>CIP created with proposed status.</p>
+</section>
+<section id="id2">
+<h4>2025-07-09<a class="headerlink" href="#id2" title="Link to this heading"></a></h4>
+<p>Major progress made on documentation improvements:</p>
+<ul class="simple">
+<li><p><em>Sphinx Environment</em>: Successfully set up Sphinx with autodoc, napoleon, mathjax, and other extensions</p></li>
+<li><p><em>README.md</em>: Completely rewritten with comprehensive project description, installation instructions, quick start guide, and contribution guidelines</p></li>
+<li><p><em>Documentation Structure</em>: Created full Sphinx documentation structure with user guide, API reference, tutorials, and contributing guides</p></li>
+<li><p><em>Module Docstrings</em>: Added comprehensive Sphinx-style docstrings to all functions and classes in mlai.py, including proper parameter types, return values, and examples</p></li>
+<li><p><em>Automatic Documentation</em>: Set up GitHub Actions workflows for building and deploying documentation to GitHub Pages</p></li>
+<li><p><em>Read the Docs</em>: Documentation is now accessible online through GitHub Pages</p></li>
+</ul>
+<p>The core documentation infrastructure is now complete and functional. Remaining tasks include creating detailed tutorials and final review/testing.</p>
+</section>
+</section>
+<section id="references">
+<h3>References<a class="headerlink" href="#references" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.sphinx-doc.org/">Sphinx Documentation</a></p></li>
+<li><p><a class="reference external" href="https://readthedocs.org/">Read the Docs</a></p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/tutorial/">Python Documentation Guide</a></p></li>
+<li><p><a class="reference external" href="https://numpydoc.readthedocs.io/en/latest/format.html">NumPy Documentation Style Guide</a></p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Code Improvement Proposals (CIPs)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="cip0002.html" class="btn btn-neutral float-right" title="CIP-0002: Comprehensive Test Framework with pytest" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2018-2025, Neil D. Lawrence.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
