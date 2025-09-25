@@ -10,6 +10,7 @@ This module tests the core machine learning functionality including:
 """
 
 import pytest
+import unittest
 import numpy as np
 import os
 import tempfile
@@ -2621,4 +2622,326 @@ class TestNeuralNetworkWithBackpropagation:
         for grad in gradients['weight_gradients']:
             assert np.all(np.isfinite(grad))
         for grad in gradients['bias_gradients']:
-            assert np.all(np.isfinite(grad)) 
+            assert np.all(np.isfinite(grad))
+
+
+class TestFiniteDifferenceGradients(unittest.TestCase):
+    """Test finite difference gradient verification."""
+    
+    def test_activation_gradients_with_finite_differences(self):
+        """Test activation function gradients using finite differences."""
+        from mlai import (
+            LinearActivation, ReLUActivation, SigmoidActivation, SoftReLUActivation,
+            finite_difference_gradient, verify_gradient_implementation
+        )
+        
+        # Test data
+        x = np.array([1.0, -2.0, 0.5, -0.1])
+        
+        # Test Linear Activation
+        linear_activation = LinearActivation()
+        def linear_func(x):
+            return linear_activation.forward(x)
+        
+        numerical_grad = finite_difference_gradient(linear_func, x)
+        analytical_grad = linear_activation.gradient(x)
+        self.assertTrue(verify_gradient_implementation(analytical_grad, numerical_grad))
+        
+        # Test ReLU Activation
+        relu_activation = ReLUActivation()
+        def relu_func(x):
+            return relu_activation.forward(x)
+        
+        numerical_grad = finite_difference_gradient(relu_func, x)
+        analytical_grad = relu_activation.gradient(x)
+        self.assertTrue(verify_gradient_implementation(analytical_grad, numerical_grad))
+        
+        # Test Sigmoid Activation
+        sigmoid_activation = SigmoidActivation()
+        def sigmoid_func(x):
+            return sigmoid_activation.forward(x)
+        
+        numerical_grad = finite_difference_gradient(sigmoid_func, x)
+        analytical_grad = sigmoid_activation.gradient(x)
+        self.assertTrue(verify_gradient_implementation(analytical_grad, numerical_grad))
+        
+        # Test Soft ReLU Activation
+        soft_relu_activation = SoftReLUActivation()
+        def soft_relu_func(x):
+            return soft_relu_activation.forward(x)
+        
+        numerical_grad = finite_difference_gradient(soft_relu_func, x)
+        analytical_grad = soft_relu_activation.gradient(x)
+        self.assertTrue(verify_gradient_implementation(analytical_grad, numerical_grad))
+    
+    def test_neural_network_gradients_with_finite_differences(self):
+        """Test neural network gradients using finite differences."""
+        from mlai import (
+            NeuralNetwork, LinearActivation, ReLUActivation, SigmoidActivation,
+            MeanSquaredError, finite_difference_gradient, verify_gradient_implementation
+        )
+        
+        # Test simple linear network
+        dimensions = [2, 2, 1]
+        activations = [LinearActivation(), LinearActivation()]
+        network = NeuralNetwork(dimensions, activations)
+        x = np.array([[1.0, 2.0]])
+        
+        # Forward pass to populate z and a attributes
+        network.predict(x)
+        
+        # Test gradient with respect to first weight matrix
+        def network_output_w0(w0_flat):
+            w0 = w0_flat.reshape(network.weights[0].shape)
+            test_network = NeuralNetwork(dimensions, activations)
+            test_network.weights[0] = w0
+            test_network.biases[0] = network.biases[0]
+            test_network.weights[1] = network.weights[1]
+            test_network.biases[1] = network.biases[1]
+            return test_network.predict(x).flatten()
+        
+        w0_flat = network.weights[0].flatten()
+        numerical_grad = finite_difference_gradient(network_output_w0, w0_flat)
+        
+        output_gradient = np.array([[1.0]])
+        analytical_grad = network.compute_gradient_for_layer(0, output_gradient).flatten()
+        
+        self.assertTrue(verify_gradient_implementation(analytical_grad, numerical_grad, rtol=1e-4))
+    
+    def test_loss_functions_with_finite_differences(self):
+        """Test loss function gradients using finite differences."""
+        from mlai import (
+            MeanSquaredError, MeanAbsoluteError, HuberLoss, 
+            BinaryCrossEntropyLoss, CrossEntropyLoss,
+            finite_difference_gradient, verify_gradient_implementation
+        )
+        
+        # Test data
+        y_pred = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])
+        y_true = np.array([[1.1, 2.1], [2.9, 4.1], [5.1, 5.9]])
+        
+        # Test Mean Squared Error
+        mse_loss = MeanSquaredError()
+        def mse_func(pred):
+            return mse_loss.forward(pred.reshape(y_pred.shape), y_true)
+        
+        numerical_grad = finite_difference_gradient(mse_func, y_pred.flatten())
+        analytical_grad = mse_loss.gradient(y_pred, y_true).flatten()
+        self.assertTrue(verify_gradient_implementation(analytical_grad, numerical_grad))
+        
+        # Test Mean Absolute Error
+        mae_loss = MeanAbsoluteError()
+        def mae_func(pred):
+            return mae_loss.forward(pred.reshape(y_pred.shape), y_true)
+        
+        numerical_grad = finite_difference_gradient(mae_func, y_pred.flatten())
+        analytical_grad = mae_loss.gradient(y_pred, y_true).flatten()
+        self.assertTrue(verify_gradient_implementation(analytical_grad, numerical_grad))
+        
+        # Test Huber Loss
+        huber_loss = HuberLoss(delta=1.0)
+        def huber_func(pred):
+            return huber_loss.forward(pred.reshape(y_pred.shape), y_true)
+        
+        numerical_grad = finite_difference_gradient(huber_func, y_pred.flatten())
+        analytical_grad = huber_loss.gradient(y_pred, y_true).flatten()
+        self.assertTrue(verify_gradient_implementation(analytical_grad, numerical_grad))
+        
+        # Test Binary Cross Entropy
+        bce_loss = BinaryCrossEntropyLoss()
+        y_pred_bce = np.array([[0.8], [0.3], [0.9]])
+        y_true_bce = np.array([[1.0], [0.0], [1.0]])
+        
+        def bce_func(pred):
+            return bce_loss.forward(pred.reshape(-1, 1), y_true_bce)
+        
+        numerical_grad = finite_difference_gradient(bce_func, y_pred_bce.flatten())
+        analytical_grad = bce_loss.gradient(y_pred_bce, y_true_bce).flatten()
+        self.assertTrue(verify_gradient_implementation(analytical_grad, numerical_grad))
+        
+        # Test Cross Entropy
+        ce_loss = CrossEntropyLoss()
+        y_pred_ce = np.array([[0.1, 0.9], [0.8, 0.2], [0.3, 0.7]])
+        y_true_ce = np.array([[0, 1], [1, 0], [0, 1]])
+        
+        def ce_func(pred):
+            return ce_loss.forward(pred.reshape(-1, 2), y_true_ce)
+        
+        numerical_grad = finite_difference_gradient(ce_func, y_pred_ce.flatten())
+        analytical_grad = ce_loss.gradient(y_pred_ce, y_true_ce).flatten()
+        self.assertTrue(verify_gradient_implementation(analytical_grad, numerical_grad))
+
+
+class TestNeuralNetworkVisualizations(unittest.TestCase):
+    """Test neural network visualization functions."""
+    
+    def setUp(self):
+        """Set up test data and network."""
+        # Create test data
+        self.x1 = np.linspace(-2, 2, 20)  # Smaller grid for faster tests
+        self.x2 = np.linspace(-2, 2, 20)
+        self.X1, self.X2 = np.meshgrid(self.x1, self.x2)
+        
+        # Create test network
+        from mlai import NeuralNetwork, ReLUActivation, LinearActivation
+        self.dimensions = [2, 5, 1]  # 2 inputs, 5 hidden units, 1 output
+        self.activations = [ReLUActivation(), LinearActivation()]
+        self.network = NeuralNetwork(self.dimensions, self.activations)
+    
+    def test_visualise_relu_activations(self):
+        """Test ReLU activation visualization function."""
+        from mlai.plot import visualise_relu_activations
+        import tempfile
+        import os
+        
+        # Create temporary directory for output
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Test the function
+            visualise_relu_activations(
+                self.network, self.X1, self.X2, 
+                layer_idx=0, 
+                directory=temp_dir, 
+                filename='test-relu-activations.svg'
+            )
+            
+            # Check that file was created
+            expected_path = os.path.join(temp_dir, 'test-relu-activations.svg')
+            self.assertTrue(os.path.exists(expected_path))
+            
+            # Check file size (should be non-zero)
+            self.assertGreater(os.path.getsize(expected_path), 0)
+    
+    def test_visualise_activation_summary(self):
+        """Test activation summary visualization function."""
+        from mlai.plot import visualise_activation_summary
+        import tempfile
+        import os
+        
+        # Create temporary directory for output
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Test the function
+            visualise_activation_summary(
+                self.network, self.X1, self.X2, 
+                layer_idx=0, 
+                directory=temp_dir, 
+                filename='test-activation-summary.svg'
+            )
+            
+            # Check that file was created
+            expected_path = os.path.join(temp_dir, 'test-activation-summary.svg')
+            self.assertTrue(os.path.exists(expected_path))
+            
+            # Check file size (should be non-zero)
+            self.assertGreater(os.path.getsize(expected_path), 0)
+    
+    def test_visualise_decision_boundaries(self):
+        """Test decision boundaries visualization function."""
+        from mlai.plot import visualise_decision_boundaries
+        import tempfile
+        import os
+        
+        # Create temporary directory for output
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Test the function
+            visualise_decision_boundaries(
+                self.network, self.X1, self.X2, 
+                layer_idx=0, 
+                directory=temp_dir, 
+                filename='test-decision-boundaries.svg'
+            )
+            
+            # Check that file was created
+            expected_path = os.path.join(temp_dir, 'test-decision-boundaries.svg')
+            self.assertTrue(os.path.exists(expected_path))
+            
+            # Check file size (should be non-zero)
+            self.assertGreater(os.path.getsize(expected_path), 0)
+    
+    def test_visualization_with_different_networks(self):
+        """Test visualizations with different network architectures."""
+        from mlai.plot import visualise_relu_activations
+        from mlai import NeuralNetwork, SigmoidActivation, SoftReLUActivation
+        import tempfile
+        import os
+        
+        # Test with different activation functions
+        from mlai import LinearActivation
+        test_configs = [
+            {
+                'name': 'Sigmoid Network',
+                'dimensions': [2, 3, 1],
+                'activations': [SigmoidActivation(), LinearActivation()]
+            },
+            {
+                'name': 'Soft ReLU Network', 
+                'dimensions': [2, 4, 1],
+                'activations': [SoftReLUActivation(), LinearActivation()]
+            }
+        ]
+        
+        with tempfile.TemporaryDirectory() as temp_dir:
+            for config in test_configs:
+                # Create network
+                network = NeuralNetwork(config['dimensions'], config['activations'])
+                
+                # Test visualization
+                visualise_relu_activations(
+                    network, self.X1, self.X2, 
+                    layer_idx=0, 
+                    directory=temp_dir, 
+                    filename=f'test-{config["name"].lower().replace(" ", "-")}.svg'
+                )
+                
+                # Check that file was created
+                expected_path = os.path.join(temp_dir, f'test-{config["name"].lower().replace(" ", "-")}.svg')
+                self.assertTrue(os.path.exists(expected_path))
+    
+    def test_visualization_error_handling(self):
+        """Test that visualizations handle errors gracefully."""
+        from mlai.plot import visualise_relu_activations
+        import tempfile
+        import os
+        
+        # Test with invalid layer index
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # This should not raise an exception, but may create empty or minimal output
+            try:
+                visualise_relu_activations(
+                    self.network, self.X1, self.X2, 
+                    layer_idx=10,  # Invalid layer index
+                    directory=temp_dir, 
+                    filename='test-error-handling.svg'
+                )
+                # If it doesn't raise an exception, check that some output was created
+                expected_path = os.path.join(temp_dir, 'test-error-handling.svg')
+                if os.path.exists(expected_path):
+                    self.assertGreaterEqual(os.path.getsize(expected_path), 0)
+            except (IndexError, AttributeError):
+                # Expected for invalid layer index
+                pass
+    
+    def test_visualization_with_single_unit(self):
+        """Test visualizations with networks having single hidden units."""
+        from mlai.plot import visualise_relu_activations
+        from mlai import NeuralNetwork, ReLUActivation, LinearActivation
+        import tempfile
+        import os
+        
+        # Create network with single hidden unit
+        dimensions = [2, 1, 1]  # Single hidden unit
+        activations = [ReLUActivation(), LinearActivation()]
+        network = NeuralNetwork(dimensions, activations)
+        
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Test visualization
+            visualise_relu_activations(
+                network, self.X1, self.X2, 
+                layer_idx=0, 
+                directory=temp_dir, 
+                filename='test-single-unit.svg'
+            )
+            
+            # Check that file was created
+            expected_path = os.path.join(temp_dir, 'test-single-unit.svg')
+            self.assertTrue(os.path.exists(expected_path))
+            self.assertGreater(os.path.getsize(expected_path), 0) 

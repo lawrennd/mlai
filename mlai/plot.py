@@ -3736,7 +3736,7 @@ class layer():
         self.text = text
 
 
-def neural_network(diagrams='../diagrams'):
+def neural_network(directory='../diagrams'):
     """Draw a neural network."""
     model = network()
     model.add_layer(layer(width=4, label=r'x_{index}',
@@ -3744,7 +3744,7 @@ def neural_network(diagrams='../diagrams'):
     model.add_layer(layer(width=8, label='h_{{1, {index}}}',
                     text=r'$\mathbf{h}_1=\boldsymbol{\phi}\left(\mathbf{W}_1\mathbf{x}\right)$'))
     model.add_layer(layer(width=1, label='y',
-                    text=r'$y=\mathbf{w}_4^\top\mathbf{h}_3$',
+                    text=r'$y=\mathbf{w}_2^\top\mathbf{h}_31',
                     observed=True))
     fig, ax = model.draw(grid_unit=3)
     ma.write_figure('neural-network.svg',
@@ -3755,7 +3755,7 @@ def neural_network(diagrams='../diagrams'):
 
 
         
-def deep_nn(diagrams='../diagrams'):
+def deep_nn(directory='../diagrams'):
     """Draw a deep neural network."""
     model = network()
     model.add_layer(layer(width=6, label='x_{index}',
@@ -4568,4 +4568,241 @@ def squared_distances(Y, shortname, description, directory="./diagrams", figsize
     ax.set_ylabel('Density')
     ax.grid(True, alpha=0.3)
     ma.write_figure(f'{shortname}_squared-distances.svg', directory=directory, transparent=True)
+
+
+def visualise_relu_activations(nn, X1, X2, layer_idx=0, directory='../diagrams', filename='relu-activations.svg'):
+    """
+    Visualise which ReLU units are activated in a specific layer.
+    
+    This function creates a grid of subplots showing the activation patterns
+    of each ReLU unit in a neural network layer. Each subplot shows where
+    that particular unit is active (positive output) vs inactive (zero output).
+    
+    :param nn: Trained neural network
+    :type nn: NeuralNetwork
+    :param X1, X2: Meshgrid coordinates for visualisation
+    :type X1, X2: numpy.ndarray
+    :param layer_idx: Which hidden layer to visualise (0-indexed)
+    :type layer_idx: int
+    :returns: Figure object
+    :rtype: matplotlib.figure.Figure
+    
+    Examples:
+        >>> x1 = np.linspace(-2, 2, 50)
+        >>> x2 = np.linspace(-2, 2, 50)
+        >>> X1, X2 = np.meshgrid(x1, x2)
+        >>> nn = NeuralNetwork([2, 10, 1], [ReLUActivation(), LinearActivation()])
+        >>> fig = visualise_relu_activations(nn, X1, X2, layer_idx=0)
+    """
+    # Get input data
+    X_pred = np.hstack([X1.flatten()[:, np.newaxis], X2.flatten()[:, np.newaxis]])
+    
+    # Forward pass to get activations
+    _ = nn.predict(X_pred)
+    
+    # Get activations for the specified layer (before activation function)
+    z_layer = nn.z[layer_idx + 1]  # +1 because z[0] is input
+    a_layer = nn.a[layer_idx + 1]  # Activations after ReLU
+    
+    n_units = z_layer.shape[1]
+    n_cols = min(5, n_units)
+    n_rows = (n_units + n_cols - 1) // n_cols
+    
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(3*n_cols, 3*n_rows))
+    
+    # Handle different subplot configurations
+    if n_units == 1:
+        # Single subplot case
+        axes = np.array([axes])
+    elif n_rows == 1 and n_cols > 1:
+        # Single row, multiple columns
+        axes = axes.reshape(1, -1)
+    elif n_rows > 1 and n_cols == 1:
+        # Multiple rows, single column
+        axes = axes.reshape(-1, 1)
+    # For multiple rows and columns, axes is already correct
+    
+    for i in range(n_units):
+        row, col = i // n_cols, i % n_cols
+        if n_units == 1:
+            ax = axes[0]
+        elif n_rows == 1:
+            ax = axes[0, col]
+        elif n_cols == 1:
+            ax = axes[row, 0]
+        else:
+            ax = axes[row, col]
+        
+        # Reshape activations back to grid
+        activation_grid = a_layer[:, i].reshape(X1.shape)
+        
+        # Create binary mask for active/inactive regions
+        active_mask = activation_grid > 0
+        
+        # Plot with clear active/inactive distinction
+        im = ax.contourf(X1, X2, activation_grid, levels=20, cmap='RdYlBu_r')
+        
+        # Overlay contour lines to show zero boundary
+        ax.contour(X1, X2, activation_grid, levels=[0], colors='black', linewidths=2)
+        
+        ax.set_title(f'{i+1}')
+        ax.set_xlabel('$x_1$')
+        ax.set_ylabel('$x_2$')
+        
+        # Add colorbar for each subplot
+        plt.colorbar(im, ax=ax)
+    
+    # Hide empty subplots
+    for i in range(n_units, n_rows * n_cols):
+        if n_units == 1:
+            # No empty subplots to hide in single unit case
+            pass
+        elif n_rows == 1:
+            if i < len(axes[0]):
+                axes[0, i].set_visible(False)
+        elif n_cols == 1:
+            if i < len(axes):
+                axes[i, 0].set_visible(False)
+        else:
+            row, col = i // n_cols, i % n_cols
+            axes[row, col].set_visible(False)
+    
+    plt.tight_layout()
+    plt.suptitle(f'ReLU Activations - Layer {layer_idx + 1}', y=1.02, fontsize=16)
+    
+    ma.write_figure(filename, directory=directory, transparent=True)
+
+
+def visualise_activation_summary(nn, X1, X2, layer_idx=0, directory='../diagrams', filename='activation-summary.svg'):
+    """
+    Create a summary visualisation showing network behavior.
+    
+    This function creates a 3-panel visualization showing:
+    1. Network output
+    2. Number of active ReLUs per point
+    3. Binary activation pattern
+    
+    :param nn: Trained neural network
+    :type nn: NeuralNetwork
+    :param X1, X2: Meshgrid coordinates for visualization
+    :type X1, X2: numpy.ndarray
+    :param layer_idx: Which hidden layer to visualize (0-indexed)
+    :type layer_idx: int
+    :returns: Figure object
+    :rtype: matplotlib.figure.Figure
+    
+    Examples:
+        >>> x1 = np.linspace(-2, 2, 50)
+        >>> x2 = np.linspace(-2, 2, 50)
+        >>> X1, X2 = np.meshgrid(x1, x2)
+        >>> nn = NeuralNetwork([2, 10, 1], [ReLUActivation(), LinearActivation()])
+        >>> fig = visualize_activation_summary(nn, X1, X2, layer_idx=0)
+    """
+    from matplotlib.colors import ListedColormap
+    
+    X_pred = np.hstack([X1.flatten()[:, np.newaxis], X2.flatten()[:, np.newaxis]])
+    
+    # Get network output and activations
+    f_pred = nn.predict(X_pred)
+    a_layer = nn.a[layer_idx + 1]  # Activations after ReLU
+    
+    # Count active units per input point
+    active_count = np.sum(a_layer > 0, axis=1)
+    
+    fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+    
+    # 1. Network output
+    im1 = axes[0].contourf(X1, X2, f_pred.reshape(X1.shape), levels=20, cmap='viridis')
+    axes[0].set_title('Network Output')
+    axes[0].set_xlabel('$x_1$')
+    axes[0].set_ylabel('$x_2$')
+    plt.colorbar(im1, ax=axes[0])
+    
+    # 2. Number of active ReLUs
+    im2 = axes[1].contourf(X1, X2, active_count.reshape(X1.shape), 
+                          levels=np.arange(0, np.max(active_count)+2), cmap='plasma')
+    axes[1].set_title('Number of Active ReLU Units')
+    axes[1].set_xlabel('$x_1$')
+    axes[1].set_ylabel('$x_2$')
+    plt.colorbar(im2, ax=axes[1])
+    
+    # 3. Activation patterns (binary)
+    # Create a custom colormap for binary visualization
+    colors = ['darkblue', 'lightcoral']
+    binary_cmap = ListedColormap(colors)
+    
+    # Average activation strength (normalized)
+    avg_activation = np.mean(a_layer, axis=1)
+    binary_mask = (avg_activation > 0).astype(int)
+    
+    im3 = axes[2].contourf(X1, X2, binary_mask.reshape(X1.shape), 
+                          levels=[0, 0.5, 1], cmap=binary_cmap)
+    axes[2].set_title('Average Activation Pattern\n(Blue=Inactive, Red=Active)')
+    axes[2].set_xlabel('$x_1$')
+    axes[2].set_ylabel('$x_2$')
+    
+    plt.tight_layout()
+    ma.write_figure(filename, directory=directory, transparent=True)
+
+
+
+def visualise_decision_boundaries(nn, X1, X2, layer_idx=0, directory='../diagrams', filename='decision-boundaries.svg'):
+    """
+    Visualize the linear decision boundaries created by each ReLU unit.
+    
+    This function shows the linear decision boundaries (where each ReLU unit
+    transitions from inactive to active) overlaid on the network's output.
+    
+    :param nn: Trained neural network
+    :type nn: NeuralNetwork
+    :param X1, X2: Meshgrid coordinates for visualization
+    :type X1, X2: numpy.ndarray
+    :param layer_idx: Which hidden layer to visualize (0-indexed)
+    :type layer_idx: int
+    :returns: Figure object
+    :rtype: matplotlib.figure.Figure
+    
+    Examples:
+        >>> x1 = np.linspace(-2, 2, 50)
+        >>> x2 = np.linspace(-2, 2, 50)
+        >>> X1, X2 = np.meshgrid(x1, x2)
+        >>> nn = NeuralNetwork([2, 10, 1], [ReLUActivation(), LinearActivation()])
+        >>> fig = visualize_decision_boundaries(nn, X1, X2, layer_idx=0)
+    """
+    X_pred = np.hstack([X1.flatten()[:, np.newaxis], X2.flatten()[:, np.newaxis]])
+    
+    # Get pre-activation values (before ReLU)
+    _ = nn.predict(X_pred)
+    z_layer = nn.z[layer_idx + 1]
+    
+    n_units = z_layer.shape[1]
+    
+    fig, ax = plt.subplots(figsize=big_figsize)
+    
+    # Plot decision boundary for each unit
+    colors = plt.cm.tab10(np.linspace(0, 1, n_units))
+    
+    for i in range(n_units):
+        z_grid = z_layer[:, i].reshape(X1.shape)
+        
+        # Plot the zero-level contour (decision boundary)
+        contour = ax.contour(X1, X2, z_grid, levels=[0], 
+                           colors=[colors[i]], linewidths=2, alpha=0.7)
+        
+        # Label the contour - check if contour has any paths
+        if contour.get_paths():
+            ax.clabel(contour, inline=True, fontsize=10, fmt=f'Unit {i+1}')
+    
+    # Also show regions where network output is positive/negative
+    f_pred = nn.predict(X_pred)
+    ax.contourf(X1, X2, f_pred.reshape(X1.shape), levels=[-100, 0, 100], 
+               colors=['lightblue', 'lightcoral'], alpha=0.3)
+    
+    ax.set_xlabel('$x_1$')
+    ax.set_ylabel('$x_2$')
+    ax.set_title('ReLU Decision Boundaries\n(Background: Network Output Sign)')
+    ax.grid(True, alpha=0.3)
+
+    ma.write_figure(filename, directory=directory, transparent=True)
+    
 

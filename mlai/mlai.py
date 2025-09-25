@@ -1591,27 +1591,27 @@ def finite_difference_gradient(func, x, h=1e-5):
     return gradient
 
 
-def finite_difference_gradient_matrix(func, x, h=1e-5):
+def finite_difference_jacobian(func, x, h=1e-5):
     """
-    Compute gradient matrix using finite differences.
+    Compute Jacobian matrix using finite differences.
     
     This computes the Jacobian matrix of a vector-valued function
     using finite differences. Useful for testing neural network
     gradient computations.
     
-    :param func: Vector-valued function to compute gradient for
+    :param func: Vector-valued function to compute Jacobian for
     :type func: callable
-    :param x: Point at which to compute gradient
+    :param x: Point at which to compute Jacobian
     :type x: numpy.ndarray
     :param h: Step size for finite differences
     :type h: float
-    :returns: Numerical gradient matrix (Jacobian)
+    :returns: Jacobian matrix (output_size × input_size)
     :rtype: numpy.ndarray
     
     Examples:
         >>> def f(x): return np.array([x[0]**2, x[1]**3])
         >>> x = np.array([2.0, 3.0])
-        >>> jacobian = finite_difference_gradient_matrix(f, x)
+        >>> jacobian = finite_difference_jacobian(f, x)
         >>> print(jacobian)  # Should be close to [[4, 0], [0, 27]]
     """
     x = np.asarray(x, dtype=float)
@@ -1672,210 +1672,10 @@ def verify_gradient_implementation(analytical_grad, numerical_grad, rtol=1e-5, a
         return False
 
 
-def test_activation_gradients_with_finite_differences():
-    """
-    Test all activation function gradients using finite differences.
-    
-    This function demonstrates how to verify gradient implementations
-    using numerical methods. It's educational and useful for debugging.
-    
-    :returns: Dictionary with test results for each activation function
-    :rtype: dict
-    """
-    print("Testing activation function gradients with finite differences...")
-    
-    # Test data
-    x = np.array([1.0, -2.0, 0.5, -0.1])
-    results = {}
-    
-    # Test Linear Activation
-    linear_activation = LinearActivation()
-    def linear_func(x):
-        return linear_activation.forward(x)
-    
-    numerical_grad = finite_difference_gradient(linear_func, x)
-    analytical_grad = linear_activation.gradient(x)
-    results['Linear'] = verify_gradient_implementation(analytical_grad, numerical_grad)
-    print(f"Linear Activation: {'PASS' if results['Linear'] else 'FAIL'}")
-    
-    # Test ReLU Activation
-    relu_activation = ReLUActivation()
-    def relu_func(x):
-        return relu_activation.forward(x)
-    
-    numerical_grad = finite_difference_gradient(relu_func, x)
-    analytical_grad = relu_activation.gradient(x)
-    results['ReLU'] = verify_gradient_implementation(analytical_grad, numerical_grad)
-    print(f"ReLU Activation: {'PASS' if results['ReLU'] else 'FAIL'}")
-    
-    # Test Sigmoid Activation
-    sigmoid_activation = SigmoidActivation()
-    def sigmoid_func(x):
-        return sigmoid_activation.forward(x)
-    
-    numerical_grad = finite_difference_gradient(sigmoid_func, x)
-    analytical_grad = sigmoid_activation.gradient(x)
-    results['Sigmoid'] = verify_gradient_implementation(analytical_grad, numerical_grad)
-    print(f"Sigmoid Activation: {'PASS' if results['Sigmoid'] else 'FAIL'}")
-    
-    # Test Soft ReLU Activation
-    soft_relu_activation = SoftReLUActivation()
-    def soft_relu_func(x):
-        return soft_relu_activation.forward(x)
-    
-    numerical_grad = finite_difference_gradient(soft_relu_func, x)
-    analytical_grad = soft_relu_activation.gradient(x)
-    results['SoftReLU'] = verify_gradient_implementation(analytical_grad, numerical_grad)
-    print(f"Soft ReLU Activation: {'PASS' if results['SoftReLU'] else 'FAIL'}")
-    
-    return results
 
 
-def test_neural_network_gradients_with_finite_differences():
-    """
-    Test neural network gradients using finite differences.
-    
-    This function demonstrates how to verify neural network gradient
-    implementations using numerical methods. It's educational and
-    useful for debugging backpropagation.
-    
-    :returns: Dictionary with test results for different network configurations
-    :rtype: dict
-    """
-    print("Testing neural network gradients with finite differences...")
-    
-    results = {}
-    
-    # Test 1: Simple linear network
-    print("\nTesting simple linear network...")
-    dimensions = [2, 2, 1]
-    activations = [LinearActivation(), LinearActivation()]
-    
-    # Create network
-    network = NeuralNetwork(dimensions, activations)
-    x = np.array([[1.0, 2.0]])
-    
-    # Forward pass to populate z and a attributes
-    network.predict(x)
-    
-    # Test gradient with respect to first weight matrix
-    def network_output_w0(w0_flat):
-        w0 = w0_flat.reshape(network.weights[0].shape)
-        test_network = NeuralNetwork(dimensions, activations)
-        test_network.weights[0] = w0
-        test_network.biases[0] = network.biases[0]
-        test_network.weights[1] = network.weights[1]
-        test_network.biases[1] = network.biases[1]
-        return test_network.predict(x).flatten()
-    
-    w0_flat = network.weights[0].flatten()
-    numerical_grad = finite_difference_gradient(network_output_w0, w0_flat)
-    
-    output_gradient = np.array([[1.0]])
-    analytical_grad = network.compute_gradient_for_layer(0, output_gradient).flatten()
-    
-    results['Linear_Network'] = verify_gradient_implementation(analytical_grad, numerical_grad, rtol=1e-4)
-    print(f"Linear Network: {'PASS' if results['Linear_Network'] else 'FAIL'}")
-    
-    # Test 2: Network with ReLU activation
-    print("\nTesting network with ReLU activation...")
-    dimensions = [2, 3, 1]
-    activations = [ReLUActivation(), LinearActivation()]
-    network = NeuralNetwork(dimensions, activations)
-    
-    # Forward pass to populate z and a attributes
-    network.predict(x)
-    
-    def network_output_w0_relu(w0_flat):
-        w0 = w0_flat.reshape(network.weights[0].shape)
-        test_network = NeuralNetwork(dimensions, activations)
-        test_network.weights[0] = w0
-        test_network.biases[0] = network.biases[0]
-        test_network.weights[1] = network.weights[1]
-        test_network.biases[1] = network.biases[1]
-        return test_network.predict(x).flatten()
-    
-    w0_flat = network.weights[0].flatten()
-    numerical_grad = finite_difference_gradient(network_output_w0_relu, w0_flat)
-    
-    analytical_grad = network.compute_gradient_for_layer(0, output_gradient).flatten()
-    
-    results['ReLU_Network'] = verify_gradient_implementation(analytical_grad, numerical_grad, rtol=1e-4)
-    print(f"ReLU Network: {'PASS' if results['ReLU_Network'] else 'FAIL'}")
-    
-    # Test 3: Network with sigmoid activation
-    print("\nTesting network with sigmoid activation...")
-    dimensions = [2, 3, 1]
-    activations = [SigmoidActivation(), LinearActivation()]
-    network = NeuralNetwork(dimensions, activations)
-    
-    # Forward pass to populate z and a attributes
-    network.predict(x)
-    
-    def network_output_w0_sigmoid(w0_flat):
-        w0 = w0_flat.reshape(network.weights[0].shape)
-        test_network = NeuralNetwork(dimensions, activations)
-        test_network.weights[0] = w0
-        test_network.biases[0] = network.biases[0]
-        test_network.weights[1] = network.weights[1]
-        test_network.biases[1] = network.biases[1]
-        return test_network.predict(x).flatten()
-    
-    w0_flat = network.weights[0].flatten()
-    numerical_grad = finite_difference_gradient(network_output_w0_sigmoid, w0_flat)
-    
-    analytical_grad = network.compute_gradient_for_layer(0, output_gradient).flatten()
-    
-    results['Sigmoid_Network'] = verify_gradient_implementation(analytical_grad, numerical_grad, rtol=1e-4)
-    print(f"Sigmoid Network: {'PASS' if results['Sigmoid_Network'] else 'FAIL'}")
-    
-    return results
 
 
-def run_all_finite_difference_tests():
-    """
-    Run all finite difference tests for educational purposes.
-    
-    This function demonstrates how to verify gradient implementations
-    using numerical methods. It's particularly useful for:
-    1. Understanding how finite differences work
-    2. Debugging gradient implementations
-    3. Educational demonstrations
-    
-    :returns: Dictionary with all test results
-    :rtype: dict
-    """
-    print("=" * 60)
-    print("FINITE DIFFERENCES GRADIENT VERIFICATION TESTS")
-    print("=" * 60)
-    print("This demonstrates how to verify gradient implementations")
-    print("using numerical methods (finite differences).")
-    print("=" * 60)
-    
-    # Test activation functions
-    activation_results = test_activation_gradients_with_finite_differences()
-    
-    # Test neural networks
-    network_results = test_neural_network_gradients_with_finite_differences()
-    
-    # Combine results
-    all_results = {**activation_results, **network_results}
-    
-    # Summary
-    print("\n" + "=" * 60)
-    print("SUMMARY")
-    print("=" * 60)
-    total_tests = len(all_results)
-    passed_tests = sum(all_results.values())
-    
-    for test_name, result in all_results.items():
-        status = "PASS" if result else "FAIL"
-        print(f"{test_name}: {status}")
-    
-    print(f"\nTotal: {passed_tests}/{total_tests} tests passed")
-    print("=" * 60)
-    
-    return all_results
 
 
 class LossFunction:
@@ -2227,209 +2027,10 @@ class HuberLoss(LossFunction):
         return gradient / predictions.size
 
 
-def test_loss_functions_with_finite_differences():
-    """
-    Test all loss function gradients using finite differences.
-    
-    This function demonstrates how to verify loss function gradient
-    implementations using numerical methods. It's educational and
-    useful for debugging.
-    
-    :returns: Dictionary with test results for each loss function
-    :rtype: dict
-    """
-    print("Testing loss function gradients with finite differences...")
-    
-    # Test data
-    y_pred = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])
-    y_true = np.array([[1.1, 2.1], [2.9, 4.1], [5.1, 5.9]])
-    
-    results = {}
-    
-    # Test Mean Squared Error
-    mse_loss = MeanSquaredError()
-    def mse_func(pred):
-        return mse_loss.forward(pred.reshape(y_pred.shape), y_true)
-    
-    numerical_grad = finite_difference_gradient(mse_func, y_pred.flatten())
-    analytical_grad = mse_loss.gradient(y_pred, y_true).flatten()
-    results['MSE'] = verify_gradient_implementation(analytical_grad, numerical_grad)
-    print(f"Mean Squared Error: {'PASS' if results['MSE'] else 'FAIL'}")
-    
-    # Test Mean Absolute Error
-    mae_loss = MeanAbsoluteError()
-    def mae_func(pred):
-        return mae_loss.forward(pred.reshape(y_pred.shape), y_true)
-    
-    numerical_grad = finite_difference_gradient(mae_func, y_pred.flatten())
-    analytical_grad = mae_loss.gradient(y_pred, y_true).flatten()
-    results['MAE'] = verify_gradient_implementation(analytical_grad, numerical_grad)
-    print(f"Mean Absolute Error: {'PASS' if results['MAE'] else 'FAIL'}")
-    
-    # Test Huber Loss
-    huber_loss = HuberLoss(delta=1.0)
-    def huber_func(pred):
-        return huber_loss.forward(pred.reshape(y_pred.shape), y_true)
-    
-    numerical_grad = finite_difference_gradient(huber_func, y_pred.flatten())
-    analytical_grad = huber_loss.gradient(y_pred, y_true).flatten()
-    results['Huber'] = verify_gradient_implementation(analytical_grad, numerical_grad)
-    print(f"Huber Loss: {'PASS' if results['Huber'] else 'FAIL'}")
-    
-    # Test Binary Cross Entropy
-    bce_loss = BinaryCrossEntropyLoss()
-    y_pred_bce = np.array([[0.8], [0.3], [0.9]])
-    y_true_bce = np.array([[1.0], [0.0], [1.0]])
-    
-    def bce_func(pred):
-        return bce_loss.forward(pred.reshape(-1, 1), y_true_bce)
-    
-    numerical_grad = finite_difference_gradient(bce_func, y_pred_bce.flatten())
-    analytical_grad = bce_loss.gradient(y_pred_bce, y_true_bce).flatten()
-    results['BCE'] = verify_gradient_implementation(analytical_grad, numerical_grad)
-    print(f"Binary Cross Entropy: {'PASS' if results['BCE'] else 'FAIL'}")
-    
-    # Test Cross Entropy
-    ce_loss = CrossEntropyLoss()
-    y_pred_ce = np.array([[0.1, 0.9], [0.8, 0.2], [0.3, 0.7]])
-    y_true_ce = np.array([[0, 1], [1, 0], [0, 1]])
-    
-    def ce_func(pred):
-        return ce_loss.forward(pred.reshape(-1, 2), y_true_ce)
-    
-    numerical_grad = finite_difference_gradient(ce_func, y_pred_ce.flatten())
-    analytical_grad = ce_loss.gradient(y_pred_ce, y_true_ce).flatten()
-    results['CE'] = verify_gradient_implementation(analytical_grad, numerical_grad)
-    print(f"Cross Entropy: {'PASS' if results['CE'] else 'FAIL'}")
-    
-    return results
 
 
-def demonstrate_loss_functions():
-    """
-    Demonstrate all loss functions with examples.
-    
-    This function shows how to use the different loss functions
-    and their properties. It's educational and useful for
-    understanding when to use each loss function.
-    
-    :returns: Dictionary with loss values for each function
-    :rtype: dict
-    """
-    print("=" * 60)
-    print("LOSS FUNCTION DEMONSTRATION")
-    print("=" * 60)
-    print("This demonstrates different loss functions and their properties.")
-    print("=" * 60)
-    
-    # Example data
-    y_pred = np.array([[1.0], [2.0], [3.0], [4.0]])
-    y_true = np.array([[1.1], [1.9], [3.1], [4.1]])
-    
-    print(f"Predictions: {y_pred.flatten()}")
-    print(f"True values: {y_true.flatten()}")
-    print()
-    
-    results = {}
-    
-    # Mean Squared Error
-    mse = MeanSquaredError()
-    mse_value = mse.forward(y_pred, y_true)
-    mse_grad = mse.gradient(y_pred, y_true)
-    results['MSE'] = mse_value
-    print(f"Mean Squared Error: {mse_value:.4f}")
-    print(f"Gradient: {mse_grad.flatten()}")
-    print()
-    
-    # Mean Absolute Error
-    mae = MeanAbsoluteError()
-    mae_value = mae.forward(y_pred, y_true)
-    mae_grad = mae.gradient(y_pred, y_true)
-    results['MAE'] = mae_value
-    print(f"Mean Absolute Error: {mae_value:.4f}")
-    print(f"Gradient: {mae_grad.flatten()}")
-    print()
-    
-    # Huber Loss
-    huber = HuberLoss(delta=1.0)
-    huber_value = huber.forward(y_pred, y_true)
-    huber_grad = huber.gradient(y_pred, y_true)
-    results['Huber'] = huber_value
-    print(f"Huber Loss (δ=1.0): {huber_value:.4f}")
-    print(f"Gradient: {huber_grad.flatten()}")
-    print()
-    
-    # Binary Cross Entropy
-    y_pred_bce = np.array([[0.8], [0.3], [0.9], [0.1]])
-    y_true_bce = np.array([[1.0], [0.0], [1.0], [0.0]])
-    
-    bce = BinaryCrossEntropyLoss()
-    bce_value = bce.forward(y_pred_bce, y_true_bce)
-    bce_grad = bce.gradient(y_pred_bce, y_true_bce)
-    results['BCE'] = bce_value
-    print(f"Binary Cross Entropy: {bce_value:.4f}")
-    print(f"Gradient: {bce_grad.flatten()}")
-    print()
-    
-    # Cross Entropy
-    y_pred_ce = np.array([[0.1, 0.9], [0.8, 0.2], [0.3, 0.7], [0.9, 0.1]])
-    y_true_ce = np.array([[0, 1], [1, 0], [0, 1], [1, 0]])
-    
-    ce = CrossEntropyLoss()
-    ce_value = ce.forward(y_pred_ce, y_true_ce)
-    ce_grad = ce.gradient(y_pred_ce, y_true_ce)
-    results['CE'] = ce_value
-    print(f"Cross Entropy: {ce_value:.4f}")
-    print(f"Gradient: {ce_grad.flatten()}")
-    print()
-    
-    return results
 
 
-def run_all_loss_function_tests():
-    """
-    Run all loss function tests for educational purposes.
-    
-    This function demonstrates how to verify loss function implementations
-    using numerical methods. It's particularly useful for:
-    1. Understanding how loss functions work
-    2. Debugging loss function implementations
-    3. Educational demonstrations
-    
-    :returns: Dictionary with all test results
-    :rtype: dict
-    """
-    print("=" * 60)
-    print("LOSS FUNCTION GRADIENT VERIFICATION TESTS")
-    print("=" * 60)
-    print("This demonstrates how to verify loss function gradients")
-    print("using numerical methods (finite differences).")
-    print("=" * 60)
-    
-    # Test loss functions
-    loss_results = test_loss_functions_with_finite_differences()
-    
-    # Demonstrate loss functions
-    print("\n" + "=" * 60)
-    print("LOSS FUNCTION DEMONSTRATION")
-    print("=" * 60)
-    demo_results = demonstrate_loss_functions()
-    
-    # Summary
-    print("\n" + "=" * 60)
-    print("SUMMARY")
-    print("=" * 60)
-    total_tests = len(loss_results)
-    passed_tests = sum(loss_results.values())
-    
-    for test_name, result in loss_results.items():
-        status = "PASS" if result else "FAIL"
-        print(f"{test_name}: {status}")
-    
-    print(f"\nTotal: {passed_tests}/{total_tests} tests passed")
-    print("=" * 60)
-    
-    return loss_results
 
 
 class BLM(LM):
