@@ -1534,8 +1534,349 @@ class NeuralNetwork(Model):
             final_gradient += np.outer(input_to_layer[b], gradient[b] * activation_derivative[b])
         
         return final_gradient
+
+
+def finite_difference_gradient(func, x, h=1e-5):
+    """
+    Compute gradient using finite differences.
+    
+    This is a numerical method to approximate gradients by computing
+    the difference quotient: f'(x) ≈ (f(x+h) - f(x-h)) / (2h)
+    
+    This is useful for:
+    1. Verifying analytical gradient implementations
+    2. Educational purposes to understand gradient computation
+    3. Debugging gradient-related issues
+    
+    :param func: Function to compute gradient for
+    :type func: callable
+    :param x: Point at which to compute gradient
+    :type x: numpy.ndarray
+    :param h: Step size for finite differences
+    :type h: float
+    :returns: Numerical gradient approximation
+    :rtype: numpy.ndarray
+    
+    Examples:
+        >>> def f(x): return x**2
+        >>> x = np.array([2.0])
+        >>> grad = finite_difference_gradient(f, x)
+        >>> print(grad)  # Should be close to [4.0]
+    """
+    x = np.asarray(x, dtype=float)
+    gradient = np.zeros_like(x)
+    
+    # Compute gradient for each dimension
+    for i in range(x.size):
+        # Create perturbation vectors
+        x_plus = x.copy()
+        x_minus = x.copy()
         
- 
+        # Perturb the i-th element
+        x_plus.flat[i] += h
+        x_minus.flat[i] -= h
+        
+        # Compute finite difference
+        # Handle both scalar and array outputs
+        f_plus = func(x_plus)
+        f_minus = func(x_minus)
+        
+        # If function returns array, take the sum (for activation functions)
+        if np.asarray(f_plus).ndim > 0:
+            f_plus = np.sum(f_plus)
+            f_minus = np.sum(f_minus)
+        
+        gradient.flat[i] = (f_plus - f_minus) / (2 * h)
+    
+    return gradient
+
+
+def finite_difference_gradient_matrix(func, x, h=1e-5):
+    """
+    Compute gradient matrix using finite differences.
+    
+    This computes the Jacobian matrix of a vector-valued function
+    using finite differences. Useful for testing neural network
+    gradient computations.
+    
+    :param func: Vector-valued function to compute gradient for
+    :type func: callable
+    :param x: Point at which to compute gradient
+    :type x: numpy.ndarray
+    :param h: Step size for finite differences
+    :type h: float
+    :returns: Numerical gradient matrix (Jacobian)
+    :rtype: numpy.ndarray
+    
+    Examples:
+        >>> def f(x): return np.array([x[0]**2, x[1]**3])
+        >>> x = np.array([2.0, 3.0])
+        >>> jacobian = finite_difference_gradient_matrix(f, x)
+        >>> print(jacobian)  # Should be close to [[4, 0], [0, 27]]
+    """
+    x = np.asarray(x, dtype=float)
+    output = func(x)
+    output = np.asarray(output, dtype=float)
+    
+    # Initialize Jacobian matrix
+    jacobian = np.zeros((output.size, x.size))
+    
+    # Compute gradient for each input dimension
+    for i in range(x.size):
+        # Create perturbation vectors
+        x_plus = x.copy()
+        x_minus = x.copy()
+        
+        # Perturb the i-th element
+        x_plus.flat[i] += h
+        x_minus.flat[i] -= h
+        
+        # Compute finite difference
+        output_plus = func(x_plus)
+        output_minus = func(x_minus)
+        
+        jacobian[:, i] = (output_plus - output_minus).flatten() / (2 * h)
+    
+    return jacobian
+
+
+def verify_gradient_implementation(analytical_grad, numerical_grad, rtol=1e-5, atol=1e-8):
+    """
+    Verify that analytical gradient matches numerical gradient.
+    
+    This function compares analytical and numerical gradients to ensure
+    the analytical implementation is correct. This is crucial for
+    debugging gradient computations in neural networks.
+    
+    :param analytical_grad: Analytically computed gradient
+    :type analytical_grad: numpy.ndarray
+    :param numerical_grad: Numerically computed gradient
+    :type numerical_grad: numpy.ndarray
+    :param rtol: Relative tolerance for comparison
+    :type rtol: float
+    :param atol: Absolute tolerance for comparison
+    :type atol: float
+    :returns: True if gradients match within tolerance
+    :rtype: bool
+    
+    Examples:
+        >>> analytical = np.array([4.0, 6.0])
+        >>> numerical = np.array([4.0001, 6.0001])
+        >>> verify_gradient_implementation(analytical, numerical)
+        True
+    """
+    try:
+        np.testing.assert_allclose(analytical_grad, numerical_grad, rtol=rtol, atol=atol)
+        return True
+    except AssertionError:
+        return False
+
+
+def test_activation_gradients_with_finite_differences():
+    """
+    Test all activation function gradients using finite differences.
+    
+    This function demonstrates how to verify gradient implementations
+    using numerical methods. It's educational and useful for debugging.
+    
+    :returns: Dictionary with test results for each activation function
+    :rtype: dict
+    """
+    print("Testing activation function gradients with finite differences...")
+    
+    # Test data
+    x = np.array([1.0, -2.0, 0.5, -0.1])
+    results = {}
+    
+    # Test Linear Activation
+    linear_activation = LinearActivation()
+    def linear_func(x):
+        return linear_activation.forward(x)
+    
+    numerical_grad = finite_difference_gradient(linear_func, x)
+    analytical_grad = linear_activation.gradient(x)
+    results['Linear'] = verify_gradient_implementation(analytical_grad, numerical_grad)
+    print(f"Linear Activation: {'PASS' if results['Linear'] else 'FAIL'}")
+    
+    # Test ReLU Activation
+    relu_activation = ReLUActivation()
+    def relu_func(x):
+        return relu_activation.forward(x)
+    
+    numerical_grad = finite_difference_gradient(relu_func, x)
+    analytical_grad = relu_activation.gradient(x)
+    results['ReLU'] = verify_gradient_implementation(analytical_grad, numerical_grad)
+    print(f"ReLU Activation: {'PASS' if results['ReLU'] else 'FAIL'}")
+    
+    # Test Sigmoid Activation
+    sigmoid_activation = SigmoidActivation()
+    def sigmoid_func(x):
+        return sigmoid_activation.forward(x)
+    
+    numerical_grad = finite_difference_gradient(sigmoid_func, x)
+    analytical_grad = sigmoid_activation.gradient(x)
+    results['Sigmoid'] = verify_gradient_implementation(analytical_grad, numerical_grad)
+    print(f"Sigmoid Activation: {'PASS' if results['Sigmoid'] else 'FAIL'}")
+    
+    # Test Soft ReLU Activation
+    soft_relu_activation = SoftReLUActivation()
+    def soft_relu_func(x):
+        return soft_relu_activation.forward(x)
+    
+    numerical_grad = finite_difference_gradient(soft_relu_func, x)
+    analytical_grad = soft_relu_activation.gradient(x)
+    results['SoftReLU'] = verify_gradient_implementation(analytical_grad, numerical_grad)
+    print(f"Soft ReLU Activation: {'PASS' if results['SoftReLU'] else 'FAIL'}")
+    
+    return results
+
+
+def test_neural_network_gradients_with_finite_differences():
+    """
+    Test neural network gradients using finite differences.
+    
+    This function demonstrates how to verify neural network gradient
+    implementations using numerical methods. It's educational and
+    useful for debugging backpropagation.
+    
+    :returns: Dictionary with test results for different network configurations
+    :rtype: dict
+    """
+    print("Testing neural network gradients with finite differences...")
+    
+    results = {}
+    
+    # Test 1: Simple linear network
+    print("\nTesting simple linear network...")
+    dimensions = [2, 2, 1]
+    activations = [LinearActivation(), LinearActivation()]
+    
+    # Create network
+    network = NeuralNetwork(dimensions, activations)
+    x = np.array([[1.0, 2.0]])
+    
+    # Forward pass to populate z and a attributes
+    network.predict(x)
+    
+    # Test gradient with respect to first weight matrix
+    def network_output_w0(w0_flat):
+        w0 = w0_flat.reshape(network.weights[0].shape)
+        test_network = NeuralNetwork(dimensions, activations)
+        test_network.weights[0] = w0
+        test_network.biases[0] = network.biases[0]
+        test_network.weights[1] = network.weights[1]
+        test_network.biases[1] = network.biases[1]
+        return test_network.predict(x).flatten()
+    
+    w0_flat = network.weights[0].flatten()
+    numerical_grad = finite_difference_gradient(network_output_w0, w0_flat)
+    
+    output_gradient = np.array([[1.0]])
+    analytical_grad = network.compute_gradient_for_layer(0, output_gradient).flatten()
+    
+    results['Linear_Network'] = verify_gradient_implementation(analytical_grad, numerical_grad, rtol=1e-4)
+    print(f"Linear Network: {'PASS' if results['Linear_Network'] else 'FAIL'}")
+    
+    # Test 2: Network with ReLU activation
+    print("\nTesting network with ReLU activation...")
+    dimensions = [2, 3, 1]
+    activations = [ReLUActivation(), LinearActivation()]
+    network = NeuralNetwork(dimensions, activations)
+    
+    # Forward pass to populate z and a attributes
+    network.predict(x)
+    
+    def network_output_w0_relu(w0_flat):
+        w0 = w0_flat.reshape(network.weights[0].shape)
+        test_network = NeuralNetwork(dimensions, activations)
+        test_network.weights[0] = w0
+        test_network.biases[0] = network.biases[0]
+        test_network.weights[1] = network.weights[1]
+        test_network.biases[1] = network.biases[1]
+        return test_network.predict(x).flatten()
+    
+    w0_flat = network.weights[0].flatten()
+    numerical_grad = finite_difference_gradient(network_output_w0_relu, w0_flat)
+    
+    analytical_grad = network.compute_gradient_for_layer(0, output_gradient).flatten()
+    
+    results['ReLU_Network'] = verify_gradient_implementation(analytical_grad, numerical_grad, rtol=1e-4)
+    print(f"ReLU Network: {'PASS' if results['ReLU_Network'] else 'FAIL'}")
+    
+    # Test 3: Network with sigmoid activation
+    print("\nTesting network with sigmoid activation...")
+    dimensions = [2, 3, 1]
+    activations = [SigmoidActivation(), LinearActivation()]
+    network = NeuralNetwork(dimensions, activations)
+    
+    # Forward pass to populate z and a attributes
+    network.predict(x)
+    
+    def network_output_w0_sigmoid(w0_flat):
+        w0 = w0_flat.reshape(network.weights[0].shape)
+        test_network = NeuralNetwork(dimensions, activations)
+        test_network.weights[0] = w0
+        test_network.biases[0] = network.biases[0]
+        test_network.weights[1] = network.weights[1]
+        test_network.biases[1] = network.biases[1]
+        return test_network.predict(x).flatten()
+    
+    w0_flat = network.weights[0].flatten()
+    numerical_grad = finite_difference_gradient(network_output_w0_sigmoid, w0_flat)
+    
+    analytical_grad = network.compute_gradient_for_layer(0, output_gradient).flatten()
+    
+    results['Sigmoid_Network'] = verify_gradient_implementation(analytical_grad, numerical_grad, rtol=1e-4)
+    print(f"Sigmoid Network: {'PASS' if results['Sigmoid_Network'] else 'FAIL'}")
+    
+    return results
+
+
+def run_all_finite_difference_tests():
+    """
+    Run all finite difference tests for educational purposes.
+    
+    This function demonstrates how to verify gradient implementations
+    using numerical methods. It's particularly useful for:
+    1. Understanding how finite differences work
+    2. Debugging gradient implementations
+    3. Educational demonstrations
+    
+    :returns: Dictionary with all test results
+    :rtype: dict
+    """
+    print("=" * 60)
+    print("FINITE DIFFERENCES GRADIENT VERIFICATION TESTS")
+    print("=" * 60)
+    print("This demonstrates how to verify gradient implementations")
+    print("using numerical methods (finite differences).")
+    print("=" * 60)
+    
+    # Test activation functions
+    activation_results = test_activation_gradients_with_finite_differences()
+    
+    # Test neural networks
+    network_results = test_neural_network_gradients_with_finite_differences()
+    
+    # Combine results
+    all_results = {**activation_results, **network_results}
+    
+    # Summary
+    print("\n" + "=" * 60)
+    print("SUMMARY")
+    print("=" * 60)
+    total_tests = len(all_results)
+    passed_tests = sum(all_results.values())
+    
+    for test_name, result in all_results.items():
+        status = "PASS" if result else "FAIL"
+        print(f"{test_name}: {status}")
+    
+    print(f"\nTotal: {passed_tests}/{total_tests} tests passed")
+    print("=" * 60)
+    
+    return all_results
+
 
 class BLM(LM):
     """
