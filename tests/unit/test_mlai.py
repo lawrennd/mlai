@@ -2770,6 +2770,37 @@ class TestFiniteDifferenceGradients(unittest.TestCase):
         numerical_grad = finite_difference_gradient(ce_func, y_pred_ce.flatten())
         analytical_grad = ce_loss.gradient(y_pred_ce, y_true_ce).flatten()
         self.assertTrue(verify_gradient_implementation(analytical_grad, numerical_grad))
+    
+    def test_verify_gradient_implementation_dimension_checking(self):
+        """Test that verify_gradient_implementation raises errors for dimension mismatches."""
+        from mlai import verify_gradient_implementation
+        
+        # Test with matching dimensions (should pass)
+        analytical = np.array([1.0, 2.0, 3.0])
+        numerical = np.array([1.0, 2.0, 3.0])  # Exact match
+        self.assertTrue(verify_gradient_implementation(analytical, numerical))
+        
+        # Test with dimension mismatch (should raise ValueError)
+        analytical = np.array([1.0, 2.0])
+        numerical = np.array([1.0, 2.0, 3.0])  # Different size
+        
+        with self.assertRaises(ValueError) as context:
+            verify_gradient_implementation(analytical, numerical)
+        
+        self.assertIn("Gradient dimension mismatch", str(context.exception))
+        self.assertIn("(2,)", str(context.exception))
+        self.assertIn("(3,)", str(context.exception))
+        
+        # Test with shape mismatch (2D vs 1D)
+        analytical = np.array([[1.0, 2.0]])
+        numerical = np.array([1.0, 2.0])
+        
+        with self.assertRaises(ValueError) as context:
+            verify_gradient_implementation(analytical, numerical)
+        
+        self.assertIn("Gradient dimension mismatch", str(context.exception))
+        self.assertIn("(1, 2)", str(context.exception))
+        self.assertIn("(2,)", str(context.exception))
 
 
 class TestNeuralNetworkVisualizations(unittest.TestCase):

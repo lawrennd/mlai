@@ -1658,6 +1658,7 @@ def verify_gradient_implementation(analytical_grad, numerical_grad, rtol=1e-5, a
     :type atol: float
     :returns: True if gradients match within tolerance
     :rtype: bool
+    :raises ValueError: If gradient dimensions don't match
     
     Examples:
         >>> analytical = np.array([4.0, 6.0])
@@ -1665,6 +1666,17 @@ def verify_gradient_implementation(analytical_grad, numerical_grad, rtol=1e-5, a
         >>> verify_gradient_implementation(analytical, numerical)
         True
     """
+    # Convert to numpy arrays if needed
+    analytical_grad = np.asarray(analytical_grad)
+    numerical_grad = np.asarray(numerical_grad)
+    
+    # Check dimension compatibility
+    if analytical_grad.shape != numerical_grad.shape:
+        raise ValueError(
+            f"Gradient dimension mismatch: analytical gradient shape {analytical_grad.shape} "
+            f"does not match numerical gradient shape {numerical_grad.shape}"
+        )
+    
     try:
         np.testing.assert_allclose(analytical_grad, numerical_grad, rtol=rtol, atol=atol)
         return True

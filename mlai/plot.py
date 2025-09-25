@@ -3748,7 +3748,7 @@ def neural_network(directory='../diagrams'):
                     observed=True))
     fig, ax = model.draw(grid_unit=3)
     ma.write_figure('neural-network.svg',
-                      directory=diagrams,
+                      directory=directory,
                       figure=fig,
                       transparent=True)
 
