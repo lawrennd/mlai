@@ -1878,6 +1878,560 @@ def run_all_finite_difference_tests():
     return all_results
 
 
+class LossFunction:
+    """
+    Abstract base class for loss functions.
+    
+    This class defines the interface for all loss functions used in
+    neural network training. Loss functions measure the difference
+    between predicted and actual values.
+    
+    Methods
+    -------
+    forward(predictions, targets) : float
+        Compute the loss value
+    gradient(predictions, targets) : numpy.ndarray
+        Compute the gradient of the loss with respect to predictions
+    
+    Examples:
+        >>> loss = MeanSquaredError()
+        >>> loss_value = loss.forward(y_pred, y_true)
+        >>> gradient = loss.gradient(y_pred, y_true)
+    """
+    def __init__(self):
+        pass
+    
+    def forward(self, predictions, targets):
+        """
+        Compute the loss value.
+        
+        :param predictions: Model predictions
+        :type predictions: numpy.ndarray
+        :param targets: True target values
+        :type targets: numpy.ndarray
+        :returns: Loss value
+        :rtype: float
+        
+        :raises NotImplementedError: If not implemented by subclass
+        """
+        raise NotImplementedError
+    
+    def gradient(self, predictions, targets):
+        """
+        Compute the gradient of the loss with respect to predictions.
+        
+        :param predictions: Model predictions
+        :type predictions: numpy.ndarray
+        :param targets: True target values
+        :type targets: numpy.ndarray
+        :returns: Gradient of loss with respect to predictions
+        :rtype: numpy.ndarray
+        
+        :raises NotImplementedError: If not implemented by subclass
+        """
+        raise NotImplementedError
+
+
+class MeanSquaredError(LossFunction):
+    """
+    Mean Squared Error loss function.
+    
+    This loss function is commonly used for regression problems.
+    It computes the average of the squared differences between
+    predictions and targets.
+    
+    Mathematical formulation:
+    MSE = (1/n) * Σ(y_pred - y_true)²
+    
+    The gradient is: dMSE/dy_pred = (2/n) * (y_pred - y_true)
+    
+    Examples:
+        >>> loss = MeanSquaredError()
+        >>> y_pred = np.array([[1.0], [2.0], [3.0]])
+        >>> y_true = np.array([[1.1], [1.9], [3.1]])
+        >>> loss_value = loss.forward(y_pred, y_true)
+        >>> gradient = loss.gradient(y_pred, y_true)
+    """
+    def __init__(self):
+        super().__init__()
+        self.name = "Mean Squared Error"
+    
+    def forward(self, predictions, targets):
+        """
+        Compute the mean squared error.
+        
+        :param predictions: Model predictions, shape (n_samples, n_outputs)
+        :type predictions: numpy.ndarray
+        :param targets: True target values, shape (n_samples, n_outputs)
+        :type targets: numpy.ndarray
+        :returns: Mean squared error
+        :rtype: float
+        """
+        return np.mean((predictions - targets) ** 2)
+    
+    def gradient(self, predictions, targets):
+        """
+        Compute the gradient of MSE with respect to predictions.
+        
+        :param predictions: Model predictions, shape (n_samples, n_outputs)
+        :type predictions: numpy.ndarray
+        :param targets: True target values, shape (n_samples, n_outputs)
+        :type targets: numpy.ndarray
+        :returns: Gradient of MSE with respect to predictions
+        :rtype: numpy.ndarray
+        """
+        return (2.0 / predictions.size) * (predictions - targets)
+
+
+class CrossEntropyLoss(LossFunction):
+    """
+    Cross-entropy loss function for classification.
+    
+    This loss function is commonly used for multi-class classification
+    problems. It measures the difference between predicted class
+    probabilities and true class labels.
+    
+    Mathematical formulation:
+    CE = -Σ y_true * log(y_pred)
+    
+    The gradient is: dCE/dy_pred = -y_true / y_pred
+    
+    Examples:
+        >>> loss = CrossEntropyLoss()
+        >>> y_pred = np.array([[0.1, 0.9], [0.8, 0.2]])
+        >>> y_true = np.array([[0, 1], [1, 0]])
+        >>> loss_value = loss.forward(y_pred, y_true)
+        >>> gradient = loss.gradient(y_pred, y_true)
+    """
+    def __init__(self, epsilon=1e-15):
+        """
+        Initialize cross-entropy loss.
+        
+        :param epsilon: Small value to prevent log(0)
+        :type epsilon: float
+        """
+        super().__init__()
+        self.epsilon = epsilon
+        self.name = "Cross Entropy"
+    
+    def forward(self, predictions, targets):
+        """
+        Compute the cross-entropy loss.
+        
+        :param predictions: Model predictions (probabilities), shape (n_samples, n_classes)
+        :type predictions: numpy.ndarray
+        :param targets: True target values (one-hot encoded), shape (n_samples, n_classes)
+        :type targets: numpy.ndarray
+        :returns: Cross-entropy loss
+        :rtype: float
+        """
+        # Clip predictions to prevent log(0)
+        predictions = np.clip(predictions, self.epsilon, 1.0 - self.epsilon)
+        return -np.mean(np.sum(targets * np.log(predictions), axis=1))
+    
+    def gradient(self, predictions, targets):
+        """
+        Compute the gradient of cross-entropy with respect to predictions.
+        
+        :param predictions: Model predictions (probabilities), shape (n_samples, n_classes)
+        :type predictions: numpy.ndarray
+        :param targets: True target values (one-hot encoded), shape (n_samples, n_classes)
+        :type targets: numpy.ndarray
+        :returns: Gradient of cross-entropy with respect to predictions
+        :rtype: numpy.ndarray
+        """
+        # Clip predictions to prevent division by zero
+        predictions = np.clip(predictions, self.epsilon, 1.0 - self.epsilon)
+        return -targets / (predictions * predictions.shape[0])
+
+
+class BinaryCrossEntropyLoss(LossFunction):
+    """
+    Binary cross-entropy loss function for binary classification.
+    
+    This loss function is used for binary classification problems
+    where the output is a single probability value.
+    
+    Mathematical formulation:
+    BCE = -[y_true * log(y_pred) + (1 - y_true) * log(1 - y_pred)]
+    
+    The gradient is: dBCE/dy_pred = -(y_true / y_pred - (1 - y_true) / (1 - y_pred))
+    
+    Examples:
+        >>> loss = BinaryCrossEntropyLoss()
+        >>> y_pred = np.array([[0.8], [0.3], [0.9]])
+        >>> y_true = np.array([[1.0], [0.0], [1.0]])
+        >>> loss_value = loss.forward(y_pred, y_true)
+        >>> gradient = loss.gradient(y_pred, y_true)
+    """
+    def __init__(self, epsilon=1e-15):
+        """
+        Initialize binary cross-entropy loss.
+        
+        :param epsilon: Small value to prevent log(0)
+        :type epsilon: float
+        """
+        super().__init__()
+        self.epsilon = epsilon
+        self.name = "Binary Cross Entropy"
+    
+    def forward(self, predictions, targets):
+        """
+        Compute the binary cross-entropy loss.
+        
+        :param predictions: Model predictions (probabilities), shape (n_samples, 1)
+        :type predictions: numpy.ndarray
+        :param targets: True target values (0 or 1), shape (n_samples, 1)
+        :type targets: numpy.ndarray
+        :returns: Binary cross-entropy loss
+        :rtype: float
+        """
+        # Clip predictions to prevent log(0)
+        predictions = np.clip(predictions, self.epsilon, 1.0 - self.epsilon)
+        return -np.mean(targets * np.log(predictions) + (1 - targets) * np.log(1 - predictions))
+    
+    def gradient(self, predictions, targets):
+        """
+        Compute the gradient of binary cross-entropy with respect to predictions.
+        
+        :param predictions: Model predictions (probabilities), shape (n_samples, 1)
+        :type predictions: numpy.ndarray
+        :param targets: True target values (0 or 1), shape (n_samples, 1)
+        :type targets: numpy.ndarray
+        :returns: Gradient of binary cross-entropy with respect to predictions
+        :rtype: numpy.ndarray
+        """
+        # Clip predictions to prevent division by zero
+        predictions = np.clip(predictions, self.epsilon, 1.0 - self.epsilon)
+        return -(targets / predictions - (1 - targets) / (1 - predictions)) / predictions.shape[0]
+
+
+class MeanAbsoluteError(LossFunction):
+    """
+    Mean Absolute Error loss function.
+    
+    This loss function is used for regression problems and is more
+    robust to outliers than mean squared error.
+    
+    Mathematical formulation:
+    MAE = (1/n) * Σ|y_pred - y_true|
+    
+    The gradient is: dMAE/dy_pred = (1/n) * sign(y_pred - y_true)
+    
+    Examples:
+        >>> loss = MeanAbsoluteError()
+        >>> y_pred = np.array([[1.0], [2.0], [3.0]])
+        >>> y_true = np.array([[1.1], [1.9], [3.1]])
+        >>> loss_value = loss.forward(y_pred, y_true)
+        >>> gradient = loss.gradient(y_pred, y_true)
+    """
+    def __init__(self):
+        super().__init__()
+        self.name = "Mean Absolute Error"
+    
+    def forward(self, predictions, targets):
+        """
+        Compute the mean absolute error.
+        
+        :param predictions: Model predictions, shape (n_samples, n_outputs)
+        :type predictions: numpy.ndarray
+        :param targets: True target values, shape (n_samples, n_outputs)
+        :type targets: numpy.ndarray
+        :returns: Mean absolute error
+        :rtype: float
+        """
+        return np.mean(np.abs(predictions - targets))
+    
+    def gradient(self, predictions, targets):
+        """
+        Compute the gradient of MAE with respect to predictions.
+        
+        :param predictions: Model predictions, shape (n_samples, n_outputs)
+        :type predictions: numpy.ndarray
+        :param targets: True target values, shape (n_samples, n_outputs)
+        :type targets: numpy.ndarray
+        :returns: Gradient of MAE with respect to predictions
+        :rtype: numpy.ndarray
+        """
+        return np.sign(predictions - targets) / predictions.size
+
+
+class HuberLoss(LossFunction):
+    """
+    Huber loss function (smooth L1 loss).
+    
+    This loss function combines the benefits of mean squared error
+    and mean absolute error. It's quadratic for small errors and
+    linear for large errors, making it robust to outliers.
+    
+    Mathematical formulation:
+    Huber = (1/n) * Σ L_δ(y_pred - y_true)
+    where L_δ(a) = 0.5 * a² if |a| ≤ δ, else δ * (|a| - 0.5 * δ)
+    
+    Examples:
+        >>> loss = HuberLoss(delta=1.0)
+        >>> y_pred = np.array([[1.0], [2.0], [3.0]])
+        >>> y_true = np.array([[1.1], [1.9], [3.1]])
+        >>> loss_value = loss.forward(y_pred, y_true)
+        >>> gradient = loss.gradient(y_pred, y_true)
+    """
+    def __init__(self, delta=1.0):
+        """
+        Initialize Huber loss.
+        
+        :param delta: Threshold parameter
+        :type delta: float
+        """
+        super().__init__()
+        self.delta = delta
+        self.name = f"Huber Loss (δ={delta})"
+    
+    def forward(self, predictions, targets):
+        """
+        Compute the Huber loss.
+        
+        :param predictions: Model predictions, shape (n_samples, n_outputs)
+        :type predictions: numpy.ndarray
+        :param targets: True target values, shape (n_samples, n_outputs)
+        :type targets: numpy.ndarray
+        :returns: Huber loss
+        :rtype: float
+        """
+        error = predictions - targets
+        abs_error = np.abs(error)
+        
+        # Quadratic part for small errors
+        quadratic = 0.5 * error ** 2
+        # Linear part for large errors
+        linear = self.delta * (abs_error - 0.5 * self.delta)
+        
+        return np.mean(np.where(abs_error <= self.delta, quadratic, linear))
+    
+    def gradient(self, predictions, targets):
+        """
+        Compute the gradient of Huber loss with respect to predictions.
+        
+        :param predictions: Model predictions, shape (n_samples, n_outputs)
+        :type predictions: numpy.ndarray
+        :param targets: True target values, shape (n_samples, n_outputs)
+        :type targets: numpy.ndarray
+        :returns: Gradient of Huber loss with respect to predictions
+        :rtype: numpy.ndarray
+        """
+        error = predictions - targets
+        abs_error = np.abs(error)
+        
+        # Gradient is error for small errors, sign(error) * delta for large errors
+        gradient = np.where(abs_error <= self.delta, error, self.delta * np.sign(error))
+        
+        return gradient / predictions.size
+
+
+def test_loss_functions_with_finite_differences():
+    """
+    Test all loss function gradients using finite differences.
+    
+    This function demonstrates how to verify loss function gradient
+    implementations using numerical methods. It's educational and
+    useful for debugging.
+    
+    :returns: Dictionary with test results for each loss function
+    :rtype: dict
+    """
+    print("Testing loss function gradients with finite differences...")
+    
+    # Test data
+    y_pred = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])
+    y_true = np.array([[1.1, 2.1], [2.9, 4.1], [5.1, 5.9]])
+    
+    results = {}
+    
+    # Test Mean Squared Error
+    mse_loss = MeanSquaredError()
+    def mse_func(pred):
+        return mse_loss.forward(pred.reshape(y_pred.shape), y_true)
+    
+    numerical_grad = finite_difference_gradient(mse_func, y_pred.flatten())
+    analytical_grad = mse_loss.gradient(y_pred, y_true).flatten()
+    results['MSE'] = verify_gradient_implementation(analytical_grad, numerical_grad)
+    print(f"Mean Squared Error: {'PASS' if results['MSE'] else 'FAIL'}")
+    
+    # Test Mean Absolute Error
+    mae_loss = MeanAbsoluteError()
+    def mae_func(pred):
+        return mae_loss.forward(pred.reshape(y_pred.shape), y_true)
+    
+    numerical_grad = finite_difference_gradient(mae_func, y_pred.flatten())
+    analytical_grad = mae_loss.gradient(y_pred, y_true).flatten()
+    results['MAE'] = verify_gradient_implementation(analytical_grad, numerical_grad)
+    print(f"Mean Absolute Error: {'PASS' if results['MAE'] else 'FAIL'}")
+    
+    # Test Huber Loss
+    huber_loss = HuberLoss(delta=1.0)
+    def huber_func(pred):
+        return huber_loss.forward(pred.reshape(y_pred.shape), y_true)
+    
+    numerical_grad = finite_difference_gradient(huber_func, y_pred.flatten())
+    analytical_grad = huber_loss.gradient(y_pred, y_true).flatten()
+    results['Huber'] = verify_gradient_implementation(analytical_grad, numerical_grad)
+    print(f"Huber Loss: {'PASS' if results['Huber'] else 'FAIL'}")
+    
+    # Test Binary Cross Entropy
+    bce_loss = BinaryCrossEntropyLoss()
+    y_pred_bce = np.array([[0.8], [0.3], [0.9]])
+    y_true_bce = np.array([[1.0], [0.0], [1.0]])
+    
+    def bce_func(pred):
+        return bce_loss.forward(pred.reshape(-1, 1), y_true_bce)
+    
+    numerical_grad = finite_difference_gradient(bce_func, y_pred_bce.flatten())
+    analytical_grad = bce_loss.gradient(y_pred_bce, y_true_bce).flatten()
+    results['BCE'] = verify_gradient_implementation(analytical_grad, numerical_grad)
+    print(f"Binary Cross Entropy: {'PASS' if results['BCE'] else 'FAIL'}")
+    
+    # Test Cross Entropy
+    ce_loss = CrossEntropyLoss()
+    y_pred_ce = np.array([[0.1, 0.9], [0.8, 0.2], [0.3, 0.7]])
+    y_true_ce = np.array([[0, 1], [1, 0], [0, 1]])
+    
+    def ce_func(pred):
+        return ce_loss.forward(pred.reshape(-1, 2), y_true_ce)
+    
+    numerical_grad = finite_difference_gradient(ce_func, y_pred_ce.flatten())
+    analytical_grad = ce_loss.gradient(y_pred_ce, y_true_ce).flatten()
+    results['CE'] = verify_gradient_implementation(analytical_grad, numerical_grad)
+    print(f"Cross Entropy: {'PASS' if results['CE'] else 'FAIL'}")
+    
+    return results
+
+
+def demonstrate_loss_functions():
+    """
+    Demonstrate all loss functions with examples.
+    
+    This function shows how to use the different loss functions
+    and their properties. It's educational and useful for
+    understanding when to use each loss function.
+    
+    :returns: Dictionary with loss values for each function
+    :rtype: dict
+    """
+    print("=" * 60)
+    print("LOSS FUNCTION DEMONSTRATION")
+    print("=" * 60)
+    print("This demonstrates different loss functions and their properties.")
+    print("=" * 60)
+    
+    # Example data
+    y_pred = np.array([[1.0], [2.0], [3.0], [4.0]])
+    y_true = np.array([[1.1], [1.9], [3.1], [4.1]])
+    
+    print(f"Predictions: {y_pred.flatten()}")
+    print(f"True values: {y_true.flatten()}")
+    print()
+    
+    results = {}
+    
+    # Mean Squared Error
+    mse = MeanSquaredError()
+    mse_value = mse.forward(y_pred, y_true)
+    mse_grad = mse.gradient(y_pred, y_true)
+    results['MSE'] = mse_value
+    print(f"Mean Squared Error: {mse_value:.4f}")
+    print(f"Gradient: {mse_grad.flatten()}")
+    print()
+    
+    # Mean Absolute Error
+    mae = MeanAbsoluteError()
+    mae_value = mae.forward(y_pred, y_true)
+    mae_grad = mae.gradient(y_pred, y_true)
+    results['MAE'] = mae_value
+    print(f"Mean Absolute Error: {mae_value:.4f}")
+    print(f"Gradient: {mae_grad.flatten()}")
+    print()
+    
+    # Huber Loss
+    huber = HuberLoss(delta=1.0)
+    huber_value = huber.forward(y_pred, y_true)
+    huber_grad = huber.gradient(y_pred, y_true)
+    results['Huber'] = huber_value
+    print(f"Huber Loss (δ=1.0): {huber_value:.4f}")
+    print(f"Gradient: {huber_grad.flatten()}")
+    print()
+    
+    # Binary Cross Entropy
+    y_pred_bce = np.array([[0.8], [0.3], [0.9], [0.1]])
+    y_true_bce = np.array([[1.0], [0.0], [1.0], [0.0]])
+    
+    bce = BinaryCrossEntropyLoss()
+    bce_value = bce.forward(y_pred_bce, y_true_bce)
+    bce_grad = bce.gradient(y_pred_bce, y_true_bce)
+    results['BCE'] = bce_value
+    print(f"Binary Cross Entropy: {bce_value:.4f}")
+    print(f"Gradient: {bce_grad.flatten()}")
+    print()
+    
+    # Cross Entropy
+    y_pred_ce = np.array([[0.1, 0.9], [0.8, 0.2], [0.3, 0.7], [0.9, 0.1]])
+    y_true_ce = np.array([[0, 1], [1, 0], [0, 1], [1, 0]])
+    
+    ce = CrossEntropyLoss()
+    ce_value = ce.forward(y_pred_ce, y_true_ce)
+    ce_grad = ce.gradient(y_pred_ce, y_true_ce)
+    results['CE'] = ce_value
+    print(f"Cross Entropy: {ce_value:.4f}")
+    print(f"Gradient: {ce_grad.flatten()}")
+    print()
+    
+    return results
+
+
+def run_all_loss_function_tests():
+    """
+    Run all loss function tests for educational purposes.
+    
+    This function demonstrates how to verify loss function implementations
+    using numerical methods. It's particularly useful for:
+    1. Understanding how loss functions work
+    2. Debugging loss function implementations
+    3. Educational demonstrations
+    
+    :returns: Dictionary with all test results
+    :rtype: dict
+    """
+    print("=" * 60)
+    print("LOSS FUNCTION GRADIENT VERIFICATION TESTS")
+    print("=" * 60)
+    print("This demonstrates how to verify loss function gradients")
+    print("using numerical methods (finite differences).")
+    print("=" * 60)
+    
+    # Test loss functions
+    loss_results = test_loss_functions_with_finite_differences()
+    
+    # Demonstrate loss functions
+    print("\n" + "=" * 60)
+    print("LOSS FUNCTION DEMONSTRATION")
+    print("=" * 60)
+    demo_results = demonstrate_loss_functions()
+    
+    # Summary
+    print("\n" + "=" * 60)
+    print("SUMMARY")
+    print("=" * 60)
+    total_tests = len(loss_results)
+    passed_tests = sum(loss_results.values())
+    
+    for test_name, result in loss_results.items():
+        status = "PASS" if result else "FAIL"
+        print(f"{test_name}: {status}")
+    
+    print(f"\nTotal: {passed_tests}/{total_tests} tests passed")
+    print("=" * 60)
+    
+    return loss_results
+
+
 class BLM(LM):
     """
     Bayesian Linear Model.
