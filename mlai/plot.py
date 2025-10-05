@@ -3379,7 +3379,7 @@ def perceptron(x_plus, x_minus, learn_rate=0.1, max_iters=10000,
     iterations = 0
     setup=True
     f2, ax2 = plt.subplots(1, 2, figsize=two_figsize)
-    handle = ma.init_perceptron_plot(f2, ax2, x_plus, x_minus, w, b)
+    handle = init_perceptron_plot(f2, ax2, x_plus, x_minus, w, b)
     handle['plane'].set_visible(False)
     handle['arrow'].set_visible(False)
     handle['circle'] = plt.Circle((x_select[0], x_select[1]), 0.25, color='b', fill=False)
