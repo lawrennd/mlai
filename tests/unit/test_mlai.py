@@ -105,32 +105,34 @@ class TestPerceptron:
         x_plus = np.array([[1, 2], [3, 4]])
         x_minus = np.array([[0, 0], [1, 1]])
         
-        with patch('numpy.random.rand') as mock_rand:
-            mock_rand.return_value = np.array([0.7])  # > 0.5, so choose positive
-            with patch('numpy.random.randint') as mock_randint:
-                mock_randint.return_value = 0  # Select first positive point
-                
-                w, b, x_select = mlai.init_perceptron(x_plus, x_minus, seed=42)
-                
-                assert np.array_equal(w, np.array([1, 2]))
-                assert b == 1
-                assert np.array_equal(x_select, np.array([1, 2]))
+        with patch('numpy.random.seed') as mock_seed:
+            with patch('numpy.random.rand') as mock_rand:
+                mock_rand.return_value = np.array([0.3])  # < plus_portion, so choose positive
+                with patch('numpy.random.randint') as mock_randint:
+                    mock_randint.return_value = 0  # Select first positive point
+                    
+                    w, b, x_select = mlai.init_perceptron(x_plus, x_minus, seed=42)
+                    
+                    assert np.array_equal(w, np.array([1, 2]))
+                    assert b == 1
+                    assert np.array_equal(x_select, np.array([1, 2]))
     
     def test_init_perceptron_negative_selection(self):
         """Test init_perceptron when selecting negative class."""
         x_plus = np.array([[1, 2], [3, 4]])
         x_minus = np.array([[0, 0], [1, 1]])
         
-        with patch('numpy.random.rand') as mock_rand:
-            mock_rand.return_value = np.array([0.3])  # < 0.5, so choose negative
-            with patch('numpy.random.randint') as mock_randint:
-                mock_randint.return_value = 1  # Select second negative point
-                
-                w, b, x_select = mlai.init_perceptron(x_plus, x_minus, seed=42)
-                
-                assert np.array_equal(w, np.array([-1, -1]))
-                assert b == -1
-                assert np.array_equal(x_select, np.array([1, 1]))
+        with patch('numpy.random.seed') as mock_seed:
+            with patch('numpy.random.rand') as mock_rand:
+                mock_rand.return_value = np.array([0.7])  # > plus_portion, so choose negative
+                with patch('numpy.random.randint') as mock_randint:
+                    mock_randint.return_value = 1  # Select second negative point
+                    
+                    w, b, x_select = mlai.init_perceptron(x_plus, x_minus, seed=42)
+                    
+                    assert np.array_equal(w, np.array([-1, -1]))
+                    assert b == -1
+                    assert np.array_equal(x_select, np.array([1, 1]))
     
     def test_update_perceptron_no_update(self):
         """Test update_perceptron when no update is needed."""
@@ -141,7 +143,7 @@ class TestPerceptron:
         
         # Mock random selection to choose a correctly classified point
         with patch('numpy.random.rand') as mock_rand:
-            mock_rand.return_value = np.array([0.7])  # Choose positive class
+            mock_rand.return_value = np.array([0.3])  # < plus_portion, so choose positive class
             with patch('numpy.random.randint') as mock_randint:
                 mock_randint.return_value = 0  # Choose first positive point
                 
