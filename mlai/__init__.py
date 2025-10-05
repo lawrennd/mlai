@@ -18,4 +18,4 @@ if GPY_AVAILABLE:
     from . import deepgp_tutorial
 
 # Import transformer components for educational purposes
-from .transformer import Attention, MultiHeadAttention, PositionalEncoding
+from .transformer import Attention, MultiHeadAttention, PositionalEncoding, Transformer, SoftmaxActivation, SigmoidAttentionActivation, IdentityMinusSoftmaxActivation
