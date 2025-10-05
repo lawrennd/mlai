@@ -11,12 +11,12 @@ This file provides an overview of all current backlog items organized by categor
 
 ### In Progress
 
-*No tasks currently in progress.*
+*No tasks currently in_progress.*
 
 
 ### Proposed
 
-*No tasks currently proposed.*
+- [Ensure Tutorials are Shared in Documentation and Integration with Tests is Documented](documentation/2025-07-16_tutorial-documentation-integration.md)
 
 
 ## Infrastructure
@@ -28,7 +28,7 @@ This file provides an overview of all current backlog items organized by categor
 
 ### In Progress
 
-*No tasks currently in progress.*
+*No tasks currently in_progress.*
 
 
 ### Proposed
@@ -45,12 +45,12 @@ This file provides an overview of all current backlog items organized by categor
 
 ### In Progress
 
-*No tasks currently in progress.*
+*No tasks currently in_progress.*
 
 
 ### Proposed
 
-*No tasks currently proposed.*
+- [Build Comprehensive Tests for plot.py](features/2025-07-16_plot-py-testing.md)
 
 
 ## Bugs
@@ -62,12 +62,14 @@ This file provides an overview of all current backlog items organized by categor
 
 ### In Progress
 
-*No tasks currently in progress.*
+*No tasks currently in_progress.*
 
 
 ### Proposed
 
-*No tasks currently proposed.*
+- [Fix remaining plotting test failures](bugs/2025-10-05_plotting-test-failures.md)
+
+- [Fix test failures due to missing optional dependencies (GPy, Daft)](bugs/2025-10-05_missing-dependencies-test-failures.md)
 
 
 ---
