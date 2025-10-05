@@ -1,0 +1,501 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CIP-0002: Comprehensive Test Framework with pytest &mdash; MLAI 0.1.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=92734c54"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Project Backlog" href="../backlog/index.html" />
+    <link rel="prev" title="CIP-0001: Documentation Improvements with Sphinx" href="cip0001.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            MLAI
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing to MLAI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tenets.html">Project Tenets</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Information:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Code Improvement Proposals (CIPs)</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="cip0001.html">CIP-0001: Documentation Improvements with Sphinx</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">CIP-0002: Comprehensive Test Framework with pytest</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#cip-0002-comprehensive-test-framework-with-pytest">CIP-0002: Comprehensive Test Framework with pytest</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#summary">Summary</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#motivation">Motivation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#detailed-description">Detailed Description</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#implementation-plan">Implementation Plan</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#backward-compatibility">Backward Compatibility</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#testing-strategy">Testing Strategy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#related-requirements">Related Requirements</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#implementation-status">Implementation Status</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#what-are-cips">What are CIPs?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#cip-process">CIP Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#current-status">Current Status</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../backlog/index.html">Project Backlog</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">MLAI</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Code Improvement Proposals (CIPs)</a></li>
+      <li class="breadcrumb-item active">CIP-0002: Comprehensive Test Framework with pytest</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/cip/cip0002.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="cip-0002-comprehensive-test-framework-with-pytest">
+<h1>CIP-0002: Comprehensive Test Framework with pytest<a class="headerlink" href="#cip-0002-comprehensive-test-framework-with-pytest" title="Link to this heading"></a></h1>
+<dl class="field-list simple">
+<dt class="field-odd">author<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Neil Lawrence</p>
+</dd>
+<dt class="field-even">created<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">2025-07-09</span></code></p>
+</dd>
+<dt class="field-odd">id<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">0002</span></code></p>
+</dd>
+<dt class="field-even">last_updated<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">2025-07-09</span></code></p>
+</dd>
+<dt class="field-odd">status<span class="colon">:</span></dt>
+<dd class="field-odd"><p>proposed</p>
+</dd>
+<dt class="field-even">tags<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">[&quot;cip&quot;,</span> <span class="pre">&quot;testing&quot;,</span> <span class="pre">&quot;pytest&quot;,</span> <span class="pre">&quot;quality&quot;,</span> <span class="pre">&quot;ci-cd&quot;]</span></code></p>
+</dd>
+<dt class="field-odd">title<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">Comprehensive</span> <span class="pre">Test</span> <span class="pre">Framework</span> <span class="pre">with</span> <span class="pre">pytest</span></code></p>
+</dd>
+</dl>
+<section id="cip-0002-comprehensive-test-framework-with-pytest">
+<h2>CIP-0002: Comprehensive Test Framework with pytest<a class="headerlink" href="#cip-0002-comprehensive-test-framework-with-pytest" title="Link to this heading"></a></h2>
+<section id="summary">
+<h3>Summary<a class="headerlink" href="#summary" title="Link to this heading"></a></h3>
+<p>This CIP proposes the implementation of a comprehensive test framework using pytest for the MLAI package. The framework will include unit tests, integration tests, property-based tests, and automated test execution with coverage reporting to ensure code quality and reliability.</p>
+</section>
+<section id="motivation">
+<h3>Motivation<a class="headerlink" href="#motivation" title="Link to this heading"></a></h3>
+<p>The current MLAI package lacks any testing infrastructure, which poses several risks:</p>
+<ul class="simple">
+<li><p><em>Code Quality</em>: No automated verification that code changes work correctly</p></li>
+<li><p><em>Regression Prevention</em>: No way to detect when new changes break existing functionality</p></li>
+<li><p><em>Documentation</em>: Tests serve as living documentation of expected behavior</p></li>
+<li><p><em>Confidence</em>: Developers and users lack confidence in the codebase reliability</p></li>
+<li><p><em>Educational Value</em>: As a teaching package, MLAI should demonstrate best practices including testing</p></li>
+</ul>
+<p>A comprehensive test framework will provide:</p>
+<ul class="simple">
+<li><p>Automated verification of all functionality</p></li>
+<li><p>Protection against regressions</p></li>
+<li><p>Clear examples of expected behavior</p></li>
+<li><p>Quality metrics through coverage reporting</p></li>
+<li><p>Integration with CI/CD pipelines</p></li>
+<li><p>Educational value for students learning ML</p></li>
+</ul>
+</section>
+<section id="detailed-description">
+<h3>Detailed Description<a class="headerlink" href="#detailed-description" title="Link to this heading"></a></h3>
+<section id="current-state-analysis">
+<h4>Current State Analysis<a class="headerlink" href="#current-state-analysis" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p>No test directory or test files exist</p></li>
+<li><p>No testing dependencies configured in pyproject.toml</p></li>
+<li><p>No CI/CD integration for automated testing</p></li>
+<li><p>No coverage reporting</p></li>
+<li><p>No test documentation or examples</p></li>
+</ul>
+</section>
+<section id="proposed-test-framework-architecture">
+<h4>Proposed Test Framework Architecture<a class="headerlink" href="#proposed-test-framework-architecture" title="Link to this heading"></a></h4>
+<section id="test-structure">
+<h5>1. Test Structure<a class="headerlink" href="#test-structure" title="Link to this heading"></a></h5>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>tests/
+├── unit/                    # Unit tests for individual functions/classes
+│   ├── test_mlai.py        # Core ML functionality tests
+│   ├── test_plot.py        # Plotting functionality tests
+│   ├── test_gp_tutorial.py # GP tutorial tests
+│   └── test_mountain_car.py # Mountain car tests
+├── integration/            # Integration tests
+│   ├── test_tutorials.py   # End-to-end tutorial tests
+│   └── test_examples.py    # Complete example tests
+├── property/               # Property-based tests
+│   └── test_properties.py  # Mathematical property tests
+├── fixtures/               # Shared test fixtures
+│   ├── conftest.py         # pytest configuration
+│   └── data/               # Test data files
+└── docs/                   # Test documentation
+    └── testing_guide.md    # How to write and run tests
+</pre></div>
+</div>
+</section>
+<section id="testing-categories">
+<h5>2. Testing Categories<a class="headerlink" href="#testing-categories" title="Link to this heading"></a></h5>
+<p><em>Unit Tests</em>:</p>
+<ul class="simple">
+<li><p>Individual function behavior</p></li>
+<li><p>Class method functionality</p></li>
+<li><p>Edge cases and error conditions</p></li>
+<li><p>Input validation</p></li>
+</ul>
+<p><em>Integration Tests</em>:</p>
+<ul class="simple">
+<li><p>Complete tutorial workflows</p></li>
+<li><p>End-to-end examples</p></li>
+<li><p>Cross-module interactions</p></li>
+<li><p>Real-world usage scenarios</p></li>
+</ul>
+<p><em>Property-Based Tests</em>:</p>
+<ul class="simple">
+<li><p>Mathematical properties (e.g., GP kernel properties)</p></li>
+<li><p>Invariants that should always hold</p></li>
+<li><p>Statistical properties of ML algorithms</p></li>
+</ul>
+<p><em>Performance Tests</em>:</p>
+<ul class="simple">
+<li><p>Execution time benchmarks</p></li>
+<li><p>Memory usage monitoring</p></li>
+<li><p>Scalability testing</p></li>
+</ul>
+</section>
+<section id="test-infrastructure">
+<h5>3. Test Infrastructure<a class="headerlink" href="#test-infrastructure" title="Link to this heading"></a></h5>
+<p><em>Dependencies</em>:</p>
+<ul class="simple">
+<li><p>pytest: Core testing framework</p></li>
+<li><p>pytest-cov: Coverage reporting</p></li>
+<li><p>pytest-benchmark: Performance testing</p></li>
+<li><p>hypothesis: Property-based testing</p></li>
+<li><p>numpy.testing: Numerical testing utilities</p></li>
+<li><p>matplotlib.testing: Plot testing utilities</p></li>
+</ul>
+<p><em>Configuration</em>:</p>
+<ul class="simple">
+<li><p>pytest.ini: Test discovery and execution settings</p></li>
+<li><p>.coveragerc: Coverage reporting configuration</p></li>
+<li><p>GitHub Actions workflow for CI/CD</p></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="implementation-plan">
+<h3>Implementation Plan<a class="headerlink" href="#implementation-plan" title="Link to this heading"></a></h3>
+<section id="phase-1-foundation-setup">
+<h4>Phase 1: Foundation Setup<a class="headerlink" href="#phase-1-foundation-setup" title="Link to this heading"></a></h4>
+<ol class="arabic simple">
+<li><p><em>Set up testing infrastructure</em>:</p>
+<ul class="simple">
+<li><p>Add testing dependencies to pyproject.toml</p></li>
+<li><p>Create tests/ directory structure</p></li>
+<li><p>Configure pytest.ini and .coveragerc</p></li>
+<li><p>Set up basic test discovery</p></li>
+</ul>
+</li>
+<li><p><em>Create test configuration</em>:</p>
+<ul class="simple">
+<li><p>Write conftest.py with shared fixtures</p></li>
+<li><p>Set up test data generation utilities</p></li>
+<li><p>Configure test environment variables</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="phase-2-core-unit-tests">
+<h4>Phase 2: Core Unit Tests<a class="headerlink" href="#phase-2-core-unit-tests" title="Link to this heading"></a></h4>
+<ol class="arabic simple" start="3">
+<li><p><em>Implement unit tests for core modules</em>:</p>
+<ul class="simple">
+<li><p>Test mlai.py core functionality</p></li>
+<li><p>Test plot.py plotting functions</p></li>
+<li><p>Test mathematical operations and algorithms</p></li>
+<li><p>Test error handling and edge cases</p></li>
+</ul>
+</li>
+<li><p><em>Add property-based tests</em>:</p>
+<ul class="simple">
+<li><p>Test GP kernel mathematical properties</p></li>
+<li><p>Test statistical invariants</p></li>
+<li><p>Test numerical stability properties</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="phase-3-integration-and-tutorial-tests">
+<h4>Phase 3: Integration and Tutorial Tests<a class="headerlink" href="#phase-3-integration-and-tutorial-tests" title="Link to this heading"></a></h4>
+<ol class="arabic simple" start="5">
+<li><p><em>Create integration tests</em>:</p>
+<ul class="simple">
+<li><p>Test complete tutorial workflows</p></li>
+<li><p>Test end-to-end examples</p></li>
+<li><p>Test cross-module interactions</p></li>
+<li><p>Test real-world usage scenarios</p></li>
+</ul>
+</li>
+<li><p><em>Add performance benchmarks</em>:</p>
+<ul class="simple">
+<li><p>Benchmark key algorithms</p></li>
+<li><p>Monitor memory usage</p></li>
+<li><p>Test scalability with different data sizes</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="phase-4-ci-cd-and-documentation">
+<h4>Phase 4: CI/CD and Documentation<a class="headerlink" href="#phase-4-ci-cd-and-documentation" title="Link to this heading"></a></h4>
+<ol class="arabic simple" start="7">
+<li><p><em>Set up automated testing</em>:</p>
+<ul class="simple">
+<li><p>Configure GitHub Actions workflow</p></li>
+<li><p>Set up coverage reporting</p></li>
+<li><p>Add test status badges to README</p></li>
+<li><p>Configure automated test execution</p></li>
+</ul>
+</li>
+<li><p><em>Create test documentation</em>:</p>
+<ul class="simple">
+<li><p>Write testing guide for contributors</p></li>
+<li><p>Document test writing conventions</p></li>
+<li><p>Create examples of good test practices</p></li>
+<li><p>Add test running instructions</p></li>
+</ul>
+</li>
+</ol>
+</section>
+</section>
+<section id="backward-compatibility">
+<h3>Backward Compatibility<a class="headerlink" href="#backward-compatibility" title="Link to this heading"></a></h3>
+<p>This change is purely additive and will not affect any existing functionality. All existing code will continue to work as before. The only changes are:</p>
+<ul class="simple">
+<li><p>Addition of test files and directories</p></li>
+<li><p>Addition of testing dependencies</p></li>
+<li><p>Addition of CI/CD configuration files</p></li>
+</ul>
+</section>
+<section id="testing-strategy">
+<h3>Testing Strategy<a class="headerlink" href="#testing-strategy" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><em>Test-Driven Development</em>: Write tests before implementing new features</p></li>
+<li><p><em>Comprehensive Coverage</em>: Aim for &gt;90% code coverage</p></li>
+<li><p><em>Continuous Integration</em>: Run tests on every commit and PR</p></li>
+<li><p><em>Performance Monitoring</em>: Track performance regressions</p></li>
+<li><p><em>Documentation</em>: Tests serve as executable documentation</p></li>
+</ul>
+</section>
+<section id="related-requirements">
+<h3>Related Requirements<a class="headerlink" href="#related-requirements" title="Link to this heading"></a></h3>
+<p>This CIP addresses the following requirements:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#tenets/"><span class="xref myst">VibeSafe tenets/</span></a> - Quality and reliability standards</p></li>
+<li><p><a class="reference internal" href="#backlog/"><span class="xref myst">Backlog tasks</span></a> - Testing and quality improvement tasks</p></li>
+<li><p><a class="reference internal" href="#cip0001.md"><span class="xref myst">CIP-0001</span></a> - Documentation improvements (tests provide executable docs)</p></li>
+</ul>
+<p>Specifically, it implements solutions for:</p>
+<ul class="simple">
+<li><p>Code quality assurance</p></li>
+<li><p>Regression prevention</p></li>
+<li><p>Educational best practices</p></li>
+<li><p>Professional development standards</p></li>
+</ul>
+</section>
+<section id="implementation-status">
+<h3>Implementation Status<a class="headerlink" href="#implementation-status" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>[x] Set up testing infrastructure</p></li>
+<li><p>[x] Create test configuration</p></li>
+<li><p>[x] Implement unit tests for core modules (gp_tutorial, <strong>init</strong>.py, deepgp_tutorial)</p></li>
+<li><p>[x] Implement comprehensive unit tests for mlai.py</p></li>
+<li><p>[x] Set up automated testing with GitHub Actions</p></li>
+<li><p>[x] Add test status badges to README</p></li>
+<li><p>[x] Add tests for abstract base classes and neural networks</p></li>
+<li><p>[x] Improve code robustness with input validation</p></li>
+<li><p>[x] Add comprehensive tests for Logistic Regression and Gaussian Process methods</p></li>
+<li><p>[x] Create integration tests for tutorial workflows</p></li>
+<li><p>[x] Fix logistic regression optimization issues</p></li>
+<li><p>[ ] Add comprehensive tests for plot.py (35 unit tests created, integration tests needed)</p></li>
+<li><p>[ ] Add property-based tests</p></li>
+<li><p>[ ] Add performance benchmarks</p></li>
+<li><p>[ ] Create test documentation</p></li>
+</ul>
+<section id="completed-work-2025-07-15">
+<h4>Completed Work (2025-07-15)<a class="headerlink" href="#completed-work-2025-07-15" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p><em>Testing Infrastructure</em>: Added pytest, pytest-cov, hypothesis, and pytest-benchmark dependencies to pyproject.toml</p></li>
+<li><p><em>Test Configuration</em>: Created tests/ directory structure with conftest.py, pytest.ini, and .coveragerc</p></li>
+<li><p><em>Unit Tests</em>: Implemented comprehensive unit tests for:</p></li>
+<li><p><em>Coverage Improvements</em>: Increased mlai.py coverage from 15% to 86% through comprehensive testing</p></li>
+<li><p><em>Abstract Base Classes</em>: Added tests for Model, ProbModel, and MapModel NotImplementedError behavior</p></li>
+<li><p><em>Neural Networks</em>: Added comprehensive tests for SimpleNeuralNetwork, SimpleDropoutNeuralNetwork, and NonparametricDropoutNeuralNetwork</p></li>
+<li><p><em>Input Validation</em>: Added parameter validation to neural network constructors for robustness</p></li>
+<li><p><em>Edge Cases</em>: Added comprehensive tests for LM error handling, Kernel <em>repr_html</em>, and utility function edge cases</p></li>
+<li><p><em>Kernel Functions</em>: Added tests for 10+ additional kernel functions (exponentiated_quadratic, eq_cov, ou_cov, matern32_cov, matern52_cov, mlp_cov, icm_cov, slfm_cov, add_cov, prod_cov)</p></li>
+<li><p><em>Basis Functions</em>: Added edge case tests for polynomial and radial basis functions</p></li>
+<li><p><em>Logistic Regression</em>: Added comprehensive tests for LR gradient, compute_g, update_g, and objective methods</p></li>
+<li><p><em>Gaussian Process</em>: Added tests for posterior_f and update_inverse functions</p></li>
+<li><p><em>Gaussian Noise Model</em>: Added tests for grad_vals method</p></li>
+<li><p><em>Overall Project Coverage</em>: Achieved 27% overall project coverage (up from 0%)</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">gp_tutorial.py</span></code>: 100% coverage with mocked matplotlib dependencies</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">__init__.py</span></code>: 73% coverage testing imports and GPy availability</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">deepgp_tutorial.py</span></code>: 83% coverage with circular import fixes and NumPy compatibility improvements</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mlai.py</span></code>: 58% coverage with 39 comprehensive test cases covering utility functions, perceptron, basis functions, linear models, neural networks, kernels, Gaussian processes, and noise models</p></li>
+</ul>
+</li>
+<li><p><em>Code Quality Improvements</em>: Fixed circular import in deepgp_tutorial by changing import from <code class="docutils literal notranslate"><span class="pre">mlai</span></code> to <code class="docutils literal notranslate"><span class="pre">mlai.mlai</span></code></p></li>
+<li><p><em>Robustness Enhancements</em>: Made scale_data function handle both 1D and 2D arrays</p></li>
+<li><p><em>NumPy Compatibility</em>: Fixed compatibility issues with newer NumPy versions by using explicit np.min()/np.max() calls</p></li>
+<li><p><em>CI/CD Integration</em>: Set up GitHub Actions workflows for testing and linting with codecov integration</p></li>
+<li><p><em>Overall Progress</em>: Achieved 21% total code coverage (up from 15%) with 70 total tests (60 passed, 10 skipped)</p></li>
+</ul>
+</section>
+<section id="completed-work-2025-07-16">
+<h4>Completed Work (2025-07-16)<a class="headerlink" href="#completed-work-2025-07-16" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p><em>Integration Tests</em>: Created comprehensive integration tests for tutorial workflows including basis functions, linear regression, logistic regression, perceptron, and Bayesian linear regression</p></li>
+<li><p><em>Logistic Regression Optimization</em>: Fixed parameter flattening during gradient descent while maintaining 2D internal storage for proper matrix operations</p></li>
+<li><p><em>Coverage Improvements</em>: Increased mlai.py coverage from 86% to 88% through comprehensive testing</p></li>
+<li><p><em>Overall Project Coverage</em>: Achieved 30% overall project coverage</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">mlai.py</span></code>: 88% coverage with comprehensive test cases</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">gp_tutorial.py</span></code>: 100% coverage with mocked matplotlib dependencies</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">__init__.py</span></code>: 73% coverage testing imports and GPy availability</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">deepgp_tutorial.py</span></code>: 83% coverage with circular import fixes and NumPy compatibility improvements</p></li>
+</ul>
+</li>
+<li><p><em>Test Infrastructure</em>: 134 total tests (124 passed, 10 skipped) with comprehensive coverage of core functionality</p></li>
+</ul>
+</section>
+<section id="completed-work-2025-07-16-plot-py-testing">
+<h4>Completed Work (2025-07-16) - Plot.py Testing<a class="headerlink" href="#completed-work-2025-07-16-plot-py-testing" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p><em>Foundational Plot.py Testing</em>: Created 35 unit tests covering core plotting infrastructure</p>
+<ul>
+<li><p><em>Plot Utilities</em>: Tests for constants, pred_range function with various parameters</p></li>
+<li><p><em>Matrix Plotting</em>: Tests for all matrix display types (values, entries, image, patch, colorpatch)</p></li>
+<li><p><em>Network Visualization</em>: Tests for network and layer classes with properties and methods</p></li>
+<li><p><em>Model Output Functions</em>: Tests for model_output and model_sample with proper mocking</p></li>
+<li><p><em>Error Handling</em>: Tests for invalid inputs and edge cases</p></li>
+<li><p><em>Performance</em>: Tests for large matrices and high point counts</p></li>
+<li><p><em>Integration</em>: Tests for matplotlib, IPython, and optional dependencies (daft, GPy)</p></li>
+</ul>
+</li>
+<li><p><em>Bug Fixes in plot.py</em>:</p>
+<ul>
+<li><p><em>String Formatting</em>: Fixed <code class="docutils literal notranslate"><span class="pre">'{val:{prec}}'</span></code> not working with integer values by converting to float</p></li>
+<li><p><em>Return Values</em>: Made model_output and model_sample return axis objects for better composability</p></li>
+<li><p><em>Parameter Handling</em>: Improved robust handling of highlight_row, highlight_col, zoom_row, zoom_col</p></li>
+<li><p><em>Backward Compatibility</em>: Maintained support for “:” string parameter while adding None/int/list support</p></li>
+</ul>
+</li>
+<li><p><em>Test Coverage</em>: All 35 tests passing (100% success rate)</p></li>
+<li><p><em>Code Quality</em>: Improved error handling, consistent return values, and better parameter validation</p></li>
+<li><p><em>Overall Impact</em>: Significant improvement to plot.py reliability and maintainability</p></li>
+<li><p><em>Status</em>: Still in progress - tested ~6-8 functions out of ~60+ total functions in plot.py</p></li>
+</ul>
+</section>
+</section>
+<section id="references">
+<h3>References<a class="headerlink" href="#references" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference external" href="https://docs.pytest.org/">pytest Documentation</a></p></li>
+<li><p><a class="reference external" href="https://pytest-cov.readthedocs.io/">pytest-cov Coverage</a></p></li>
+<li><p><a class="reference external" href="https://hypothesis.readthedocs.io/">hypothesis Property Testing</a></p></li>
+<li><p><a class="reference external" href="https://numpy.org/doc/stable/reference/routines.testing.html">NumPy Testing</a></p></li>
+<li><p><a class="reference external" href="https://matplotlib.org/stable/devel/testing.html">Matplotlib Testing</a></p></li>
+<li><p><a class="reference external" href="https://realpython.com/python-testing/">Python Testing Best Practices</a></p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="cip0001.html" class="btn btn-neutral float-left" title="CIP-0001: Documentation Improvements with Sphinx" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../backlog/index.html" class="btn btn-neutral float-right" title="Project Backlog" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2018-2025, Neil D. Lawrence.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

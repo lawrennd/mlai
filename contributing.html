@@ -1,0 +1,264 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contributing to MLAI &mdash; MLAI 0.1.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=92734c54"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Project Tenets" href="tenets.html" />
+    <link rel="prev" title="Mountain Car Module" href="api/mountain_car.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            MLAI
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/index.html">API Reference</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Contributing to MLAI</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#project-philosophy">Project Philosophy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#getting-started">Getting Started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#development-workflow">Development Workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#coding-standards">Coding Standards</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#testing">Testing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#documentation">Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#submitting-changes">Submitting Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#code-of-conduct">Code of Conduct</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#questions">Questions?</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tenets.html">Project Tenets</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Information:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="cip/index.html">Code Improvement Proposals (CIPs)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="backlog/index.html">Project Backlog</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">MLAI</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Contributing to MLAI</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/contributing.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="contributing-to-mlai">
+<h1>Contributing to MLAI<a class="headerlink" href="#contributing-to-mlai" title="Link to this heading"></a></h1>
+<p>Thank you for your interest in contributing to MLAI! This guide will help you get started.</p>
+<section id="project-philosophy">
+<h2>Project Philosophy<a class="headerlink" href="#project-philosophy" title="Link to this heading"></a></h2>
+<p>MLAI follows the principles outlined in our <a class="reference internal" href="tenets.html"><span class="doc">Project Tenets</span></a>. Before contributing, please familiarize yourself with these guiding principles:</p>
+<ol class="arabic simple">
+<li><p><em>Clarity Over Cleverness</em>: Code should be easy to understand</p></li>
+<li><p><em>Mathematical Transparency</em>: Mathematical concepts should be explicit</p></li>
+<li><p><em>Educational Focus</em>: Every contribution should serve a pedagogical purpose</p></li>
+<li><p><em>Good Python Practices</em>: Follow PEP 8 and modern Python conventions</p></li>
+<li><p><em>Reproducibility</em>: Examples should be runnable end-to-end</p></li>
+<li><p><em>Inclusivity</em>: Documentation should be accessible to diverse audiences</p></li>
+<li><p><em>Open Science</em>: Encourage sharing and collaboration</p></li>
+</ol>
+</section>
+<section id="getting-started">
+<h2>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading"></a></h2>
+<ol class="arabic">
+<li><p><em>Fork the repository</em> on GitHub</p></li>
+<li><p><em>Clone your fork</em> locally</p></li>
+<li><p><em>Create a virtual environment</em>:
+.. code-block:: bash</p>
+<blockquote>
+<div><p>python -m venv venv
+source venv/bin/activate  # On Windows: venvScriptsactivate</p>
+</div></blockquote>
+</li>
+<li><p><em>Install dependencies</em>:
+.. code-block:: bash</p>
+<blockquote>
+<div><p>pip install -e .
+pip install -r requirements-dev.txt  # If available</p>
+</div></blockquote>
+</li>
+</ol>
+</section>
+<section id="development-workflow">
+<h2>Development Workflow<a class="headerlink" href="#development-workflow" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p><em>Check existing issues and CIPs</em>: Look at the <a class="reference internal" href="cip/index.html"><span class="doc">Code Improvement Proposals (CIPs)</span></a> and <a class="reference internal" href="backlog/index.html"><span class="doc">Project Backlog</span></a></p></li>
+<li><p><em>Create a feature branch</em>: <cite>git checkout -b feature/your-feature-name</cite></p></li>
+<li><p><em>Make your changes</em>: Follow the coding standards below</p></li>
+<li><p><em>Test your changes</em>: Run the test suite (when available)</p></li>
+<li><p><em>Update documentation</em>: Add or update docstrings and documentation</p></li>
+<li><p><em>Submit a pull request</em>: Include a clear description of your changes</p></li>
+</ol>
+</section>
+<section id="coding-standards">
+<h2>Coding Standards<a class="headerlink" href="#coding-standards" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><em>Style</em>: Follow PEP 8 and PEP 257</p></li>
+<li><p><em>Type hints</em>: Use type hints where they improve clarity</p></li>
+<li><p><em>Docstrings</em>: Use NumPy or Google docstring format</p></li>
+<li><p><em>Mathematical notation</em>: Include mathematical equations in docstrings</p></li>
+<li><p><em>Examples</em>: Provide working examples in docstrings</p></li>
+</ul>
+<p>Example docstring:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">gaussian_kernel</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">lengthscale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the Gaussian (RBF) kernel between two points.</span>
+
+<span class="sd">    The Gaussian kernel is defined as:</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">       k(x_1, x_2) = \exp\left(-\frac{\|x_1 - x_2\|^2}{2\ell^2}\right)</span>
+
+<span class="sd">    where :math:`\ell` is the lengthscale parameter.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x1 : array-like</span>
+<span class="sd">        First input point</span>
+<span class="sd">    x2 : array-like</span>
+<span class="sd">        Second input point</span>
+<span class="sd">    lengthscale : float, default=1.0</span>
+<span class="sd">        Lengthscale parameter :math:`\ell`</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        Kernel value</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; gaussian_kernel([0], [1], lengthscale=1.0)</span>
+<span class="sd">    0.6065306597126334</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+</section>
+<section id="testing">
+<h2>Testing<a class="headerlink" href="#testing" title="Link to this heading"></a></h2>
+<p>When the test framework is implemented (see <a class="reference internal" href="cip/cip0002.html"><span class="doc">CIP-0002: Comprehensive Test Framework with pytest</span></a>), please:</p>
+<ul class="simple">
+<li><p>Write tests for new functionality</p></li>
+<li><p>Ensure all tests pass</p></li>
+<li><p>Maintain or improve test coverage</p></li>
+<li><p>Include property-based tests for mathematical functions</p></li>
+</ul>
+</section>
+<section id="documentation">
+<h2>Documentation<a class="headerlink" href="#documentation" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Update docstrings for any functions you modify</p></li>
+<li><p>Add examples to the tutorials if relevant</p></li>
+<li><p>Update this contributing guide if needed</p></li>
+<li><p>Follow the documentation style guide</p></li>
+</ul>
+</section>
+<section id="submitting-changes">
+<h2>Submitting Changes<a class="headerlink" href="#submitting-changes" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p><em>Write a clear commit message</em> following conventional commits</p></li>
+<li><p><em>Reference related issues or CIPs</em> in your commit message</p></li>
+<li><p><em>Provide a detailed pull request description</em></p></li>
+<li><p><em>Include examples</em> of how your changes work</p></li>
+<li><p><em>Link to relevant documentation</em> or discussions</p></li>
+</ol>
+</section>
+<section id="code-of-conduct">
+<h2>Code of Conduct<a class="headerlink" href="#code-of-conduct" title="Link to this heading"></a></h2>
+<p>We are committed to providing a welcoming and inclusive environment for all contributors. Please be respectful and constructive in all interactions.</p>
+</section>
+<section id="questions">
+<h2>Questions?<a class="headerlink" href="#questions" title="Link to this heading"></a></h2>
+<p>If you have questions about contributing:</p>
+<ul class="simple">
+<li><p>Check the <a class="reference internal" href="tenets.html"><span class="doc">Project Tenets</span></a> for project philosophy</p></li>
+<li><p>Review existing <a class="reference internal" href="cip/index.html"><span class="doc">Code Improvement Proposals (CIPs)</span></a> for design decisions</p></li>
+<li><p>Open an issue on GitHub for specific questions</p></li>
+<li><p>Join our community discussions</p></li>
+</ul>
+<p>Thank you for contributing to MLAI!</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="api/mountain_car.html" class="btn btn-neutral float-left" title="Mountain Car Module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tenets.html" class="btn btn-neutral float-right" title="Project Tenets" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2018-2025, Neil D. Lawrence.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
