@@ -38,7 +38,9 @@ Each CIP can have one of the following statuses:
 - [CIP-0001](./cip0001.md): 
 - [CIP-0002](./cip0002.md): 
 - [CIP-0003](./cip0003.md): 
-- [CIP-0004](./cip0004.md): Replace MATLAB GP Optimization Visualization with Python
+- [CIP-0004](./cip0004.md): 
+- [CIP-0005](./cip0005.md): 
+- [CIP-0006](./cip0006.md): Refactor mlai.py into Modular Structure 
 
 ## Creating a Good CIP
 
