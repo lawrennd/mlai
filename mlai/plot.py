@@ -39,7 +39,7 @@ except ImportError:
     pass
 
 import mlai as ma
-from mlai.mlai import LM
+from .linear_models import LM
 
 # Check for GPy availability
 GPY_AVAILABLE = True

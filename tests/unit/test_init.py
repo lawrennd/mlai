@@ -4,8 +4,9 @@ import mlai
 
 @pytest.mark.unit
 def test_mlai_module_import():
-    """Test that the mlai module can be imported."""
-    assert hasattr(mlai, 'mlai')
+    """Test that the mlai package can be imported."""
+    # Test that the package itself can be imported (no longer has mlai.mlai submodule)
+    assert mlai is not None
 
 
 @pytest.mark.unit
@@ -52,16 +53,15 @@ def test_key_functions_are_callable():
 def test_package_has_expected_attributes():
     """Test that the package has all expected attributes."""
     expected_attributes = [
-        'mlai',           # Core module
         'GPY_AVAILABLE',  # GPy availability flag
         'write_figure',   # Key functions
         'write_animation',
         'Basis',
         'linear',
-        'icm_cov', 
+        'icm_cov',
         'slfm_cov'
     ]
-    
+
     for attr in expected_attributes:
         assert hasattr(mlai, attr), f"Attribute {attr} not found in mlai package"
 
