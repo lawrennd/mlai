@@ -23,6 +23,10 @@ __all__ = [
     # Data generation functions
     'generate_cluster_data',
     'generate_swiss_roll',
+    'generate_sequence_data',
+    'generate_arithmetic_sequences',
+    'generate_pattern_sequences',
+    'generate_text_sequences',
 ]
 
 def generate_cluster_data(n_points_per_cluster=30):
@@ -48,3 +52,154 @@ def generate_swiss_roll(n_points=1000, noise=0.05):
     X = np.stack([x, y, z])
     X += noise * np.random.randn(*X.shape)
     return X.T, t
+
+
+def generate_sequence_data(n_samples=200, seq_length=10, vocab_size=30, pattern_type='next_token'):
+    """
+    Generate interesting sequence data for transformer training.
+    
+    Parameters
+    ----------
+    n_samples : int
+        Number of sequences to generate
+    seq_length : int
+        Length of each sequence
+    vocab_size : int
+        Size of vocabulary (number of unique tokens)
+    pattern_type : str
+        Type of pattern to generate ('next_token', 'arithmetic', 'pattern', 'text')
+        
+    Returns
+    -------
+    X : np.ndarray
+        Input sequences of shape (n_samples, seq_length)
+    y : np.ndarray
+        Target sequences of shape (n_samples, seq_length)
+    """
+    np.random.seed(24)  # For reproducibility
+    
+    if pattern_type == 'next_token':
+        return _generate_next_token_sequences(n_samples, seq_length, vocab_size)
+    elif pattern_type == 'arithmetic':
+        return generate_arithmetic_sequences(n_samples, seq_length, vocab_size)
+    elif pattern_type == 'pattern':
+        return generate_pattern_sequences(n_samples, seq_length, vocab_size)
+    elif pattern_type == 'text':
+        return generate_text_sequences(n_samples, seq_length, vocab_size)
+    else:
+        raise ValueError(f"Unknown pattern_type: {pattern_type}")
+
+
+def _generate_next_token_sequences(n_samples, seq_length, vocab_size):
+    """Generate sequences where target is next token (standard language modeling)."""
+    X = np.random.randint(0, vocab_size, (n_samples, seq_length))
+    y = np.roll(X, -1, axis=1)
+    y[:, -1] = 0  # Padding token for last position
+    return X, y
+
+
+def generate_arithmetic_sequences(n_samples=200, seq_length=8, vocab_size=20):
+    """
+    Generate arithmetic sequence data (e.g., 2, 4, 6, 8, ...).
+    
+    This creates sequences where each number follows an arithmetic pattern,
+    making it interesting for transformers to learn mathematical relationships.
+    """
+    np.random.seed(24)
+    
+    X = []
+    y = []
+    
+    for _ in range(n_samples):
+        # Random starting value and step
+        start = np.random.randint(1, 10)
+        step = np.random.randint(1, 5)
+        
+        # Generate arithmetic sequence
+        sequence = [start + i * step for i in range(seq_length + 1)]
+        
+        # Clip to vocabulary size
+        sequence = [min(x, vocab_size - 1) for x in sequence]
+        
+        X.append(sequence[:-1])
+        y.append(sequence[1:])
+    
+    return np.array(X), np.array(y)
+
+
+def generate_pattern_sequences(n_samples=200, seq_length=10, vocab_size=20):
+    """
+    Generate sequences with repeating patterns (e.g., A, B, C, A, B, C, ...).
+    
+    This tests the transformer's ability to learn and maintain patterns
+    across the sequence.
+    """
+    np.random.seed(24)
+    
+    X = []
+    y = []
+    
+    for _ in range(n_samples):
+        # Random pattern length (2-4)
+        pattern_length = np.random.randint(2, 5)
+        
+        # Generate random pattern
+        pattern = np.random.randint(0, vocab_size, pattern_length)
+        
+        # Repeat pattern to fill sequence
+        full_sequence = []
+        for i in range(seq_length + 1):
+            full_sequence.append(pattern[i % pattern_length])
+        
+        X.append(full_sequence[:-1])
+        y.append(full_sequence[1:])
+    
+    return np.array(X), np.array(y)
+
+
+def generate_text_sequences(n_samples=200, seq_length=12, vocab_size=26):
+    """
+    Generate text-like sequences with word boundaries and structure.
+    
+    This simulates natural language with spaces, punctuation, and
+    word-like structures for more realistic transformer training.
+    """
+    np.random.seed(24)
+    
+    # Define special tokens
+    SPACE = 0
+    PERIOD = 1
+    COMMA = 2
+    LETTERS_START = 3
+    
+    X = []
+    y = []
+    
+    for _ in range(n_samples):
+        sequence = []
+        word_length = 0
+        max_word_length = 6
+        
+        for i in range(seq_length + 1):
+            if word_length == 0:
+                # Start of new word
+                if np.random.random() < 0.1 and i > 0:
+                    # Add punctuation
+                    sequence.append(np.random.choice([PERIOD, COMMA]))
+                else:
+                    # Add letter
+                    sequence.append(LETTERS_START + np.random.randint(0, vocab_size - LETTERS_START))
+                word_length = 1
+            elif word_length >= max_word_length or np.random.random() < 0.3:
+                # End word with space
+                sequence.append(SPACE)
+                word_length = 0
+            else:
+                # Continue word
+                sequence.append(LETTERS_START + np.random.randint(0, vocab_size - LETTERS_START))
+                word_length += 1
+        
+        X.append(sequence[:-1])
+        y.append(sequence[1:])
+    
+    return np.array(X), np.array(y)
