@@ -2442,16 +2442,20 @@ class MaxPoolingLayer(Layer):
         
         Parameters
         ----------
-        grad_output : np.ndarray
+        grad_output : np.ndarray or tuple
             Gradient from the next layer
             
         Returns
         -------
-        np.ndarray
+        tuple
             Gradient with respect to input
         """
         if self.last_input is None:
             raise ValueError("Must call forward before backward")
+        
+        # Handle gradient from layered network (tuple format)
+        if isinstance(grad_output, tuple):
+            grad_output = grad_output[0]
         
         # Initialize gradient for input
         grad_input = np.zeros_like(self.last_input)

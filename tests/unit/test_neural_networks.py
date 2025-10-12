@@ -2238,5 +2238,146 @@ class TestPositionalEncodingLayerGradients(unittest.TestCase):
         pos_encoding_batch2 = pos_encoding[1]
         np.testing.assert_array_almost_equal(pos_encoding_batch1, pos_encoding_batch2, decimal=15)
             
+class TestCNNArchitecture(unittest.TestCase):
+    """Test complete CNN architectures."""
+    
+    def test_cnn_architecture_forward_pass(self):
+        """Test a complete CNN architecture forward pass."""
+        from mlai.neural_networks import (
+            LayeredNeuralNetwork, ConvolutionalLayer, MaxPoolingLayer, 
+            FlattenLayer, FullyConnectedLayer, LinearLayer, ReLUActivation
+        )
+        
+        # Create a complete CNN architecture
+        cnn_layers = [
+            ConvolutionalLayer(input_channels=1, output_channels=8, kernel_size=3, padding=1, activation=ReLUActivation()),
+            MaxPoolingLayer(pool_size=2, stride=2),
+            ConvolutionalLayer(input_channels=8, output_channels=16, kernel_size=3, padding=1, activation=ReLUActivation()),
+            MaxPoolingLayer(pool_size=2, stride=2),
+            FlattenLayer(),
+            FullyConnectedLayer(16 * 4 * 4, 32, activation=ReLUActivation()),  # 16 channels * 4*4 spatial after pooling
+            LinearLayer(32, 3),  # 3 classes (no activation for final layer)
+        ]
+        
+        cnn = LayeredNeuralNetwork(cnn_layers)
+        
+        # Test input: batch_size=2, channels=1, height=16, width=16
+        X = np.random.randn(2, 1, 16, 16)
+        
+        # Forward pass
+        output = cnn.forward(X)
+        
+        # Check output shape
+        self.assertEqual(output.shape, (2, 3))
+        
+        # Check that network has parameters
+        self.assertGreater(len(cnn.parameters), 0)
+        
+        # Check that all layers are properly connected
+        self.assertEqual(len(cnn.layers), 7)
+    
+    def test_cnn_architecture_gradient_flow(self):
+        """Test gradient flow through complete CNN architecture."""
+        from mlai.neural_networks import (
+            LayeredNeuralNetwork, ConvolutionalLayer, MaxPoolingLayer, 
+            FlattenLayer, FullyConnectedLayer, LinearLayer, ReLUActivation
+        )
+        from mlai.utils import finite_difference_gradient, verify_gradient_implementation
+        
+        # Create a simple CNN
+        cnn_layers = [
+            ConvolutionalLayer(input_channels=1, output_channels=2, kernel_size=3, padding=1, activation=ReLUActivation()),
+            MaxPoolingLayer(pool_size=2, stride=2),
+            FlattenLayer(),
+            LinearLayer(2 * 8 * 8, 3),  # 2 channels * 8*8 spatial after pooling
+        ]
+        
+        cnn = LayeredNeuralNetwork(cnn_layers)
+        
+        X = np.random.randn(1, 1, 16, 16)
+        
+        # Test input gradient
+        def cnn_func(x_flat):
+            x_reshaped = x_flat.reshape(1, 1, 16, 16)
+            output = cnn.forward(x_reshaped)
+            return np.sum(output)
+        
+        # Numerical gradient
+        numerical_grad = finite_difference_gradient(cnn_func, X.flatten())
+        
+        # Analytical gradient
+        output = cnn.forward(X)
+        analytical_grad_dict = cnn.backward(np.ones_like(output))
+        # Get the gradient from the first layer (input gradient)
+        analytical_grad = analytical_grad_dict['layer_0'][0].flatten()
+        
+        # Verify gradients match
+        self.assertTrue(verify_gradient_implementation(analytical_grad, numerical_grad, rtol=1e-4))
+    
+    def test_cnn_architecture_parameter_management(self):
+        """Test parameter management in CNN architecture."""
+        from mlai.neural_networks import (
+            LayeredNeuralNetwork, ConvolutionalLayer, MaxPoolingLayer, 
+            FlattenLayer, FullyConnectedLayer, LinearLayer, ReLUActivation
+        )
+        
+        # Create CNN
+        cnn_layers = [
+            ConvolutionalLayer(input_channels=1, output_channels=4, kernel_size=3, padding=1, activation=ReLUActivation()),
+            MaxPoolingLayer(pool_size=2, stride=2),
+            FlattenLayer(),
+            LinearLayer(4 * 7 * 7, 10),
+        ]
+        
+        cnn = LayeredNeuralNetwork(cnn_layers)
+        
+        # Test parameter getter
+        params = cnn.parameters
+        self.assertGreater(len(params), 0)
+        
+        # Test parameter setter
+        new_params = params + 0.1
+        cnn.parameters = new_params
+        np.testing.assert_array_almost_equal(cnn.parameters, new_params)
+    
+    def test_cnn_architecture_different_sizes(self):
+        """Test CNN with different input sizes."""
+        from mlai.neural_networks import (
+            LayeredNeuralNetwork, ConvolutionalLayer, MaxPoolingLayer, 
+            FlattenLayer, FullyConnectedLayer, LinearLayer, ReLUActivation
+        )
+        
+        # Test different input sizes
+        test_sizes = [(1, 1, 16, 16), (2, 1, 32, 32), (1, 1, 8, 8)]
+        
+        for batch_size, channels, height, width in test_sizes:
+            # Calculate expected size after conv + pooling
+            # Conv with padding=1 keeps same size, pooling reduces by factor of 2
+            conv_height = height  # padding=1 keeps size
+            conv_width = width
+            pool_height = conv_height // 2
+            pool_width = conv_width // 2
+            flattened_size = 4 * pool_height * pool_width  # 4 channels
+            
+            # Create CNN with correct size for this input
+            cnn_layers = [
+                ConvolutionalLayer(input_channels=1, output_channels=4, kernel_size=3, padding=1, activation=ReLUActivation()),
+                MaxPoolingLayer(pool_size=2, stride=2),
+                FlattenLayer(),
+                LinearLayer(flattened_size, 5),
+            ]
+            
+            cnn = LayeredNeuralNetwork(cnn_layers)
+            
+            X = np.random.randn(batch_size, channels, height, width)
+            output = cnn.forward(X)
+            
+            # Check output shape
+            self.assertEqual(output.shape, (batch_size, 5))
+            
+            # Check that forward pass works
+            self.assertFalse(np.allclose(output, 0))
+
+
 if __name__ == '__main__':
     unittest.main()
