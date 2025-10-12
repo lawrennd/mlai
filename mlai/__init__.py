@@ -32,12 +32,16 @@ from .linear_models import linear, polynomial, radial, fourier, radial_multivari
 
 # Import neural network classes and functions to make them available at package level
 from .neural_networks import (
-    SimpleNeuralNetwork, NeuralNetwork,
+    SimpleNeuralNetwork, NeuralNetwork, LayeredNeuralNetwork,
     init_perceptron, update_perceptron,
     relu_activation, sigmoid_activation, linear_activation, soft_relu_activation,
     LinearActivation, ReLUActivation, SigmoidActivation, SoftReLUActivation,
     LossFunction, MeanSquaredError, MeanAbsoluteError, HuberLoss,
-    BinaryCrossEntropyLoss, CrossEntropyLoss
+    BinaryCrossEntropyLoss, CrossEntropyLoss,
+    # Layer classes
+    Layer, LinearLayer, FullyConnectedLayer, MultiInputLayer,
+    AttentionLayer, MultiHeadAttentionLayer, PositionalEncodingLayer,
+    ConvolutionalLayer, MaxPoolingLayer, FlattenLayer
 )
 
 # Import plot module
