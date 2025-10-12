@@ -32,6 +32,11 @@ __all__ = [
     'MultiHeadAttentionLayer',
     'PositionalEncodingLayer',
     
+    # Convolutional Layers
+    'ConvolutionalLayer',
+    'MaxPoolingLayer', 
+    'FlattenLayer',
+    
     # Activation Functions
     'ReLUActivation',
     'SigmoidActivation',
@@ -2007,7 +2012,7 @@ class PositionalEncodingLayer(Layer):
     Sinusoidal positional encoding layer for sequence data.
     
     This implements the standard sinusoidal positional encoding from
-    "Attention Is All You Need" (Vaswani et al., 2017) as a proper Layer.
+    "Attention Is All You Need" (Vaswani et al., 2017) as a Layer.
     
     Parameters
     ----------
@@ -2105,6 +2110,497 @@ class PositionalEncodingLayer(Layer):
         if len(value) != 0:
             raise ValueError("PositionalEncodingLayer has no trainable parameters")
 
+
+class ConvolutionalLayer(Layer):
+    """
+    Convolutional layer for processing 2D images.
+    
+    This layer implements 2D convolution with multiple filters, padding, and stride.
+    It follows the standard CNN architecture where each filter learns to detect
+    specific features in the input.
+    
+    Parameters
+    ----------
+    input_channels : int
+        Number of input channels (e.g., 1 for grayscale, 3 for RGB)
+    output_channels : int
+        Number of output channels (number of filters)
+    kernel_size : int or tuple
+        Size of the convolution kernel (height, width)
+    stride : int or tuple, optional
+        Stride of the convolution, by default 1
+    padding : int or tuple, optional
+        Padding to add to input, by default 0
+    activation : Activation, optional
+        Activation function to apply after convolution
+    """
+    
+    def __init__(self, input_channels, output_channels, kernel_size, stride=1, padding=0, activation=None):
+        super().__init__()
+        self.input_channels = input_channels
+        self.output_channels = output_channels
+        
+        # Handle kernel size
+        if isinstance(kernel_size, int):
+            self.kernel_size = (kernel_size, kernel_size)
+        else:
+            self.kernel_size = kernel_size
+            
+        # Handle stride
+        if isinstance(stride, int):
+            self.stride = (stride, stride)
+        else:
+            self.stride = stride
+            
+        # Handle padding
+        if isinstance(padding, int):
+            self.padding = (padding, padding)
+        else:
+            self.padding = padding
+        
+        # Initialize filters (kernels) and biases
+        # Shape: (output_channels, input_channels, kernel_height, kernel_width)
+        self.filters = np.random.normal(0, np.sqrt(2.0 / (input_channels * self.kernel_size[0] * self.kernel_size[1])), 
+                                      (output_channels, input_channels, self.kernel_size[0], self.kernel_size[1]))
+        self.biases = np.zeros(output_channels)
+        
+        # Set up activation function
+        if activation is None:
+            self.activation = ReLUActivation()
+        else:
+            self.activation = activation
+        
+        # Store for backward pass
+        self.last_input = None
+        self.last_output = None
+        self.last_conv_output = None
+    
+    def forward(self, x):
+        """
+        Forward pass of the convolutional layer.
+        
+        Parameters
+        ----------
+        x : np.ndarray
+            Input tensor of shape (batch_size, input_channels, height, width)
+            
+        Returns
+        -------
+        np.ndarray
+            Output tensor of shape (batch_size, output_channels, out_height, out_width)
+        """
+        # Store input for backward pass
+        self.last_input = x
+        
+        batch_size, input_channels, input_height, input_width = x.shape
+        
+        # Add padding if specified
+        if self.padding[0] > 0 or self.padding[1] > 0:
+            x_padded = np.pad(x, ((0, 0), (0, 0), (self.padding[0], self.padding[0]), 
+                                 (self.padding[1], self.padding[1])), mode='constant')
+        else:
+            x_padded = x
+        
+        # Calculate output dimensions
+        out_height = (input_height + 2 * self.padding[0] - self.kernel_size[0]) // self.stride[0] + 1
+        out_width = (input_width + 2 * self.padding[1] - self.kernel_size[1]) // self.stride[1] + 1
+        
+        # Initialize output
+        output = np.zeros((batch_size, self.output_channels, out_height, out_width))
+        
+        # Perform convolution
+        for b in range(batch_size):
+            for out_c in range(self.output_channels):
+                for out_h in range(out_height):
+                    for out_w in range(out_width):
+                        # Calculate input region
+                        start_h = out_h * self.stride[0]
+                        start_w = out_w * self.stride[1]
+                        end_h = start_h + self.kernel_size[0]
+                        end_w = start_w + self.kernel_size[1]
+                        
+                        # Extract region and apply convolution
+                        region = x_padded[b, :, start_h:end_h, start_w:end_w]
+                        conv_sum = np.sum(region * self.filters[out_c]) + self.biases[out_c]
+                        output[b, out_c, out_h, out_w] = conv_sum
+        
+        # Apply activation function
+        self.last_conv_output = output.copy()
+        if hasattr(self.activation, 'forward'):
+            output = self.activation.forward(output)
+        
+        self.last_output = output
+        return output
+    
+    def backward(self, grad_output):
+        """
+        Backward pass of the convolutional layer.
+        
+        Parameters
+        ----------
+        grad_output : np.ndarray or tuple
+            Gradient from the next layer
+            
+        Returns
+        -------
+        tuple
+            Gradient with respect to input
+        """
+        if self.last_input is None:
+            raise ValueError("Must call forward before backward")
+        
+        # Handle gradient from layered network (tuple format)
+        if isinstance(grad_output, tuple):
+            grad_output = grad_output[0]
+        
+        # Gradient through activation function
+        if hasattr(self.activation, 'gradient'):
+            activation_grad = self.activation.gradient(self.last_conv_output)
+            grad_conv = grad_output * activation_grad
+        else:
+            grad_conv = grad_output
+        
+        # Initialize gradients
+        grad_filters = np.zeros_like(self.filters)
+        grad_biases = np.zeros_like(self.biases)
+        grad_input = np.zeros_like(self.last_input)
+        
+        batch_size, input_channels, input_height, input_width = self.last_input.shape
+        
+        # Add padding to input for gradient computation
+        if self.padding[0] > 0 or self.padding[1] > 0:
+            grad_input_padded = np.pad(grad_input, ((0, 0), (0, 0), (self.padding[0], self.padding[0]), 
+                                                   (self.padding[1], self.padding[1])), mode='constant')
+        else:
+            grad_input_padded = grad_input
+        
+        # Calculate output dimensions
+        out_height = (input_height + 2 * self.padding[0] - self.kernel_size[0]) // self.stride[0] + 1
+        out_width = (input_width + 2 * self.padding[1] - self.kernel_size[1]) // self.stride[1] + 1
+        
+        # Compute gradients
+        for b in range(batch_size):
+            for out_c in range(self.output_channels):
+                for out_h in range(out_height):
+                    for out_w in range(out_width):
+                        # Calculate input region
+                        start_h = out_h * self.stride[0]
+                        start_w = out_w * self.stride[1]
+                        end_h = start_h + self.kernel_size[0]
+                        end_w = start_w + self.kernel_size[1]
+                        
+                        # Check bounds
+                        if (start_h >= 0 and end_h <= input_height and 
+                            start_w >= 0 and end_w <= input_width):
+                            # Gradient for filters
+                            region = self.last_input[b, :, start_h:end_h, start_w:end_w]
+                            grad_filters[out_c] += grad_conv[b, out_c, out_h, out_w] * region
+                        
+                        # Gradient for biases
+                        grad_biases[out_c] += grad_conv[b, out_c, out_h, out_w]
+                        
+                        # Gradient for input
+                        if (start_h >= 0 and end_h <= input_height + 2 * self.padding[0] and 
+                            start_w >= 0 and end_w <= input_width + 2 * self.padding[1]):
+                            grad_input_padded[b, :, start_h:end_h, start_w:end_w] += \
+                                grad_conv[b, out_c, out_h, out_w] * self.filters[out_c]
+        
+        # Remove padding from input gradient
+        if self.padding[0] > 0 or self.padding[1] > 0:
+            grad_input = grad_input_padded[:, :, self.padding[0]:-self.padding[0], 
+                                          self.padding[1]:-self.padding[1]]
+        else:
+            grad_input = grad_input_padded
+        
+        return (grad_input,)
+    
+    @property
+    def parameters(self):
+        """
+        Get all trainable parameters as a 1D vector.
+        
+        Returns
+        -------
+        np.ndarray
+            1D array of all trainable parameters
+        """
+        return np.concatenate([self.filters.flatten(), self.biases.flatten()])
+    
+    @parameters.setter
+    def parameters(self, value):
+        """
+        Set all trainable parameters from a 1D vector.
+        
+        Parameters
+        ----------
+        value : np.ndarray
+            1D array of parameters to set
+        """
+        expected_length = self.filters.size + self.biases.size
+        if len(value) != expected_length:
+            raise ValueError(f"Expected {expected_length} parameters, got {len(value)}")
+        
+        # Set filters
+        filters_size = self.filters.size
+        self.filters = value[:filters_size].reshape(self.filters.shape)
+        
+        # Set biases
+        self.biases = value[filters_size:].reshape(self.biases.shape)
+
+
+class MaxPoolingLayer(Layer):
+    """
+    Max pooling layer for downsampling feature maps.
+    
+    This layer reduces the spatial dimensions by taking the maximum value
+    in each pooling region, helping to reduce computational complexity
+    and provide translation invariance.
+    
+    Parameters
+    ----------
+    pool_size : int or tuple
+        Size of the pooling window (height, width)
+    stride : int or tuple, optional
+        Stride of the pooling operation, by default None (same as pool_size)
+    """
+    
+    def __init__(self, pool_size, stride=None):
+        super().__init__()
+        
+        # Handle pool size
+        if isinstance(pool_size, int):
+            self.pool_size = (pool_size, pool_size)
+        else:
+            self.pool_size = pool_size
+            
+        # Handle stride (default to pool_size)
+        if stride is None:
+            self.stride = self.pool_size
+        elif isinstance(stride, int):
+            self.stride = (stride, stride)
+        else:
+            self.stride = stride
+        
+        # Store for backward pass
+        self.last_input = None
+        self.last_output = None
+        self.max_indices = None
+    
+    def forward(self, x):
+        """
+        Forward pass of the max pooling layer.
+        
+        Parameters
+        ----------
+        x : np.ndarray
+            Input tensor of shape (batch_size, channels, height, width)
+            
+        Returns
+        -------
+        np.ndarray
+            Output tensor of shape (batch_size, channels, out_height, out_width)
+        """
+        # Store input for backward pass
+        self.last_input = x
+        
+        batch_size, channels, input_height, input_width = x.shape
+        
+        # Calculate output dimensions
+        out_height = (input_height - self.pool_size[0]) // self.stride[0] + 1
+        out_width = (input_width - self.pool_size[1]) // self.stride[1] + 1
+        
+        # Initialize output and max indices
+        output = np.zeros((batch_size, channels, out_height, out_width))
+        self.max_indices = np.zeros((batch_size, channels, out_height, out_width, 2), dtype=int)
+        
+        # Perform max pooling
+        for b in range(batch_size):
+            for c in range(channels):
+                for out_h in range(out_height):
+                    for out_w in range(out_width):
+                        # Calculate input region
+                        start_h = out_h * self.stride[0]
+                        start_w = out_w * self.stride[1]
+                        end_h = start_h + self.pool_size[0]
+                        end_w = start_w + self.pool_size[1]
+                        
+                        # Extract region and find maximum
+                        region = x[b, c, start_h:end_h, start_w:end_w]
+                        max_val = np.max(region)
+                        output[b, c, out_h, out_w] = max_val
+                        
+                        # Store indices of maximum value
+                        max_idx = np.unravel_index(np.argmax(region), region.shape)
+                        self.max_indices[b, c, out_h, out_w] = [start_h + max_idx[0], start_w + max_idx[1]]
+        
+        self.last_output = output
+        return output
+    
+    def backward(self, grad_output):
+        """
+        Backward pass of the max pooling layer.
+        
+        Parameters
+        ----------
+        grad_output : np.ndarray
+            Gradient from the next layer
+            
+        Returns
+        -------
+        np.ndarray
+            Gradient with respect to input
+        """
+        if self.last_input is None:
+            raise ValueError("Must call forward before backward")
+        
+        # Initialize gradient for input
+        grad_input = np.zeros_like(self.last_input)
+        
+        batch_size, channels, input_height, input_width = self.last_input.shape
+        out_height, out_width = grad_output.shape[2], grad_output.shape[3]
+        
+        # Distribute gradients to maximum positions
+        for b in range(batch_size):
+            for c in range(channels):
+                for out_h in range(out_height):
+                    for out_w in range(out_width):
+                        # Get the position of the maximum value
+                        max_h, max_w = self.max_indices[b, c, out_h, out_w]
+                        
+                        # Add gradient to the maximum position
+                        grad_input[b, c, max_h, max_w] += grad_output[b, c, out_h, out_w]
+        
+        return (grad_input,)
+    
+    @property
+    def parameters(self):
+        """
+        Get all trainable parameters as a 1D vector.
+        
+        Max pooling has no trainable parameters.
+        
+        Returns
+        -------
+        np.ndarray
+            Empty array (no parameters)
+        """
+        return np.array([])
+    
+    @parameters.setter
+    def parameters(self, value):
+        """
+        Set all trainable parameters from a 1D vector.
+        
+        Max pooling has no trainable parameters, so this
+        just checks that an empty array is provided.
+        
+        Parameters
+        ----------
+        value : np.ndarray
+            Should be empty array
+        """
+        if len(value) != 0:
+            raise ValueError("MaxPoolingLayer has no trainable parameters")
+
+
+class FlattenLayer(Layer):
+    """
+    Flatten layer for converting multi-dimensional tensors to 1D.
+    
+    This layer is commonly used to transition from convolutional layers
+    to fully connected layers by flattening the spatial dimensions.
+    
+    Parameters
+    ----------
+    start_dim : int, optional
+        First dimension to flatten, by default 1
+    end_dim : int, optional
+        Last dimension to flatten, by default -1
+    """
+    
+    def __init__(self, start_dim=1, end_dim=-1):
+        super().__init__()
+        self.start_dim = start_dim
+        self.end_dim = end_dim
+        self.original_shape = None
+    
+    def forward(self, x):
+        """
+        Forward pass of the flatten layer.
+        
+        Parameters
+        ----------
+        x : np.ndarray
+            Input tensor of any shape
+            
+        Returns
+        -------
+        np.ndarray
+            Flattened tensor
+        """
+        # Store original shape for backward pass
+        self.original_shape = x.shape
+        
+        # Flatten the specified dimensions
+        if self.start_dim == 1 and self.end_dim == -1:
+            # Standard flattening: keep batch dimension, flatten the rest
+            return x.reshape(x.shape[0], -1)
+        else:
+            # Custom flattening
+            shape = list(x.shape)
+            flattened_dims = np.prod(shape[self.start_dim:self.end_dim+1])
+            new_shape = shape[:self.start_dim] + [flattened_dims] + shape[self.end_dim+1:]
+            return x.reshape(new_shape)
+    
+    def backward(self, grad_output):
+        """
+        Backward pass of the flatten layer.
+        
+        Parameters
+        ----------
+        grad_output : np.ndarray
+            Gradient from the next layer
+            
+        Returns
+        -------
+        np.ndarray
+            Gradient with respect to input
+        """
+        if self.original_shape is None:
+            raise ValueError("Must call forward before backward")
+        
+        # Reshape gradient back to original shape
+        return (grad_output.reshape(self.original_shape),)
+    
+    @property
+    def parameters(self):
+        """
+        Get all trainable parameters as a 1D vector.
+        
+        Flatten layer has no trainable parameters.
+        
+        Returns
+        -------
+        np.ndarray
+            Empty array (no parameters)
+        """
+        return np.array([])
+    
+    @parameters.setter
+    def parameters(self, value):
+        """
+        Set all trainable parameters from a 1D vector.
+        
+        Flatten layer has no trainable parameters, so this
+        just checks that an empty array is provided.
+        
+        Parameters
+        ----------
+        value : np.ndarray
+            Should be empty array
+        """
+        if len(value) != 0:
+            raise ValueError("FlattenLayer has no trainable parameters")
 
 
 
