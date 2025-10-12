@@ -1954,6 +1954,293 @@ class TestAttentionLayerGradients(unittest.TestCase):
         
         # Verify gradients match
         self.assertTrue(verify_gradient_implementation(analytical_grad_kv, numerical_grad_kv, rtol=1e-4))
+
+
+class TestMultiHeadAttentionLayerGradients(unittest.TestCase):
+    """Test gradient computation for MultiHeadAttentionLayer using numerical gradient verification."""
+    
+    def test_multihead_attention_layer_gradients(self):
+        """Test that MultiHeadAttentionLayer gradients match numerical gradients."""
+        from mlai.neural_networks import MultiHeadAttentionLayer
+        from mlai.utils import finite_difference_gradient, verify_gradient_implementation
+        
+        # Create multi-head attention layer
+        mha = MultiHeadAttentionLayer(d_model=8, n_heads=2)
+        
+        # Test input
+        x = np.random.randn(2, 3, 8)  # batch_size=2, seq_len=3, d_model=8
+        
+        # Test input gradient
+        def mha_func(x_flat):
+            x_reshaped = x_flat.reshape(2, 3, 8)
+            output = mha.forward(x_reshaped)
+            return np.sum(output)
+        
+        # Numerical gradient
+        numerical_grad = finite_difference_gradient(mha_func, x.flatten())
+        
+        # Analytical gradient
+        output = mha.forward(x)
+        grad_output = np.ones_like(output)
+        gradients = mha.backward(grad_output)
+        analytical_grad = gradients[0].flatten()  # First (and only) gradient
+        
+        # Verify gradients match
+        self.assertTrue(verify_gradient_implementation(analytical_grad, numerical_grad, rtol=1e-4))
+    
+    def test_multihead_attention_layer_different_architectures(self):
+        """Test MultiHeadAttentionLayer gradients with different architectures."""
+        from mlai.neural_networks import MultiHeadAttentionLayer
+        from mlai.utils import finite_difference_gradient, verify_gradient_implementation
+        
+        # Test different architectures
+        test_cases = [
+            (4, 1),  # d_model=4, n_heads=1
+            (8, 2),  # d_model=8, n_heads=2
+            (12, 3),  # d_model=12, n_heads=3
+        ]
+        
+        for d_model, n_heads in test_cases:
+            mha = MultiHeadAttentionLayer(d_model=d_model, n_heads=n_heads)
+            
+            # Test input
+            x = np.random.randn(1, 2, d_model)
+            
+            # Test input gradient
+            def mha_func(x_flat):
+                x_reshaped = x_flat.reshape(1, 2, d_model)
+                output = mha.forward(x_reshaped)
+                return np.sum(output)
+            
+            # Numerical gradient
+            numerical_grad = finite_difference_gradient(mha_func, x.flatten())
+            
+            # Analytical gradient
+            output = mha.forward(x)
+            grad_output = np.ones_like(output)
+            gradients = mha.backward(grad_output)
+            analytical_grad = gradients[0].flatten()
+            
+            # Verify gradients match
+            self.assertTrue(verify_gradient_implementation(analytical_grad, numerical_grad, rtol=1e-4))
+    
+    def test_multihead_attention_layer_parameters(self):
+        """Test MultiHeadAttentionLayer parameters property."""
+        from mlai.neural_networks import MultiHeadAttentionLayer
+        
+        # Create multi-head attention layer
+        mha = MultiHeadAttentionLayer(d_model=6, n_heads=2)
+        
+        # Test parameters getter
+        params = mha.parameters
+        self.assertIsInstance(params, np.ndarray)
+        self.assertGreater(len(params), 0)
+        
+        # Test parameters setter
+        original_params = params.copy()
+        new_params = original_params + 0.1
+        mha.parameters = new_params
+        
+        # Verify parameters were updated
+        np.testing.assert_array_almost_equal(mha.parameters, new_params)
+        
+        # Test round-trip
+        mha.parameters = original_params
+        np.testing.assert_array_almost_equal(mha.parameters, original_params)
+    
+    def test_multihead_attention_layer_parameters_error_handling(self):
+        """Test MultiHeadAttentionLayer parameters setter error handling."""
+        from mlai.neural_networks import MultiHeadAttentionLayer
+        
+        mha = MultiHeadAttentionLayer(d_model=4, n_heads=2)
+        
+        # Test wrong parameter length
+        wrong_params = np.array([1.0, 2.0, 3.0])  # Too short
+        with self.assertRaises(ValueError):
+            mha.parameters = wrong_params
+        
+        # Test correct parameter length
+        correct_length = len(mha.parameters)
+        correct_params = np.random.randn(correct_length)
+        mha.parameters = correct_params  # Should not raise error
+    
+    def test_multihead_attention_layer_forward_backward_consistency(self):
+        """Test that MultiHeadAttentionLayer forward and backward passes are consistent."""
+        from mlai.neural_networks import MultiHeadAttentionLayer
+        
+        mha = MultiHeadAttentionLayer(d_model=6, n_heads=2)
+        
+        # Test input
+        x = np.random.randn(2, 3, 6)
+        
+        # Forward pass
+        output = mha.forward(x)
+        self.assertEqual(output.shape, x.shape)
+        
+        # Backward pass
+        grad_output = np.ones_like(output)
+        gradients = mha.backward(grad_output)
+        
+        # Check gradient shape
+        self.assertEqual(len(gradients), 1)
+        grad_input = gradients[0]
+        self.assertEqual(grad_input.shape, x.shape)
+        
+        # Check that gradients are finite
+        self.assertTrue(np.all(np.isfinite(grad_input)))
+    
+    def test_multihead_attention_layer_head_separation(self):
+        """Test that MultiHeadAttentionLayer properly separates heads."""
+        from mlai.neural_networks import MultiHeadAttentionLayer
+        
+        mha = MultiHeadAttentionLayer(d_model=8, n_heads=2)
+        
+        # Test that we have the right number of attention heads
+        self.assertEqual(len(mha.attention_heads), 2)
+        self.assertEqual(mha.d_k, 4)  # 8 // 2 = 4
+        
+        # Test that each head has the right dimension
+        for head in mha.attention_heads:
+            self.assertEqual(head.d_model, 4)  # Each head works on d_k dimension
+
+
+class TestPositionalEncodingLayerGradients(unittest.TestCase):
+    """Test gradient computation for PositionalEncodingLayer using numerical gradient verification."""
+    
+    def test_positional_encoding_layer_gradients(self):
+        """Test that PositionalEncodingLayer gradients match numerical gradients."""
+        from mlai.neural_networks import PositionalEncodingLayer
+        from mlai.utils import finite_difference_gradient, verify_gradient_implementation
+        
+        # Create positional encoding layer
+        pos_enc = PositionalEncodingLayer(d_model=4)
+        
+        # Test input
+        x = np.random.randn(2, 3, 4)  # batch_size=2, seq_len=3, d_model=4
+        
+        # Test input gradient
+        def pos_enc_func(x_flat):
+            x_reshaped = x_flat.reshape(2, 3, 4)
+            output = pos_enc.forward(x_reshaped)
+            return np.sum(output)
+        
+        # Numerical gradient
+        numerical_grad = finite_difference_gradient(pos_enc_func, x.flatten())
+        
+        # Analytical gradient
+        output = pos_enc.forward(x)
+        grad_output = np.ones_like(output)
+        gradients = pos_enc.backward(grad_output)
+        analytical_grad = gradients[0].flatten()  # First (and only) gradient
+        
+        # Verify gradients match (should be identical since it's just addition)
+        self.assertTrue(verify_gradient_implementation(analytical_grad, numerical_grad, rtol=1e-10))
+    
+    def test_positional_encoding_layer_identity_gradient(self):
+        """Test that PositionalEncodingLayer has identity gradient (grad_output = grad_input)."""
+        from mlai.neural_networks import PositionalEncodingLayer
+        
+        pos_enc = PositionalEncodingLayer(d_model=4)
+        
+        # Test input
+        x = np.random.randn(2, 3, 4)
+        
+        # Forward pass
+        output = pos_enc.forward(x)
+        
+        # Backward pass with specific gradient
+        grad_output = np.random.randn(2, 3, 4)
+        gradients = pos_enc.backward(grad_output)
+        grad_input = gradients[0]
+        
+        # Gradient should be identical to grad_output (identity gradient)
+        np.testing.assert_array_equal(grad_input, grad_output)
+    
+    def test_positional_encoding_layer_parameters(self):
+        """Test PositionalEncodingLayer parameters property (should be empty)."""
+        from mlai.neural_networks import PositionalEncodingLayer
+        
+        pos_enc = PositionalEncodingLayer(d_model=4)
+        
+        # Test parameters getter (should be empty)
+        params = pos_enc.parameters
+        self.assertIsInstance(params, np.ndarray)
+        self.assertEqual(len(params), 0)
+        
+        # Test parameters setter (should accept empty array)
+        pos_enc.parameters = np.array([])  # Should not raise error
+        
+        # Test parameters setter error (should reject non-empty array)
+        with self.assertRaises(ValueError):
+            pos_enc.parameters = np.array([1.0, 2.0])
+    
+    def test_positional_encoding_layer_different_architectures(self):
+        """Test PositionalEncodingLayer with different architectures."""
+        from mlai.neural_networks import PositionalEncodingLayer
+        
+        # Test different d_model values
+        test_cases = [2, 4, 8, 16]
+        
+        for d_model in test_cases:
+            pos_enc = PositionalEncodingLayer(d_model=d_model)
+            
+            # Test input
+            x = np.random.randn(1, 2, d_model)
+            
+            # Forward pass
+            output = pos_enc.forward(x)
+            self.assertEqual(output.shape, x.shape)
+            
+            # Backward pass
+            grad_output = np.ones_like(output)
+            gradients = pos_enc.backward(grad_output)
+            grad_input = gradients[0]
+            
+            # Should have identity gradient
+            np.testing.assert_array_equal(grad_input, grad_output)
+    
+    def test_positional_encoding_layer_sequence_length(self):
+        """Test PositionalEncodingLayer with different sequence lengths."""
+        from mlai.neural_networks import PositionalEncodingLayer
+        
+        pos_enc = PositionalEncodingLayer(d_model=4, max_length=10)
+        
+        # Test different sequence lengths
+        test_cases = [1, 3, 5, 8]
+        
+        for seq_len in test_cases:
+            x = np.random.randn(2, seq_len, 4)
+            
+            # Forward pass
+            output = pos_enc.forward(x)
+            self.assertEqual(output.shape, x.shape)
+            
+            # Check that positional encoding was added
+            # The output should be different from input (unless by coincidence)
+            self.assertFalse(np.array_equal(output, x))
+    
+    def test_positional_encoding_layer_consistency(self):
+        """Test that PositionalEncodingLayer produces consistent results."""
+        from mlai.neural_networks import PositionalEncodingLayer
+        
+        pos_enc = PositionalEncodingLayer(d_model=4)
+        
+        # Test input
+        x = np.random.randn(2, 3, 4)
+        
+        # Multiple forward passes should give same result
+        output1 = pos_enc.forward(x)
+        output2 = pos_enc.forward(x)
+        np.testing.assert_array_equal(output1, output2)
+        
+        # The difference should be the positional encoding
+        pos_encoding = output1 - x
+        self.assertEqual(pos_encoding.shape, x.shape)
+        
+        # Positional encoding should be the same for all batches (within numerical precision)
+        pos_encoding_batch1 = pos_encoding[0]
+        pos_encoding_batch2 = pos_encoding[1]
+        np.testing.assert_array_almost_equal(pos_encoding_batch1, pos_encoding_batch2, decimal=15)
             
 if __name__ == '__main__':
     unittest.main()
