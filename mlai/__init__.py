@@ -1,6 +1,15 @@
 # Import core functionality
 from . import mlai
 
+# Import modular components (stub files for refactoring)
+from . import models
+from . import linear_models
+from . import gaussian_processes
+from . import neural_networks
+from . import utils
+from . import dimred
+from . import optimisation
+
 # Check for GPy availability
 GPY_AVAILABLE = True
 try:
