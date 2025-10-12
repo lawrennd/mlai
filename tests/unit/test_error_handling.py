@@ -15,7 +15,7 @@ import os
 from unittest.mock import patch, MagicMock
 
 # Import mlai modules
-import mlai.mlai as mlai
+import mlai
 
 
 class TestUtilityFunctionErrors(unittest.TestCase):

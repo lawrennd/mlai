@@ -23,7 +23,7 @@ from .mlai import *
 
 # Import utility functions to make them available at package level
 from .utils import write_figure, write_animation, write_animation_html, filename_join, write_figure_caption, load_pgm
-from .mlai import finite_difference_gradient, verify_gradient_implementation
+from .mlai import finite_difference_gradient, verify_gradient_implementation, linear
 
 # Import neural network classes and functions to make them available at package level
 from .neural_networks import (

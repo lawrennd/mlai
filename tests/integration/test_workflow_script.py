@@ -56,16 +56,30 @@ class TestWorkflowScript:
     
     def test_workflow_script_runs_successfully(self):
         """Test that the workflow script runs without errors."""
-        # Run the workflow script
+        # Run the workflow script with PYTHONPATH set to include the mlai package
+        env = os.environ.copy()
+        env['PYTHONPATH'] = str(Path(self.original_cwd).parent)
+        
         result = subprocess.run(
             [sys.executable, "example_workflow.py"],
             capture_output=True,
             text=True,
-            cwd=self.temp_dir
+            cwd=self.temp_dir,
+            env=env
         )
         
         # Check that the script ran successfully
+        if result.returncode != 0:
+            print(f"STDOUT: {result.stdout}")
+            print(f"STDERR: {result.stderr}")
         assert result.returncode == 0, f"Script failed with return code {result.returncode}"
+        
+        # Print script output for debugging
+        print(f"STDOUT: {result.stdout}")
+        print(f"STDERR: {result.stderr}")
+        
+        # List all files in the temp directory
+        print(f"Files in temp directory: {list(Path(self.temp_dir).glob('*'))}")
         
         # Check that expected output files were created
         expected_files = [
@@ -85,12 +99,16 @@ class TestWorkflowScript:
     
     def test_workflow_script_produces_expected_metrics(self):
         """Test that the workflow script produces reasonable metrics."""
-        # Run the workflow script
+        # Run the workflow script with PYTHONPATH set to include the mlai package
+        env = os.environ.copy()
+        env['PYTHONPATH'] = str(Path(self.original_cwd).parent)
+        
         result = subprocess.run(
             [sys.executable, "example_workflow.py"],
             capture_output=True,
             text=True,
-            cwd=self.temp_dir
+            cwd=self.temp_dir,
+            env=env
         )
         
         # Check for expected metrics in output
@@ -108,12 +126,16 @@ class TestWorkflowScript:
     
     def test_workflow_script_no_errors(self):
         """Test that the workflow script runs without errors or warnings."""
-        # Run the workflow script
+        # Run the workflow script with PYTHONPATH set to include the mlai package
+        env = os.environ.copy()
+        env['PYTHONPATH'] = str(Path(self.original_cwd).parent)
+        
         result = subprocess.run(
             [sys.executable, "example_workflow.py"],
             capture_output=True,
             text=True,
-            cwd=self.temp_dir
+            cwd=self.temp_dir,
+            env=env
         )
         
         # Check that there are no error messages

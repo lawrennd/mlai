@@ -14,7 +14,7 @@ Run this script to see all concepts in action with visualizations.
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-import mlai.mlai as mlai
+import mlai
 
 def setup_plotting():
     """Set up matplotlib for better plots."""
