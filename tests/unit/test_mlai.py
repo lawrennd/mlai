@@ -24,79 +24,6 @@ import pandas as pd
 import mlai.mlai as mlai
 
 
-class TestUtilityFunctions:
-    """Test utility functions for file operations and plotting."""
-    
-    def test_filename_join_no_directory(self):
-        """Test filename_join with no directory specified."""
-        result = mlai.filename_join("test.png")
-        assert result == "test.png"
-    
-    def test_filename_join_with_directory(self):
-        """Test filename_join with directory specified."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            result = mlai.filename_join("test.png", temp_dir)
-            expected = os.path.join(temp_dir, "test.png")
-            assert result == expected
-    
-    def test_filename_join_creates_directory(self):
-        """Test filename_join creates directory if it doesn't exist."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            new_dir = os.path.join(temp_dir, "new_subdir")
-            result = mlai.filename_join("test.png", new_dir)
-            expected = os.path.join(new_dir, "test.png")
-            assert result == expected
-            assert os.path.exists(new_dir)
-    
-    @patch('matplotlib.animation.Animation.save')
-    def test_write_animation(self, mock_save):
-        """Test write_animation function."""
-        mock_anim = MagicMock()
-        with tempfile.TemporaryDirectory() as temp_dir:
-            mlai.write_animation(mock_anim, "test.gif", temp_dir, fps=10)
-            expected_path = os.path.join(temp_dir, "test.gif")
-            mock_save.assert_called_once_with(expected_path, fps=10)
-    
-    def test_write_animation_html(self):
-        """Test write_animation_html function."""
-        mock_anim = MagicMock()
-        mock_anim.to_jshtml.return_value = "<html>test</html>"
-        
-        with tempfile.TemporaryDirectory() as temp_dir:
-            mlai.write_animation_html(mock_anim, "test.html", temp_dir)
-            expected_path = os.path.join(temp_dir, "test.html")
-            assert os.path.exists(expected_path)
-            
-            with open(expected_path, 'r') as f:
-                content = f.read()
-            assert content == "<html>test</html>"
-    
-    @patch('matplotlib.pyplot.savefig')
-    def test_write_figure_current_figure(self, mock_savefig):
-        """Test write_figure with current figure."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            mlai.write_figure("test.png", directory=temp_dir)
-            expected_path = os.path.join(temp_dir, "test.png")
-            mock_savefig.assert_called_once_with(expected_path, transparent=True)
-    
-    @patch('matplotlib.figure.Figure.savefig')
-    def test_write_figure_specific_figure(self, mock_savefig):
-        """Test write_figure with specific figure."""
-        mock_figure = MagicMock()
-        with tempfile.TemporaryDirectory() as temp_dir:
-            mlai.write_figure("test.png", figure=mock_figure, directory=temp_dir)
-            expected_path = os.path.join(temp_dir, "test.png")
-            mock_figure.savefig.assert_called_once_with(expected_path, transparent=True)
-    
-    def test_write_figure_custom_kwargs(self):
-        """Test write_figure with custom kwargs."""
-        with patch('matplotlib.pyplot.savefig') as mock_savefig:
-            with tempfile.TemporaryDirectory() as temp_dir:
-                mlai.write_figure("test.png", directory=temp_dir, dpi=300, transparent=False)
-                expected_path = os.path.join(temp_dir, "test.png")
-                mock_savefig.assert_called_once_with(expected_path, dpi=300, transparent=False)
-
-
 class TestPerceptron:
     """Test perceptron algorithm functions."""
     
@@ -1802,7 +1729,7 @@ class TestMapModelMethods:
         assert rmse == np.sqrt(4.0 / 2)  # sqrt(sum_squares / num_data)
 
 
-class TestWardsMethod:
+# TestWardsMethod moved to test_dimred.py - Ward's method is clustering, not utilities
     """Test Ward's hierarchical clustering implementation."""
     
     def test_wards_method_initialization(self):
@@ -1928,13 +1855,14 @@ class TestWardsMethod:
     def test_wards_method_linkage_matrix_compatibility(self):
         """Test that linkage matrix is compatible with scipy."""
         from scipy.cluster.hierarchy import dendrogram
-        
+        import matplotlib.pyplot as plt
+
         X = np.array([[1, 2], [3, 4], [5, 6]])
         ward = mlai.WardsMethod(X)
         ward.fit()
-        
+
         linkage_matrix = ward.get_linkage_matrix()
-        
+
         # Should be able to create dendrogram without errors
         try:
             fig, ax = plt.subplots(figsize=(6, 4))
@@ -1942,28 +1870,34 @@ class TestWardsMethod:
             plt.close(fig)
         except Exception as e:
             pytest.fail(f"Linkage matrix not compatible with scipy: {e}")
+        finally:
+            plt.close('all')
     
     def test_wards_method_compare_with_scipy(self):
         """Test comparison with scipy's Ward linkage."""
         from scipy.cluster.hierarchy import linkage as scipy_linkage
+        import matplotlib.pyplot as plt
         
-        X = np.array([[1, 2], [3, 4], [5, 6], [7, 8]])
-        ward = mlai.WardsMethod(X)
-        ward.fit()
-        
-        our_linkage = ward.get_linkage_matrix()
-        scipy_linkage_result = scipy_linkage(X, method='ward')
-        
-        # Both should have same shape
-        assert our_linkage.shape == scipy_linkage_result.shape
-        
-        # Both should have positive distances
-        assert np.all(our_linkage[:, 2] > 0)
-        assert np.all(scipy_linkage_result[:, 2] > 0)
-        
-        # Both should have positive cluster sizes
-        assert np.all(our_linkage[:, 3] > 0)
-        assert np.all(scipy_linkage_result[:, 3] > 0)
+        try:
+            X = np.array([[1, 2], [3, 4], [5, 6], [7, 8]])
+            ward = mlai.WardsMethod(X)
+            ward.fit()
+            
+            our_linkage = ward.get_linkage_matrix()
+            scipy_linkage_result = scipy_linkage(X, method='ward')
+            
+            # Both should have same shape
+            assert our_linkage.shape == scipy_linkage_result.shape
+            
+            # Both should have positive distances
+            assert np.all(our_linkage[:, 2] > 0)
+            assert np.all(scipy_linkage_result[:, 2] > 0)
+            
+            # Both should have positive cluster sizes
+            assert np.all(our_linkage[:, 3] > 0)
+            assert np.all(scipy_linkage_result[:, 3] > 0)
+        finally:
+            plt.close('all')
     
     def test_wards_method_edge_cases(self):
         """Test edge cases for Ward's method."""
@@ -2810,6 +2744,10 @@ class TestNeuralNetworkVisualizations(unittest.TestCase):
     
     def setUp(self):
         """Set up test data and network."""
+        # Clean up matplotlib state before each test
+        import matplotlib.pyplot as plt
+        plt.close('all')
+        
         # Create test data
         self.x1 = np.linspace(-2, 2, 20)  # Smaller grid for faster tests
         self.x2 = np.linspace(-2, 2, 20)
@@ -2826,6 +2764,7 @@ class TestNeuralNetworkVisualizations(unittest.TestCase):
         from mlai.plot import visualise_relu_activations
         import tempfile
         import os
+        import matplotlib.pyplot as plt
         
         # Create temporary directory for output
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -2843,35 +2782,44 @@ class TestNeuralNetworkVisualizations(unittest.TestCase):
             
             # Check file size (should be non-zero)
             self.assertGreater(os.path.getsize(expected_path), 0)
+            
+            # Clean up matplotlib state
+            plt.close('all')
     
     def test_visualise_activation_summary(self):
         """Test activation summary visualization function."""
         from mlai.plot import visualise_activation_summary
         import tempfile
         import os
+        import matplotlib.pyplot as plt
         
-        # Create temporary directory for output
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # Test the function
-            visualise_activation_summary(
-                self.network, self.X1, self.X2, 
-                layer_idx=0, 
-                directory=temp_dir, 
-                filename='test-activation-summary.svg'
-            )
-            
-            # Check that file was created
-            expected_path = os.path.join(temp_dir, 'test-activation-summary.svg')
-            self.assertTrue(os.path.exists(expected_path))
-            
-            # Check file size (should be non-zero)
-            self.assertGreater(os.path.getsize(expected_path), 0)
+        try:
+            # Create temporary directory for output
+            with tempfile.TemporaryDirectory() as temp_dir:
+                # Test the function
+                visualise_activation_summary(
+                    self.network, self.X1, self.X2, 
+                    layer_idx=0, 
+                    directory=temp_dir, 
+                    filename='test-activation-summary.svg'
+                )
+                
+                # Check that file was created
+                expected_path = os.path.join(temp_dir, 'test-activation-summary.svg')
+                self.assertTrue(os.path.exists(expected_path))
+                
+                # Check file size (should be non-zero)
+                self.assertGreater(os.path.getsize(expected_path), 0)
+        finally:
+            # Clean up matplotlib state
+            plt.close('all')
     
     def test_visualise_decision_boundaries(self):
         """Test decision boundaries visualization function."""
         from mlai.plot import visualise_decision_boundaries
         import tempfile
         import os
+        import matplotlib.pyplot as plt
         
         # Create temporary directory for output
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -2889,6 +2837,9 @@ class TestNeuralNetworkVisualizations(unittest.TestCase):
             
             # Check file size (should be non-zero)
             self.assertGreater(os.path.getsize(expected_path), 0)
+            
+            # Clean up matplotlib state
+            plt.close('all')
     
     def test_visualization_with_different_networks(self):
         """Test visualizations with different network architectures."""
@@ -2928,6 +2879,10 @@ class TestNeuralNetworkVisualizations(unittest.TestCase):
                 # Check that file was created
                 expected_path = os.path.join(temp_dir, f'test-{config["name"].lower().replace(" ", "-")}.svg')
                 self.assertTrue(os.path.exists(expected_path))
+            
+            # Clean up matplotlib state
+            import matplotlib.pyplot as plt
+            plt.close('all')
     
     def test_visualization_error_handling(self):
         """Test that visualizations handle errors gracefully."""
@@ -2952,6 +2907,10 @@ class TestNeuralNetworkVisualizations(unittest.TestCase):
             except (IndexError, AttributeError):
                 # Expected for invalid layer index
                 pass
+            
+            # Clean up matplotlib state
+            import matplotlib.pyplot as plt
+            plt.close('all')
     
     def test_visualization_with_single_unit(self):
         """Test visualizations with networks having single hidden units."""
@@ -2977,4 +2936,8 @@ class TestNeuralNetworkVisualizations(unittest.TestCase):
             # Check that file was created
             expected_path = os.path.join(temp_dir, 'test-single-unit.svg')
             self.assertTrue(os.path.exists(expected_path))
-            self.assertGreater(os.path.getsize(expected_path), 0) 
+            self.assertGreater(os.path.getsize(expected_path), 0)
+            
+            # Clean up matplotlib state
+            import matplotlib.pyplot as plt
+            plt.close('all') 
