@@ -17,7 +17,7 @@ import matplotlib.animation as animation
 import pandas as pd
 
 # Import the module to test
-import mlai.mlai as mlai
+import mlai
 
 
 class TestAbstractBaseClasses:

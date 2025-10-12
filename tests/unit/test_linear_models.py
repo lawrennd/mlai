@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-Tests for linear models, basis functions, and related functionality in mlai.
-
+Tests for linear models, basis functions, and related functionality in 
 This module tests the linear models and basis functions that will be moved to 
 linear_models.py in the refactoring process.
 """
@@ -15,7 +14,9 @@ import pytest
 from unittest.mock import patch, MagicMock
 
 # Import mlai modules
-import mlai.mlai as mlai
+import mlai
+from mlai.linear_models import LM, Basis, linear, polynomial, radial, fourier, relu, hyperbolic_tangent, Gaussian
+from mlai import BLM, LR
 
 
 class TestBasisFunctions:
@@ -24,14 +25,14 @@ class TestBasisFunctions:
     def test_linear_basis(self):
         """Test linear basis function."""
         x = np.array([[1], [2], [3]])  # 2D array as expected
-        result = mlai.linear(x)
+        result = linear(x)
         expected = np.array([[1, 1], [1, 2], [1, 3]])
         assert np.array_equal(result, expected)
     
     def test_polynomial_basis(self):
         """Test polynomial basis function."""
         x = np.array([[0.5], [1.0]])  # 2D array as expected
-        result = mlai.polynomial(x, num_basis=3, data_limits=[0, 2])
+        result = polynomial(x, num_basis=3, data_limits=[0, 2])
         # Should create 3 basis functions
         assert result.shape == (2, 3)
         # Values should be finite
@@ -40,7 +41,7 @@ class TestBasisFunctions:
     def test_radial_basis(self):
         """Test radial basis function."""
         x = np.array([[0.5], [1.0]])  # 2D array as expected
-        result = mlai.radial(x, num_basis=3, data_limits=[0, 2])
+        result = radial(x, num_basis=3, data_limits=[0, 2])
         # Should create 3 RBF basis functions
         assert result.shape == (2, 3)
         # Values should be positive (Gaussian functions)
@@ -49,14 +50,14 @@ class TestBasisFunctions:
     def test_fourier_basis(self):
         """Test Fourier basis function."""
         x = np.array([[0.5], [1.0]])  # 2D array as expected
-        result = mlai.fourier(x, num_basis=4, data_limits=[0, 2])
+        result = fourier(x, num_basis=4, data_limits=[0, 2])
         # Should create 4 Fourier basis functions (2 sine, 2 cosine)
         assert result.shape == (2, 4)
     
     def test_relu_basis(self):
         """Test ReLU basis function."""
         x = np.array([[0.5], [1.0]])  # 2D array as expected
-        result = mlai.relu(x, num_basis=3, data_limits=[0, 2])
+        result = relu(x, num_basis=3, data_limits=[0, 2])
         # Should create 3 ReLU basis functions
         assert result.shape == (2, 3)
         # ReLU values should be non-negative
@@ -65,7 +66,7 @@ class TestBasisFunctions:
     def test_hyperbolic_tangent_basis(self):
         """Test hyperbolic tangent basis function."""
         x = np.array([[0.5], [1.0]])  # 2D array as expected
-        result = mlai.hyperbolic_tangent(x, num_basis=3, data_limits=[0, 2])
+        result = hyperbolic_tangent(x, num_basis=3, data_limits=[0, 2])
         # Should create 3 tanh basis functions
         assert result.shape == (2, 3)
         # tanh values should be in [-1, 1]
@@ -81,7 +82,7 @@ class TestBasisClass:
         def test_function(x, **kwargs):
             return x.reshape(-1, 1)
         
-        basis = mlai.Basis(test_function, 1)
+        basis = Basis(test_function, 1)
         assert basis.function == test_function
         assert basis.number == 1
         # kwargs is not a standard attribute, so we'll test what we can
@@ -93,7 +94,7 @@ class TestBasisClass:
         def test_function(x, **kwargs):
             return x.reshape(-1, 1)
         
-        basis = mlai.Basis(test_function, 1)
+        basis = Basis(test_function, 1)
         x = np.array([1, 2, 3])
         result = basis.Phi(x)
         expected = np.array([[1], [2], [3]])
@@ -107,9 +108,9 @@ class TestLinearModel:
         """Test LM class initialization."""
         X = np.array([[1, 2], [3, 4]])
         y = np.array([1, 2]).reshape(-1, 1)
-        basis = mlai.Basis(mlai.linear, 1)
+        basis = Basis(linear, 1)
         
-        model = mlai.LM(X, y, basis)
+        model = LM(X, y, basis)
         assert model.X.shape == (2, 2)
         assert model.y.shape == (2, 1)
         assert model.basis == basis
@@ -118,9 +119,9 @@ class TestLinearModel:
         """Test LM set_param method."""
         X = np.array([[1], [2]])  # Single feature
         y = np.array([1, 2]).reshape(-1, 1)
-        basis = mlai.Basis(mlai.linear, 1)
+        basis = Basis(linear, 1)
         
-        model = mlai.LM(X, y, basis)
+        model = LM(X, y, basis)
         # Skip the fit call that happens in set_param
         model.sigma2 = 0.1
         assert model.sigma2 == 0.1
@@ -129,9 +130,9 @@ class TestLinearModel:
         """Test LM objective method (lines 654-655)."""
         X = np.array([[1], [2], [3]])
         y = np.array([[1], [2], [3]])
-        basis = mlai.Basis(mlai.linear, 1)
+        basis = Basis(linear, 1)
         
-        model = mlai.LM(X, y, basis)
+        model = LM(X, y, basis)
         model.fit()  # Need to fit first to get w_star
         # The objective method should call update_sum_squares and return sum_squares
         result = model.objective()
@@ -143,9 +144,9 @@ class TestLinearModel:
         """Test LM log_likelihood method (lines 659-660)."""
         X = np.array([[1], [2], [3]])
         y = np.array([[1], [2], [3]])
-        basis = mlai.Basis(mlai.linear, 1)
+        basis = Basis(linear, 1)
         
-        model = mlai.LM(X, y, basis)
+        model = LM(X, y, basis)
         model.fit()  # Need to fit first to get w_star
         # The log_likelihood method should call update_sum_squares and return log-likelihood
         result = model.log_likelihood()
@@ -159,7 +160,7 @@ class TestLinearModel:
         frequency_range = [0.0, 0.5, 1.0, 1.5]  # Custom frequencies
         
         # Test with num_basis=4 to trigger the else branch
-        result = mlai.fourier(X, num_basis=4, data_limits=data_limits, frequency_range=frequency_range)
+        result = fourier(X, num_basis=4, data_limits=data_limits, frequency_range=frequency_range)
         
         assert result.shape == (X.shape[0], 4)
         assert np.all(np.isfinite(result))
@@ -172,14 +173,14 @@ class TestLinearModel:
         data_limits = [0.0, 2.0]
         
         # Test with num_basis=2 to trigger elif num_basis==2 branch (lines 858-859)
-        result_2 = mlai.relu(X, num_basis=2, data_limits=data_limits)
+        result_2 = relu(X, num_basis=2, data_limits=data_limits)
         assert result_2.shape == (X.shape[0], 2)
         assert np.all(np.isfinite(result_2))
         # First column should be all 1s (constant term)
         assert np.all(result_2[:, 0] == 1.0)
         
         # Test with num_basis=1 to trigger if num_basis < 3 branch (line 863)
-        result_1 = mlai.relu(X, num_basis=1, data_limits=data_limits)
+        result_1 = relu(X, num_basis=1, data_limits=data_limits)
         assert result_1.shape == (X.shape[0], 1)
         assert np.all(np.isfinite(result_1))
         # Should be all 1s (constant term only)
@@ -191,12 +192,12 @@ class TestLinearModel:
         data_limits = [0.0, 2.0]
         
         # Test with num_basis=2 to trigger elif num_basis==2 branch (lines 902-904)
-        result_2 = mlai.relu(X, num_basis=2, data_limits=data_limits)
+        result_2 = relu(X, num_basis=2, data_limits=data_limits)
         assert result_2.shape == (X.shape[0], 2)
         assert np.all(np.isfinite(result_2))
         
         # Test with num_basis=1 to trigger else branch (lines 905-907)
-        result_1 = mlai.relu(X, num_basis=1, data_limits=data_limits)
+        result_1 = relu(X, num_basis=1, data_limits=data_limits)
         assert result_1.shape == (X.shape[0], 1)
         assert np.all(np.isfinite(result_1))
     
@@ -204,9 +205,9 @@ class TestLinearModel:
         """Test LM fit and predict methods."""
         X = np.array([[1], [2], [3]])
         y = np.array([2, 4, 6]).reshape(-1, 1)  # Linear relationship y = 2x
-        basis = mlai.Basis(mlai.linear, 1)
+        basis = Basis(linear, 1)
         
-        model = mlai.LM(X, y, basis)
+        model = LM(X, y, basis)
         model.fit()
         
         # Test prediction
@@ -226,9 +227,9 @@ class TestLogisticRegression:
         """Test LR class initialization."""
         X = np.array([[1, 2], [3, 4]])
         y = np.array([0, 1]).reshape(-1, 1)  # Binary labels
-        basis = mlai.Basis(mlai.linear, 1)
+        basis = Basis(linear, 1)
         
-        lr = mlai.LR(X, y, basis)
+        lr = LR(X, y, basis)
         assert lr.X.shape == (2, 2)
         assert lr.y.shape == (2, 1)
         assert lr.basis == basis
@@ -237,9 +238,9 @@ class TestLogisticRegression:
         """Test LR predict method."""
         X = np.array([[1], [2]])
         y = np.array([0, 1])
-        basis = mlai.Basis(mlai.linear, 1)
+        basis = Basis(linear, 1)
         
-        lr = mlai.LR(X, y, basis)
+        lr = LR(X, y, basis)
         # Skip predict since it requires fitting first
         # Just test that the model was created properly
         assert hasattr(lr, 'X')
@@ -250,20 +251,20 @@ class TestLogisticRegression:
         """Test LR constructor error handling (line 2278)."""
         X = np.array([[1, 2], [3, 4]])
         y = np.array([[1], [2]])
-        basis = mlai.Basis(mlai.linear, 2)
+        basis = Basis(linear, 2)
         
         # Test with invalid y shape (should raise ValueError)
         y_invalid = np.array([[1, 2], [3, 4]])  # 2D but wrong shape
         with pytest.raises(ValueError, match="y must be 2D with shape"):
-            mlai.LR(X, y_invalid, basis)
+            LR(X, y_invalid, basis)
 
     def test_lr_predict_method(self):
         """Test LR predict method (lines 2295-2298)."""
         X = np.array([[1], [2], [3]])
         y = np.array([0, 1, 0]).reshape(-1, 1)
-        basis = mlai.Basis(mlai.linear, 2)  # Need 2 basis functions for linear
+        basis = Basis(linear, 2)  # Need 2 basis functions for linear
         
-        lr = mlai.LR(X, y, basis)
+        lr = LR(X, y, basis)
         lr.fit()  # Fit the model first
         
         # Test predict method
@@ -280,9 +281,9 @@ class TestLogisticRegression:
         """Test LR fit method (lines 2325-2335)."""
         X = np.array([[1], [2], [3]])
         y = np.array([0, 1, 0]).reshape(-1, 1)
-        basis = mlai.Basis(mlai.linear, 2)  # Need 2 basis functions for linear
+        basis = Basis(linear, 2)  # Need 2 basis functions for linear
         
-        lr = mlai.LR(X, y, basis)
+        lr = LR(X, y, basis)
         
         # Test fit method with small number of iterations
         lr.fit(max_iterations=5, learning_rate=0.1, tolerance=1e-6)
@@ -296,9 +297,9 @@ class TestLogisticRegression:
         """Test LR fit method convergence (line 2335)."""
         X = np.array([[1], [2], [3]])
         y = np.array([0, 1, 0]).reshape(-1, 1)
-        basis = mlai.Basis(mlai.linear, 2)  # Need 2 basis functions for linear
+        basis = Basis(linear, 2)  # Need 2 basis functions for linear
         
-        lr = mlai.LR(X, y, basis)
+        lr = LR(X, y, basis)
         
         # Test fit method with very small tolerance to trigger convergence
         lr.fit(max_iterations=100, learning_rate=0.1, tolerance=1e-10)
@@ -312,9 +313,9 @@ class TestLogisticRegression:
         """Test LM set_param method (lines 573, 578-579, 583)."""
         X = np.array([[1], [2], [3]])
         y = np.array([[2], [4], [6]])
-        basis = mlai.Basis(mlai.linear, 2)
+        basis = Basis(linear, 2)
         
-        lm = mlai.LM(X, y, basis)
+        lm = LM(X, y, basis)
         
         # Test setting a parameter that triggers the first branch (line 573)
         # This should update the model's internal state
@@ -340,8 +341,8 @@ class TestBayesianLinearModel:
         y = np.array([1, 2, 3]).reshape(-1, 1)
         alpha = 1.0
         sigma2 = 0.1
-        basis = mlai.Basis(mlai.linear, 2)  # number=2 for 1D input
-        blm = mlai.BLM(X, y, basis, alpha=alpha, sigma2=sigma2)
+        basis = Basis(linear, 2)  # number=2 for 1D input
+        blm = BLM(X, y, basis, alpha=alpha, sigma2=sigma2)
         assert blm.alpha == alpha
         assert blm.sigma2 == sigma2
         assert blm.basis == basis
@@ -353,8 +354,8 @@ class TestBayesianLinearModel:
         y = np.array([1, 2, 3]).reshape(-1, 1)
         alpha = 1.0
         sigma2 = 0.1
-        basis = mlai.Basis(mlai.linear, 2)
-        blm = mlai.BLM(X, y, basis, alpha=alpha, sigma2=sigma2)
+        basis = Basis(linear, 2)
+        blm = BLM(X, y, basis, alpha=alpha, sigma2=sigma2)
         blm.fit()
         # Posterior mean and covariance should be set
         assert hasattr(blm, 'mu_w')
@@ -366,9 +367,9 @@ class TestBayesianLinearModel:
         """Test BLM set_param method (lines 2105, 2112-2113)."""
         X = np.array([[1], [2], [3]])
         y = np.array([[2], [4], [6]])
-        basis = mlai.Basis(mlai.linear, 2)
+        basis = Basis(linear, 2)
         
-        blm = mlai.BLM(X, y, basis)
+        blm = BLM(X, y, basis)
         
         # Test setting a parameter that triggers the first branch (line 2105)
         # This should update the model's internal state
@@ -390,8 +391,8 @@ class TestBayesianLinearModel:
         y = np.array([1, 2, 3]).reshape(-1, 1)
         alpha = 1.0
         sigma2 = 0.1
-        basis = mlai.Basis(mlai.linear, 2)
-        blm = mlai.BLM(X, y, basis, alpha=alpha, sigma2=sigma2)
+        basis = Basis(linear, 2)
+        blm = BLM(X, y, basis, alpha=alpha, sigma2=sigma2)
         blm.fit()
         X_test = np.array([[4], [5]])
         mean, var = blm.predict(X_test)
@@ -409,8 +410,8 @@ class TestBayesianLinearModel:
         y = np.array([1, 2, 3]).reshape(-1, 1)
         alpha = 1.0
         sigma2 = 0.1
-        basis = mlai.Basis(mlai.linear, 2)
-        blm = mlai.BLM(X, y, basis, alpha=alpha, sigma2=sigma2)
+        basis = Basis(linear, 2)
+        blm = BLM(X, y, basis, alpha=alpha, sigma2=sigma2)
         blm.fit()
         obj = blm.objective()
         ll = blm.log_likelihood()
@@ -423,8 +424,8 @@ class TestBayesianLinearModel:
         y = np.array([1, 2, 3]).reshape(-1, 1)
         alpha = 1.0
         sigma2 = 0.1
-        basis = mlai.Basis(mlai.linear, 2)
-        blm = mlai.BLM(X, y, basis, alpha=alpha, sigma2=sigma2)
+        basis = Basis(linear, 2)
+        blm = BLM(X, y, basis, alpha=alpha, sigma2=sigma2)
         blm.fit()
         blm.update_nll()
         assert hasattr(blm, 'log_det')
@@ -439,8 +440,8 @@ class TestBayesianLinearModel:
         y = np.array([1, 2, 3]).reshape(-1, 1)
         alpha = 1.0
         sigma2 = 0.1
-        basis = mlai.Basis(mlai.linear, 2)
-        blm = mlai.BLM(X, y, basis, alpha=alpha, sigma2=sigma2)
+        basis = Basis(linear, 2)
+        blm = BLM(X, y, basis, alpha=alpha, sigma2=sigma2)
         blm.fit()
         blm.set_param('sigma2', 0.2)
         assert blm.sigma2 == 0.2
@@ -454,8 +455,8 @@ class TestBayesianLinearModel:
         y = np.array([1, 2, 3]).reshape(-1, 1)
         alpha = 1.0
         sigma2 = 0.1
-        basis = mlai.Basis(mlai.linear, 2)
-        blm = mlai.BLM(X, y, basis, alpha=alpha, sigma2=sigma2)
+        basis = Basis(linear, 2)
+        blm = BLM(X, y, basis, alpha=alpha, sigma2=sigma2)
         with pytest.raises(ValueError):
             blm.set_param('not_a_param', 123)
 
@@ -465,8 +466,8 @@ class TestBayesianLinearModel:
         y = np.array([1, 2, 3]).reshape(-1, 1)
         alpha = 1.0
         sigma2 = 0.1
-        basis = mlai.Basis(mlai.linear, 2)
-        blm = mlai.BLM(X, y, basis, alpha=alpha, sigma2=sigma2)
+        basis = Basis(linear, 2)
+        blm = BLM(X, y, basis, alpha=alpha, sigma2=sigma2)
         blm.fit()
         blm.update_f()
         assert hasattr(blm, 'f_bar')
@@ -480,13 +481,13 @@ class TestNoiseModels:
     
     def test_gaussian_noise_initialization(self):
         """Test Gaussian noise initialization."""
-        noise = mlai.Gaussian(offset=0.0, scale=1.0)
+        noise = Gaussian(offset=0.0, scale=1.0)
         assert noise.offset == 0.0
         assert noise.scale == 1.0
     
     def test_gaussian_noise_log_likelihood(self):
         """Test Gaussian noise log_likelihood method."""
-        noise = mlai.Gaussian(offset=0.0, scale=1.0)
+        noise = Gaussian(offset=0.0, scale=1.0)
         # Skip the log_likelihood test due to implementation issues
         # Just test that the noise model was created properly
         assert noise.offset == 0.0
@@ -494,7 +495,7 @@ class TestNoiseModels:
     
     def test_gaussian_noise_grad_vals(self):
         """Test Gaussian noise grad_vals method."""
-        noise = mlai.Gaussian(offset=0.0, scale=1.0)
+        noise = Gaussian(offset=0.0, scale=1.0)
         # Skip the grad_vals test due to implementation issues
         # Just test that the noise model was created properly
         assert hasattr(noise, 'offset')
@@ -507,14 +508,14 @@ class TestBasisFunctions:
     def test_linear_basis(self):
         """Test linear basis function."""
         X = np.array([[1, 2], [3, 4]])
-        result = mlai.linear(X)
+        result = linear(X)
         expected = np.array([[1, 1, 2], [1, 3, 4]])  # [1, x1, x2]
         np.testing.assert_array_almost_equal(result, expected)
     
     def test_polynomial_basis(self):
         """Test polynomial basis function."""
         X = np.array([[1]])  # 1D input
-        result = mlai.polynomial(X, num_basis=6)
+        result = polynomial(X, num_basis=6)
         # Should have 6 basis functions
         assert result.shape[1] == 6
         assert result.shape[0] == 1
@@ -522,21 +523,21 @@ class TestBasisFunctions:
     def test_radial_basis(self):
         """Test radial basis function."""
         X = np.array([[1], [3]])  # 1D input
-        result = mlai.radial(X, num_basis=4)
+        result = radial(X, num_basis=4)
         assert result.shape[0] == 2
         assert result.shape[1] == 4
     
     def test_fourier_basis(self):
         """Test Fourier basis function."""
         X = np.array([[1]])  # 1D input
-        result = mlai.fourier(X, num_basis=7)
+        result = fourier(X, num_basis=7)
         # Should have 7 basis functions
         assert result.shape[1] == 7
     
     def test_relu_basis(self):
         """Test ReLU basis function."""
         X = np.array([[1], [-1]])
-        result = mlai.relu(X, num_basis=4)
+        result = relu(X, num_basis=4)
         # ReLU should be non-negative
         assert np.all(result >= 0)
         assert result.shape[0] == 2
@@ -545,7 +546,7 @@ class TestBasisFunctions:
     def test_hyperbolic_tangent_basis(self):
         """Test hyperbolic tangent basis function."""
         X = np.array([[1]])
-        result = mlai.hyperbolic_tangent(X, num_basis=4)
+        result = hyperbolic_tangent(X, num_basis=4)
         # tanh should be between -1 and 1
         assert np.all(result >= -1)
         assert np.all(result <= 1)
@@ -557,16 +558,16 @@ class TestBasisClass:
     
     def test_basis_initialization(self):
         """Test Basis class initialization."""
-        basis = mlai.Basis(mlai.linear, number=2)
-        assert basis.function == mlai.linear
+        basis = Basis(linear, number=2)
+        assert basis.function == linear
         assert basis.number == 2
     
     def test_basis_phi_method(self):
         """Test Basis Phi method."""
-        basis = mlai.Basis(mlai.linear, number=2)
+        basis = Basis(linear, number=2)
         X = np.array([[1, 2]])
         result = basis.Phi(X)
-        expected = mlai.linear(X)
+        expected = linear(X)
         np.testing.assert_array_almost_equal(result, expected)
 
 
@@ -577,8 +578,8 @@ class TestLinearModelEdgeCases:
         """Test LM set_param raises ValueError for unknown parameters."""
         X = np.array([[1], [2]])
         y = np.array([1, 2]).reshape(-1, 1)
-        basis = mlai.Basis(mlai.linear, 1)
-        model = mlai.LM(X, y, basis)
+        basis = Basis(linear, 1)
+        model = LM(X, y, basis)
         
         with pytest.raises(ValueError, match="Unknown parameter"):
             model.set_param("unknown_param", 1.0)
@@ -587,8 +588,8 @@ class TestLinearModelEdgeCases:
         """Test LM set_param doesn't update when value is the same."""
         X = np.array([[1], [2]])
         y = np.array([1, 2]).reshape(-1, 1)
-        basis = mlai.Basis(mlai.linear, 1)
-        model = mlai.LM(X, y, basis)
+        basis = Basis(linear, 1)
+        model = LM(X, y, basis)
         
         # Set sigma2 to a known value
         model.sigma2 = 0.5
@@ -605,13 +606,13 @@ class TestBasisFunctionEdgeCases:
         """Test polynomial basis function with edge cases."""
         # Test with single point
         x = np.array([[0.5]])
-        result = mlai.polynomial(x, num_basis=2, data_limits=[0, 1])
+        result = polynomial(x, num_basis=2, data_limits=[0, 1])
         assert result.shape == (1, 2)
         assert np.all(np.isfinite(result))
         
         # Test with different data limits
         x = np.array([[0.5], [1.0]])
-        result = mlai.polynomial(x, num_basis=3, data_limits=[-2, 2])
+        result = polynomial(x, num_basis=3, data_limits=[-2, 2])
         assert result.shape == (2, 3)
         assert np.all(np.isfinite(result))
     
@@ -619,13 +620,13 @@ class TestBasisFunctionEdgeCases:
         """Test radial basis function with edge cases."""
         # Test with custom width
         x = np.array([[0.5], [1.0]])
-        result = mlai.radial(x, num_basis=3, data_limits=[0, 2], width=0.5)
+        result = radial(x, num_basis=3, data_limits=[0, 2], width=0.5)
         assert result.shape == (2, 3)
         assert np.all(np.isfinite(result))
         
         # Test with single point
         x = np.array([[0.5]])
-        result = mlai.radial(x, num_basis=2, data_limits=[0, 1])
+        result = radial(x, num_basis=2, data_limits=[0, 1])
         assert result.shape == (1, 2)
         assert np.all(np.isfinite(result))
 
@@ -637,20 +638,20 @@ class TestLogisticRegressionMethods:
         """Test LR initialization works."""
         X = np.array([[1, 2], [3, 4]])
         y = np.array([[0], [1]])
-        basis = mlai.Basis(mlai.linear, number=2)
-        lr = mlai.LR(X, y, basis)
+        basis = Basis(linear, number=2)
+        lr = LR(X, y, basis)
         assert lr is not None
     
     def test_lr_constructor_error_handling(self):
         """Test LR constructor error handling (line 2278)."""
         X = np.array([[1, 2], [3, 4]])
         y = np.array([[1], [2]])
-        basis = mlai.Basis(mlai.linear, 2)
+        basis = Basis(linear, 2)
         
         # Test with invalid y shape (should raise ValueError)
         y_invalid = np.array([[1, 2], [3, 4]])  # 2D but wrong shape
         with pytest.raises(ValueError, match="y must be 2D with shape"):
-            mlai.LR(X, y_invalid, basis)
+            LR(X, y_invalid, basis)
 
 class TestLogisticRegressionMethods:
     """Test Logistic Regression methods that were not previously covered."""
@@ -659,8 +660,8 @@ class TestLogisticRegressionMethods:
         """Test LR gradient method."""
         X = np.array([[1], [2]])
         y = np.array([0, 1]).reshape(-1, 1)  # Convert to numpy array
-        basis = mlai.Basis(mlai.linear, 2)  # 2 basis functions to match w_star size
-        lr = mlai.LR(X, y, basis)
+        basis = Basis(linear, 2)  # 2 basis functions to match w_star size
+        lr = LR(X, y, basis)
         
         # Set some weights to compute gradient (ensure 2D shape)
         lr.w_star = np.array([0.5, 0.3]).reshape(-1, 1)
@@ -673,8 +674,8 @@ class TestLogisticRegressionMethods:
         """Test LR compute_g method."""
         X = np.array([[1], [2]])
         y = np.array([0, 1]).reshape(-1, 1)
-        basis = mlai.Basis(mlai.linear, 1)
-        lr = mlai.LR(X, y, basis)
+        basis = Basis(linear, 1)
+        lr = LR(X, y, basis)
         
         f = np.array([[-1.0], [1.0]])  # Test both negative and positive values
         # Set self.g to avoid the reference error in compute_g
@@ -692,8 +693,8 @@ class TestLogisticRegressionMethods:
         """Test LR update_g method."""
         X = np.array([[1], [2]])
         y = np.array([0, 1]).reshape(-1, 1)
-        basis = mlai.Basis(mlai.linear, 2)  # 2 basis functions to match w_star size
-        lr = mlai.LR(X, y, basis)
+        basis = Basis(linear, 2)  # 2 basis functions to match w_star size
+        lr = LR(X, y, basis)
         
         # Set some weights (ensure 2D shape)
         lr.w_star = np.array([0.5, 0.3]).reshape(-1, 1)
@@ -708,8 +709,8 @@ class TestLogisticRegressionMethods:
         """Test LR objective method."""
         X = np.array([[1], [2]])
         y = np.array([0, 1]).reshape(-1, 1)
-        basis = mlai.Basis(mlai.linear, 2)  # 2 basis functions to match w_star size
-        lr = mlai.LR(X, y, basis)
+        basis = Basis(linear, 2)  # 2 basis functions to match w_star size
+        lr = LR(X, y, basis)
         
         # Set some weights (ensure 2D shape)
         lr.w_star = np.array([0.5, 0.3]).reshape(-1, 1)
@@ -721,17 +722,17 @@ class TestLogisticRegressionMethods:
     def test_linear_model_invalid_y_shape(self):
         """Test LM constructor with invalid y shape (line 537)."""
         X = np.array([[1, 2], [3, 4]])
-        basis = mlai.Basis(mlai.polynomial, 3)
+        basis = Basis(polynomial, 3)
         
         # Test with 1D y (should raise ValueError)
         y_1d = np.array([1, 2])
         with pytest.raises(ValueError, match="y must be 2D with shape \\(n_samples, 1\\)"):
-            mlai.LM(X, y_1d, basis)
+            LM(X, y_1d, basis)
         
         # Test with 2D y but wrong second dimension (should raise ValueError)
         y_wrong_shape = np.array([[1, 2], [3, 4]])  # shape (2, 2) instead of (2, 1)
         with pytest.raises(ValueError, match="y must be 2D with shape \\(n_samples, 1\\)"):
-            mlai.LM(X, y_wrong_shape, basis)
+            LM(X, y_wrong_shape, basis)
         
 
 if __name__ == '__main__':

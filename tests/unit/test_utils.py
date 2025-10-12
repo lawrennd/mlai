@@ -13,7 +13,7 @@ import os
 from unittest.mock import patch, MagicMock
 
 # Import mlai modules
-import mlai.mlai as mlai
+import mlai
 import mlai.utils as utils
 
 class TestUtilityFunctions:

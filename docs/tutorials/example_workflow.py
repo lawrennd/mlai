@@ -268,7 +268,7 @@ def demonstrate_perceptron():
     # Prepare the figure and axes for MLAI perceptron visualization
     import mlai.plot as plot
     fig, axes = plt.subplots(1, 2, figsize=(12, 6))
-    handles = plot.init_perceptron(fig, axes, X_plus, X_minus, w, b, fontsize=16)
+    handles = plot.init_perceptron_plot(fig, axes, X_plus, X_minus, w, b, fontsize=16)
     plt.show(block=False)
     
     # Training loop with dynamic visualization
@@ -278,7 +278,7 @@ def demonstrate_perceptron():
     
     for iteration in range(max_iterations):
         w, b, x_selected, updated = mlai.update_perceptron(w, b, X_plus, X_minus, learning_rate)
-        handles = plot.update_perceptron(handles, fig, axes, X_plus, X_minus, iteration, w, b)
+        handles = plot.update_perceptron_plot(handles, fig, axes, X_plus, X_minus, iteration, w, b)
         plt.pause(0.1)
         if not updated:
             convergence_iteration = iteration

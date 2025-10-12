@@ -58,7 +58,7 @@ class TestWorkflowScript:
         """Test that the workflow script runs without errors."""
         # Run the workflow script with PYTHONPATH set to include the mlai package
         env = os.environ.copy()
-        env['PYTHONPATH'] = str(Path(self.original_cwd).parent)
+        env['PYTHONPATH'] = str(Path(self.original_cwd))
         
         result = subprocess.run(
             [sys.executable, "example_workflow.py"],
@@ -101,7 +101,7 @@ class TestWorkflowScript:
         """Test that the workflow script produces reasonable metrics."""
         # Run the workflow script with PYTHONPATH set to include the mlai package
         env = os.environ.copy()
-        env['PYTHONPATH'] = str(Path(self.original_cwd).parent)
+        env['PYTHONPATH'] = str(Path(self.original_cwd))
         
         result = subprocess.run(
             [sys.executable, "example_workflow.py"],
@@ -128,7 +128,7 @@ class TestWorkflowScript:
         """Test that the workflow script runs without errors or warnings."""
         # Run the workflow script with PYTHONPATH set to include the mlai package
         env = os.environ.copy()
-        env['PYTHONPATH'] = str(Path(self.original_cwd).parent)
+        env['PYTHONPATH'] = str(Path(self.original_cwd))
         
         result = subprocess.run(
             [sys.executable, "example_workflow.py"],
