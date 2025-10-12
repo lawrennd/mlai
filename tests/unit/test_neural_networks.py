@@ -1740,7 +1740,7 @@ class TestAttentionLayerGradients(unittest.TestCase):
         from mlai.utils import finite_difference_gradient, verify_gradient_implementation
         
         # Create attention layer
-        attention = AttentionLayer(d_model=4, n_heads=1)
+        attention = AttentionLayer(d_model=4)
         
         # Test input
         x = np.random.randn(2, 3, 4)  # batch_size=2, seq_len=3, d_model=4
@@ -1769,7 +1769,7 @@ class TestAttentionLayerGradients(unittest.TestCase):
         from mlai.utils import finite_difference_gradient, verify_gradient_implementation
         
         # Create attention layer
-        attention = AttentionLayer(d_model=4, n_heads=1)
+        attention = AttentionLayer(d_model=4)
         
         # Test inputs
         x = np.random.randn(2, 3, 4)  # Primary input
@@ -1815,7 +1815,7 @@ class TestAttentionLayerGradients(unittest.TestCase):
         from mlai.utils import finite_difference_gradient, verify_gradient_implementation
         
         # Create attention layer
-        attention = AttentionLayer(d_model=3, n_heads=1)
+        attention = AttentionLayer(d_model=3)
         
         # Test input
         x = np.random.randn(1, 2, 3)  # batch_size=1, seq_len=2, d_model=3
@@ -1851,7 +1851,7 @@ class TestAttentionLayerGradients(unittest.TestCase):
         from mlai.neural_networks import AttentionLayer
         
         # Create attention layer
-        attention = AttentionLayer(d_model=3, n_heads=1)
+        attention = AttentionLayer(d_model=3)
         
         # Test input
         x = np.random.randn(1, 2, 3)  # batch_size=1, seq_len=2, d_model=3
@@ -1880,14 +1880,10 @@ class TestAttentionLayerGradients(unittest.TestCase):
         from mlai.utils import finite_difference_gradient, verify_gradient_implementation
         
         # Test different architectures
-        test_cases = [
-            (2, 1),  # d_model=2, n_heads=1
-            (4, 2),  # d_model=4, n_heads=2
-            (6, 3),  # d_model=6, n_heads=3
-        ]
-        
-        for d_model, n_heads in test_cases:
-            attention = AttentionLayer(d_model=d_model, n_heads=n_heads)
+        test_cases = [2, 4, 6]  # d_model values
+
+        for d_model in test_cases:
+            attention = AttentionLayer(d_model=d_model)
             
             # Test input
             x = np.random.randn(1, 2, d_model)
@@ -1916,7 +1912,7 @@ class TestAttentionLayerGradients(unittest.TestCase):
         from mlai.utils import finite_difference_gradient, verify_gradient_implementation
         
         # Create attention layer
-        attention = AttentionLayer(d_model=4, n_heads=1)
+        attention = AttentionLayer(d_model=4)
         
         # Test inputs
         x = np.random.randn(2, 3, 4)  # Primary input (becomes Q)

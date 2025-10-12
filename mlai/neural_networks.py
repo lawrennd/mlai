@@ -1557,26 +1557,26 @@ class MultiInputLayer(Layer):
 
 class AttentionLayer(MultiInputLayer):
     """
-    General attention layer supporting both self and cross attention.
+    Single-head attention layer supporting both self and cross attention.
     
     This layer implements the scaled dot-product attention mechanism
     and can handle both self-attention (single input) and cross-attention
     (multiple inputs) scenarios.
     
+    For multi-head attention, use MultiHeadAttentionLayer which composes
+    multiple AttentionLayer instances.
+    
     :param d_model: Model dimension
     :type d_model: int
-    :param n_heads: Number of attention heads
-    :type n_heads: int
     :param dropout: Dropout rate for regularization
     :type dropout: float, optional
     :param activation: Activation function for attention weights
     :type activation: Activation, optional
     """
     
-    def __init__(self, d_model, n_heads, dropout=0.0, activation=None):
+    def __init__(self, d_model, dropout=0.0, activation=None):
         super().__init__()
         self.d_model = d_model
-        self.n_heads = n_heads
         self.dropout = dropout
         
         # Set up activation function (default to softmax for attention)
@@ -1838,7 +1838,7 @@ class MultiHeadAttentionLayer(Layer):
         self.d_k = d_model // n_heads
         
         # Create multiple single-head attention layers
-        self.attention_heads = [AttentionLayer(self.d_k, n_heads=1, dropout=dropout, activation=activation) for _ in range(n_heads)]
+        self.attention_heads = [AttentionLayer(self.d_k, dropout=dropout, activation=activation) for _ in range(n_heads)]
         
         # Output projection to combine all heads
         self.W_o = np.random.normal(0, np.sqrt(2.0 / d_model), (d_model, d_model))
