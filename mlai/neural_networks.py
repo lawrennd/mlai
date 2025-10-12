@@ -186,6 +186,57 @@ class SimpleNeuralNetwork(Model):
         phi = vxmb*(vxmb>0)
         return np.sum(self.w2*phi) + self.b2
 
+    @property
+    def parameters(self):
+        """
+        Get all trainable parameters as a 1D vector.
+        
+        Returns all network parameters (w1, b1, w2, b2) as a flattened array
+        in the order: [w1, b1, w2, b2].
+        
+        :returns: 1D array of all trainable parameters
+        :rtype: numpy.ndarray
+        """
+        return np.concatenate([
+            self.w1.flatten(),
+            self.b1.flatten(), 
+            self.w2.flatten(),
+            self.b2.flatten()
+        ])
+    
+    @parameters.setter
+    def parameters(self, value):
+        """
+        Set all trainable parameters from a 1D vector.
+        
+        Updates all network parameters from a flattened array in the order:
+        [w1, b1, w2, b2].
+        
+        :param value: 1D array of parameters to set
+        :type value: numpy.ndarray
+        
+        :raises ValueError: If the parameter vector has incorrect length
+        """
+        expected_length = (self.w1.size + self.b1.size + 
+                          self.w2.size + self.b2.size)
+        if len(value) != expected_length:
+            raise ValueError(f"Expected {expected_length} parameters, got {len(value)}")
+        
+        # Unpack parameters in the same order as the getter
+        w1_size = self.w1.size
+        b1_size = self.b1.size
+        w2_size = self.w2.size
+        b2_size = self.b2.size
+        
+        start = 0
+        self.w1 = value[start:start+w1_size].reshape(self.w1.shape)
+        start += w1_size
+        self.b1 = value[start:start+b1_size].reshape(self.b1.shape)
+        start += b1_size
+        self.w2 = value[start:start+w2_size].reshape(self.w2.shape)
+        start += w2_size
+        self.b2 = value[start:start+b2_size].reshape(self.b2.shape)
+
 
 def relu_activation(x):
     """

@@ -37,6 +37,8 @@ class Model(object):
         Compute the objective function value (to be minimized)
     fit() : None
         Fit the model to the data (to be implemented by subclasses)
+    parameters : numpy.ndarray
+        Property to get/set all trainable parameters as a 1D vector
     
     Examples:
         >>> class MyModel(Model):
@@ -44,6 +46,13 @@ class Model(object):
         ...         return 0.0  # Implement objective
         ...     def fit(self):
         ...         pass  # Implement fitting
+        ...     @property
+        ...     def parameters(self):
+        ...         return np.concatenate([self.w.flatten(), [self.b]])
+        ...     @parameters.setter
+        ...     def parameters(self, value):
+        ...         self.w = value[:-1].reshape(self.w.shape)
+        ...         self.b = value[-1]
     """
     def __init__(self):
         pass
@@ -72,6 +81,52 @@ class Model(object):
         :raises NotImplementedError: If not implemented by subclass
         """
         raise NotImplementedError
+
+    @property
+    def parameters(self):
+        """
+        Get all trainable parameters as a 1D vector.
+        
+        This property provides a unified interface for accessing all model
+        parameters in a format suitable for optimization algorithms. It follows
+        the Netlab 'pak' convention for packaging parameters into a vector.
+        
+        The parameters should be returned in a consistent order that matches
+        the setter implementation.
+        
+        :returns: 1D array of all trainable parameters
+        :rtype: numpy.ndarray
+        
+        :raises NotImplementedError: If not implemented by subclass
+        
+        Examples:
+            >>> model = MyModel()
+            >>> params = model.parameters  # Get current parameters
+            >>> print(f"Model has {len(params)} parameters")
+        """
+        raise NotImplementedError("Subclasses must implement the parameters property")
+    
+    @parameters.setter
+    def parameters(self, value):
+        """
+        Set all trainable parameters from a 1D vector.
+        
+        This property setter allows updating all model parameters from a
+        single 1D array, following the Netlab 'unpak' convention. The order
+        of parameters should match the getter implementation.
+        
+        :param value: 1D array of parameters to set
+        :type value: numpy.ndarray
+        
+        :raises NotImplementedError: If not implemented by subclass
+        :raises ValueError: If the parameter vector has incorrect length
+        
+        Examples:
+            >>> model = MyModel()
+            >>> new_params = np.array([1.0, 2.0, 3.0])
+            >>> model.parameters = new_params  # Set all parameters
+        """
+        raise NotImplementedError("Subclasses must implement the parameters setter")
 
 class ProbModel(Model):
     """

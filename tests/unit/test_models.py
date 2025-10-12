@@ -110,6 +110,16 @@ class TestAbstractBaseClasses:
         with pytest.raises(NotImplementedError):
             dummy.update_sum_squares()
 
+    def test_model_parameters_not_implemented(self):
+        """Test that base Model class raises NotImplementedError for parameters."""
+        model = mlai.Model()
+        
+        with pytest.raises(NotImplementedError, match="Subclasses must implement the parameters property"):
+            _ = model.parameters
+        
+        with pytest.raises(NotImplementedError, match="Subclasses must implement the parameters setter"):
+            model.parameters = np.array([1.0, 2.0])
+
 class TestMapModelMethods:
     """Test MapModel methods that were not previously covered."""
     

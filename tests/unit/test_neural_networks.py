@@ -1122,6 +1122,164 @@ class TestNeuralNetworkVisualizations(unittest.TestCase):
             plt.close('all')
 
 
+class TestParametersProperty:
+    """Test the parameters property functionality for neural networks."""
+    
+    def test_simple_neural_network_parameters_getter(self):
+        """Test getting parameters from SimpleNeuralNetwork."""
+        network = mlai.SimpleNeuralNetwork(nodes=3)
+        
+        # Get parameters
+        params = network.parameters
+        
+        # Check it's a 1D numpy array
+        assert isinstance(params, np.ndarray)
+        assert params.ndim == 1
+        
+        # Check expected length: w1(3) + b1(3) + w2(3) + b2(1) = 10
+        expected_length = 3 + 3 + 3 + 1
+        assert len(params) == expected_length
+        
+        # Check that parameters match individual attributes
+        expected_params = np.concatenate([
+            network.w1.flatten(),
+            network.b1.flatten(),
+            network.w2.flatten(),
+            network.b2.flatten()
+        ])
+        np.testing.assert_array_equal(params, expected_params)
+    
+    def test_simple_neural_network_parameters_setter(self):
+        """Test setting parameters in SimpleNeuralNetwork."""
+        network = mlai.SimpleNeuralNetwork(nodes=2)
+        
+        # Store original parameters
+        original_params = network.parameters.copy()
+        original_w1 = network.w1.copy()
+        original_b1 = network.b1.copy()
+        original_w2 = network.w2.copy()
+        original_b2 = network.b2.copy()
+        
+        # Set new parameters
+        new_params = np.array([1.0, 2.0,  # w1
+                               0.1, 0.2,  # b1
+                               3.0, 4.0,  # w2
+                               0.5])      # b2
+        network.parameters = new_params
+        
+        # Check that parameters were set correctly
+        np.testing.assert_array_equal(network.w1, [1.0, 2.0])
+        np.testing.assert_array_equal(network.b1, [0.1, 0.2])
+        np.testing.assert_array_equal(network.w2, [3.0, 4.0])
+        np.testing.assert_array_equal(network.b2, [0.5])
+        np.testing.assert_array_equal(network.parameters, new_params)
+        
+        # Test round-trip: set back to original
+        network.parameters = original_params
+        np.testing.assert_array_equal(network.w1, original_w1)
+        np.testing.assert_array_equal(network.b1, original_b1)
+        np.testing.assert_array_equal(network.w2, original_w2)
+        np.testing.assert_array_equal(network.b2, original_b2)
+        np.testing.assert_array_equal(network.parameters, original_params)
+    
+    def test_simple_neural_network_parameters_setter_wrong_length(self):
+        """Test that setting parameters with wrong length raises ValueError."""
+        network = mlai.SimpleNeuralNetwork(nodes=2)
+        
+        # Test too few parameters
+        with pytest.raises(ValueError, match="Expected 7 parameters, got 3"):
+            network.parameters = np.array([1.0, 2.0, 3.0])
+        
+        # Test too many parameters
+        with pytest.raises(ValueError, match="Expected 7 parameters, got 10"):
+            network.parameters = np.array([1.0] * 10)
+    
+    def test_simple_neural_network_parameters_different_sizes(self):
+        """Test parameters property with different network sizes."""
+        for nodes in [1, 2, 5, 10]:
+            network = mlai.SimpleNeuralNetwork(nodes=nodes)
+            
+            # Check parameter length
+            expected_length = nodes + nodes + nodes + 1  # w1 + b1 + w2 + b2
+            assert len(network.parameters) == expected_length
+            
+            # Test round-trip
+            original_params = network.parameters.copy()
+            network.parameters = original_params
+            np.testing.assert_array_equal(network.parameters, original_params)
+    
+    def test_simple_neural_network_parameters_immutable_behavior(self):
+        """Test that parameters property returns a copy, not a view."""
+        network = mlai.SimpleNeuralNetwork(nodes=2)
+        
+        # Get parameters
+        params = network.parameters
+        
+        # Modify the returned array
+        params[0] = 999.0
+        
+        # Check that original network parameters are unchanged
+        assert network.w1[0] != 999.0
+        assert network.parameters[0] != 999.0
+    
+    def test_simple_neural_network_parameters_consistency(self):
+        """Test that parameters are consistent with individual attributes."""
+        network = mlai.SimpleNeuralNetwork(nodes=3)
+        
+        # Manually construct expected parameters
+        expected = np.concatenate([
+            network.w1.flatten(),
+            network.b1.flatten(),
+            network.w2.flatten(),
+            network.b2.flatten()
+        ])
+        
+        # Check that parameters property matches
+        np.testing.assert_array_equal(network.parameters, expected)
+        
+        # Test after setting individual attributes
+        network.w1[0] = 42.0
+        network.b1[1] = 17.0
+        network.w2[2] = 3.14
+        network.b2[0] = 2.71
+        
+        # Parameters should reflect the changes (get fresh copy)
+        params = network.parameters
+        assert params[0] == 42.0  # w1[0]
+        assert params[4] == 17.0  # b1[1] (after w1 which has 3 elements)
+        assert params[8] == 3.14  # w2[2] (after w1(3) + b1(3))
+        assert params[9] == 2.71  # b2[0] (after w1(3) + b1(3) + w2(3))
+        
+        # Test that the parameters property returns the correct values
+        expected_after_changes = np.concatenate([
+            network.w1.flatten(),
+            network.b1.flatten(),
+            network.w2.flatten(),
+            network.b2.flatten()
+        ])
+        np.testing.assert_array_equal(params, expected_after_changes)
+    
+    def test_simple_neural_network_parameters_optimization_context(self):
+        """Test that parameters property works well with optimization algorithms."""
+        network = mlai.SimpleNeuralNetwork(nodes=2)
+        
+        # Get initial parameters
+        initial_params = network.parameters.copy()
+        
+        # Simulate optimization step: add small random perturbation
+        perturbation = np.random.normal(0, 0.1, size=initial_params.shape)
+        new_params = initial_params + perturbation
+        
+        # Set new parameters
+        network.parameters = new_params
+        
+        # Verify the change
+        np.testing.assert_allclose(network.parameters, new_params, rtol=1e-10)
+        
+        # Test that we can compute output with new parameters
+        output = network.predict(1.0)
+        assert isinstance(output, np.ndarray)
+        assert output.shape == (1,)
             
 if __name__ == '__main__':
     unittest.main()
