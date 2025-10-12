@@ -63,4 +63,18 @@ This local backlog system provides:
 2. Better organization of tasks into categories
 3. More detailed status tracking than GitHub issues alone
 4. Integration with the CIP system
-5. A historical record of all planned work, whether implemented or not 
+5. A historical record of all planned work, whether implemented or not
+
+## Current Backlog Items
+
+### Bugs
+- [2025-10-12_coverage-collection-numpy-interference.md](./bugs/2025-10-12_coverage-collection-numpy-interference.md): Fix Coverage Collection Interference with NumPy (Proposed, Medium)
+
+### Features
+- No feature tasks currently in backlog
+
+### Documentation
+- No documentation tasks currently in backlog
+
+### Infrastructure
+- No infrastructure tasks currently in backlog 
