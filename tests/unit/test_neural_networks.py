@@ -1410,6 +1410,325 @@ class TestParametersProperty:
                                0.5])      # b2
         dropout_net.parameters = new_params
         np.testing.assert_array_equal(dropout_net.parameters, new_params)
+
+
+class TestLayerArchitecture(unittest.TestCase):
+    """Test the new layer architecture (Layer, LinearLayer, FullyConnectedLayer, LayeredNeuralNetwork)."""
+    
+    def test_layer_base_class_not_implemented(self):
+        """Test that base Layer class raises NotImplementedError for abstract methods."""
+        from mlai.neural_networks import Layer
+        
+        layer = Layer()
+        
+        # Test forward method
+        with pytest.raises(NotImplementedError):
+            layer.forward(np.array([[1.0, 2.0]]))
+        
+        # Test backward method
+        with pytest.raises(NotImplementedError):
+            layer.backward(np.array([[1.0, 2.0]]))
+        
+        # Test parameters property
+        with pytest.raises(NotImplementedError):
+            _ = layer.parameters
+        
+        # Test parameters setter
+        with pytest.raises(NotImplementedError):
+            layer.parameters = np.array([1.0, 2.0])
+    
+    def test_linear_layer_forward_backward(self):
+        """Test LinearLayer forward and backward passes."""
+        from mlai.neural_networks import LinearLayer
+        
+        layer = LinearLayer(input_size=3, output_size=2)
+        
+        # Test forward pass
+        x = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+        output = layer.forward(x)
+        
+        assert output.shape == (2, 2)
+        assert isinstance(output, np.ndarray)
+        
+        # Test backward pass
+        grad_output = np.ones_like(output)
+        grad_input = layer.backward(grad_output)
+        
+        assert grad_input.shape == x.shape
+        assert isinstance(grad_input, np.ndarray)
+    
+    def test_linear_layer_parameters_property(self):
+        """Test LinearLayer parameters property."""
+        from mlai.neural_networks import LinearLayer
+        
+        layer = LinearLayer(input_size=2, output_size=3)
+        
+        # Test getter
+        params = layer.parameters
+        assert isinstance(params, np.ndarray)
+        assert params.ndim == 1
+        assert len(params) == 2*3 + 3  # W.size + b.size
+        
+        # Test setter
+        original_params = layer.parameters.copy()
+        new_params = np.random.normal(0, 0.1, len(original_params))
+        layer.parameters = new_params
+        np.testing.assert_array_equal(layer.parameters, new_params)
+        
+        # Test round-trip
+        layer.parameters = original_params
+        np.testing.assert_array_equal(layer.parameters, original_params)
+    
+    def test_linear_layer_parameters_setter_wrong_length(self):
+        """Test that LinearLayer parameters setter raises ValueError for wrong length."""
+        from mlai.neural_networks import LinearLayer
+        
+        layer = LinearLayer(input_size=2, output_size=3)
+        
+        # Test too few parameters
+        with pytest.raises(ValueError, match="Expected 9 parameters, got 3"):
+            layer.parameters = np.array([1.0, 2.0, 3.0])
+        
+        # Test too many parameters
+        with pytest.raises(ValueError, match="Expected 9 parameters, got 15"):
+            layer.parameters = np.array([1.0] * 15)
+    
+    def test_fully_connected_layer_forward_backward(self):
+        """Test FullyConnectedLayer forward and backward passes."""
+        from mlai.neural_networks import FullyConnectedLayer, ReLUActivation, SigmoidActivation
+        
+        # Test with ReLU activation
+        relu_layer = FullyConnectedLayer(input_size=3, output_size=2, activation=ReLUActivation())
+        
+        x = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+        output = relu_layer.forward(x)
+        
+        assert output.shape == (2, 2)
+        assert isinstance(output, np.ndarray)
+        assert np.all(output >= 0)  # ReLU should be non-negative
+        
+        # Test backward pass
+        grad_output = np.ones_like(output)
+        grad_input = relu_layer.backward(grad_output)
+        
+        assert grad_input.shape == x.shape
+        assert isinstance(grad_input, np.ndarray)
+        
+        # Test with Sigmoid activation
+        sigmoid_layer = FullyConnectedLayer(input_size=3, output_size=2, activation=SigmoidActivation())
+        output = sigmoid_layer.forward(x)
+        
+        assert output.shape == (2, 2)
+        assert np.all(output >= 0) and np.all(output <= 1)  # Sigmoid should be in [0,1]
+    
+    def test_fully_connected_layer_parameters_property(self):
+        """Test FullyConnectedLayer parameters property."""
+        from mlai.neural_networks import FullyConnectedLayer, ReLUActivation
+        
+        layer = FullyConnectedLayer(input_size=2, output_size=3, activation=ReLUActivation())
+        
+        # Test getter
+        params = layer.parameters
+        assert isinstance(params, np.ndarray)
+        assert params.ndim == 1
+        assert len(params) == 2*3 + 3  # W.size + b.size
+        
+        # Test setter
+        original_params = layer.parameters.copy()
+        new_params = np.random.normal(0, 0.1, len(original_params))
+        layer.parameters = new_params
+        np.testing.assert_array_equal(layer.parameters, new_params)
+        
+        # Test round-trip
+        layer.parameters = original_params
+        np.testing.assert_array_equal(layer.parameters, original_params)
+    
+    def test_fully_connected_layer_parameters_setter_wrong_length(self):
+        """Test that FullyConnectedLayer parameters setter raises ValueError for wrong length."""
+        from mlai.neural_networks import FullyConnectedLayer, ReLUActivation
+        
+        layer = FullyConnectedLayer(input_size=2, output_size=3, activation=ReLUActivation())
+        
+        # Test too few parameters
+        with pytest.raises(ValueError, match="Expected 9 parameters, got 3"):
+            layer.parameters = np.array([1.0, 2.0, 3.0])
+        
+        # Test too many parameters
+        with pytest.raises(ValueError, match="Expected 9 parameters, got 15"):
+            layer.parameters = np.array([1.0] * 15)
+    
+    def test_fully_connected_layer_different_activations(self):
+        """Test FullyConnectedLayer with different activation functions."""
+        from mlai.neural_networks import FullyConnectedLayer, ReLUActivation, SigmoidActivation, LinearActivation
+        
+        x = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+        
+        # Test different activations
+        activations = [ReLUActivation(), SigmoidActivation(), LinearActivation()]
+        
+        for activation in activations:
+            layer = FullyConnectedLayer(input_size=3, output_size=2, activation=activation)
+            output = layer.forward(x)
+            
+            assert output.shape == (2, 2)
+            assert isinstance(output, np.ndarray)
+            
+            # Test round-trip parameters
+            original_params = layer.parameters.copy()
+            layer.parameters = original_params
+            np.testing.assert_array_equal(layer.parameters, original_params)
+    
+    def test_layered_neural_network_forward_backward(self):
+        """Test LayeredNeuralNetwork forward and backward passes."""
+        from mlai.neural_networks import LayeredNeuralNetwork, FullyConnectedLayer, ReLUActivation, LinearActivation
+        
+        layers = [
+            FullyConnectedLayer(input_size=3, output_size=4, activation=ReLUActivation()),
+            FullyConnectedLayer(input_size=4, output_size=2, activation=LinearActivation())
+        ]
+        network = LayeredNeuralNetwork(layers)
+        
+        # Test forward pass
+        x = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+        output = network.forward(x)
+        
+        assert output.shape == (2, 2)
+        assert isinstance(output, np.ndarray)
+        
+        # Test backward pass
+        grad_output = np.ones_like(output)
+        gradients = network.backward(grad_output)
+        
+        assert isinstance(gradients, dict)
+        assert 'layer_0' in gradients
+        assert 'layer_1' in gradients
+        assert gradients['layer_0'].shape == x.shape
+        assert gradients['layer_1'].shape == (2, 4)  # Intermediate layer output shape
+    
+    def test_layered_neural_network_parameters_property(self):
+        """Test LayeredNeuralNetwork parameters property."""
+        from mlai.neural_networks import LayeredNeuralNetwork, FullyConnectedLayer, ReLUActivation, LinearActivation
+        
+        layers = [
+            FullyConnectedLayer(input_size=2, output_size=3, activation=ReLUActivation()),
+            FullyConnectedLayer(input_size=3, output_size=1, activation=LinearActivation())
+        ]
+        network = LayeredNeuralNetwork(layers)
+        
+        # Test getter
+        params = network.parameters
+        assert isinstance(params, np.ndarray)
+        assert params.ndim == 1
+        
+        # Calculate expected length: layer1(2*3+3) + layer2(3*1+1) = 9 + 4 = 13
+        expected_length = 9 + 4
+        assert len(params) == expected_length
+        
+        # Test setter
+        original_params = network.parameters.copy()
+        new_params = np.random.normal(0, 0.1, len(original_params))
+        network.parameters = new_params
+        np.testing.assert_array_equal(network.parameters, new_params)
+        
+        # Test round-trip
+        network.parameters = original_params
+        np.testing.assert_array_equal(network.parameters, original_params)
+    
+    def test_layered_neural_network_parameters_setter_wrong_length(self):
+        """Test that LayeredNeuralNetwork parameters setter raises ValueError for wrong length."""
+        from mlai.neural_networks import LayeredNeuralNetwork, FullyConnectedLayer, ReLUActivation
+        
+        layers = [FullyConnectedLayer(input_size=2, output_size=3, activation=ReLUActivation())]
+        network = LayeredNeuralNetwork(layers)
+        
+        # Test too few parameters
+        with pytest.raises(ValueError, match="Expected 9 parameters, got 3"):
+            network.parameters = np.array([1.0, 2.0, 3.0])
+        
+        # Test too many parameters
+        with pytest.raises(ValueError, match="Expected 9 parameters, got 15"):
+            network.parameters = np.array([1.0] * 15)
+    
+    def test_layered_neural_network_different_architectures(self):
+        """Test LayeredNeuralNetwork with different architectures."""
+        from mlai.neural_networks import LayeredNeuralNetwork, FullyConnectedLayer, ReLUActivation, LinearActivation
+        
+        # Test different architectures
+        test_cases = [
+            [FullyConnectedLayer(2, 1, LinearActivation())],  # Simple: 2->1
+            [FullyConnectedLayer(3, 2, ReLUActivation()), FullyConnectedLayer(2, 1, LinearActivation())],  # 3->2->1
+            [FullyConnectedLayer(1, 4, ReLUActivation()), FullyConnectedLayer(4, 2, ReLUActivation()), FullyConnectedLayer(2, 1, LinearActivation())],  # 1->4->2->1
+        ]
+        
+        for layers in test_cases:
+            network = LayeredNeuralNetwork(layers)
+            
+            # Test that parameters are accessible
+            params = network.parameters
+            assert isinstance(params, np.ndarray)
+            assert params.ndim == 1
+            assert len(params) > 0
+            
+            # Test round-trip
+            original_params = network.parameters.copy()
+            network.parameters = original_params
+            np.testing.assert_array_equal(network.parameters, original_params)
+    
+    def test_layered_neural_network_optimization_context(self):
+        """Test LayeredNeuralNetwork parameters property in optimization context."""
+        from mlai.neural_networks import LayeredNeuralNetwork, FullyConnectedLayer, ReLUActivation, LinearActivation
+        
+        layers = [
+            FullyConnectedLayer(input_size=2, output_size=3, activation=ReLUActivation()),
+            FullyConnectedLayer(input_size=3, output_size=1, activation=LinearActivation())
+        ]
+        network = LayeredNeuralNetwork(layers)
+        
+        # Store original parameters
+        original_params = network.parameters.copy()
+        
+        # Simulate parameter update (as would happen in optimization)
+        new_params = original_params + np.random.normal(0, 0.01, len(original_params))
+        network.parameters = new_params
+        
+        # Verify the update worked
+        np.testing.assert_allclose(network.parameters, new_params, rtol=1e-10)
+        
+        # Test that we can compute output with new parameters
+        x = np.array([[1.0, 2.0], [3.0, 4.0]])
+        output = network.predict(x)
+        assert isinstance(output, np.ndarray)
+        assert output.shape == (2, 1)
+    
+    def test_layered_neural_network_empty_layers_error(self):
+        """Test that LayeredNeuralNetwork raises ValueError for empty layers list."""
+        from mlai.neural_networks import LayeredNeuralNetwork
+        
+        with pytest.raises(ValueError, match="At least one layer must be provided"):
+            LayeredNeuralNetwork([])
+    
+    def test_layered_neural_network_single_layer(self):
+        """Test LayeredNeuralNetwork with a single layer."""
+        from mlai.neural_networks import LayeredNeuralNetwork, FullyConnectedLayer, LinearActivation
+        
+        layers = [FullyConnectedLayer(input_size=3, output_size=2, activation=LinearActivation())]
+        network = LayeredNeuralNetwork(layers)
+        
+        # Test forward pass
+        x = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+        output = network.forward(x)
+        
+        assert output.shape == (2, 2)
+        assert isinstance(output, np.ndarray)
+        
+        # Test parameters
+        params = network.parameters
+        assert len(params) == 3*2 + 2  # W.size + b.size
+        
+        # Test round-trip
+        original_params = network.parameters.copy()
+        network.parameters = original_params
+        np.testing.assert_array_equal(network.parameters, original_params)
             
 if __name__ == '__main__':
     unittest.main()
