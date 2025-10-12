@@ -174,6 +174,27 @@ class TestUtilityFunctions:
         assert result.shape == (X.shape[0], 1)
         assert np.all(np.isfinite(result))
         assert np.all(result >= 0)  # Gaussian values should be non-negative
+
+    def test_finite_difference_jacobian(self):
+        """Test finite_difference_jacobian function (lines 1617-1640)."""
+        def test_func(x):
+            """Test function: f(x) = [x[0]^2, x[1]^3]"""
+            return np.array([x[0]**2, x[1]**3])
+        
+        x = np.array([2.0, 3.0])
+        jacobian = mlai.finite_difference_jacobian(test_func, x)
+        
+        # Check shape: 2 outputs, 2 inputs
+        assert jacobian.shape == (2, 2)
+        
+        # Check that it's finite
+        assert np.all(np.isfinite(jacobian))
+        
+        # Check approximate values (should be close to [[4, 0], [0, 27]])
+        assert abs(jacobian[0, 0] - 4.0) < 0.1  # derivative of x^2 at x=2
+        assert abs(jacobian[1, 1] - 27.0) < 0.1  # derivative of x^3 at x=3
+        assert abs(jacobian[0, 1]) < 0.1  # cross-derivative should be ~0
+        assert abs(jacobian[1, 0]) < 0.1  # cross-derivative should be ~0
     
     def test_dist2(self):
         """Test dist2 function (lines 3184, 3191-3192)."""

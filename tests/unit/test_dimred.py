@@ -498,6 +498,48 @@ class TestDimensionalityReduction:
         stress_zero = mlai.kruskal_stress(D_original, D_original)
         assert stress_zero == 0.0
 
+    def test_kmeans_objective_function(self):
+        """Test kmeans_objective function (lines 3172-3181)."""
+        Y = np.array([[1, 2], [3, 4], [5, 6], [7, 8]])
+        centres = np.array([[2, 3], [6, 7]])
+        
+        # Test with assignments provided
+        assignments = np.array([0, 0, 1, 1])
+        objective = mlai.kmeans_objective(Y, centres, assignments)
+        
+        assert isinstance(objective, (int, float, np.number))
+        assert objective >= 0
+        assert np.isfinite(objective)
+        
+        # Test without assignments (should compute them)
+        objective2 = mlai.kmeans_objective(Y, centres)
+        assert isinstance(objective2, (int, float, np.number))
+        assert objective2 >= 0
+        assert np.isfinite(objective2)
+
+    def test_ppca_eig_function(self):
+        """Test ppca_eig function (line 3351)."""
+        Y = np.random.randn(20, 5)
+        q = 3
+        
+        W, sigma2_out = mlai.ppca_eig(Y, q)
+        
+        assert W.shape == (5, 3)  # input_dim x q
+        assert isinstance(sigma2_out, (int, float, np.number))
+        assert np.isfinite(sigma2_out)
+
+    def test_ppca_svd_function(self):
+        """Test ppca_svd function (line 3366)."""
+        Y = np.random.randn(20, 5)
+        q = 3
+        
+        W, mu, sigma2_out = mlai.ppca_svd(Y, q)
+        
+        assert W.shape == (5, 3)  # input_dim x q
+        assert mu.shape == (3,)  # q dimensions
+        assert isinstance(sigma2_out, (int, float, np.number))
+        assert np.isfinite(sigma2_out)
+
 
 if __name__ == '__main__':
     unittest.main()

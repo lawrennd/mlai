@@ -527,6 +527,42 @@ class TestAdditionalKernelFunctions:
         assert isinstance(result, (float, np.floating))
         assert result >= 0
 
+    def test_kernel_k_method(self):
+        """Test Kernel K method (line 2549)."""
+        kernel = mlai.Kernel(mlai.eq_cov)
+        X = np.array([[1], [2], [3]])
+        
+        # Test K method with X2=None (line 2549)
+        K = kernel.K(X)
+        assert K.shape == (3, 3)
+        assert np.all(np.isfinite(K))
+        
+        # Test K method with X2 provided
+        X2 = np.array([[1.5], [2.5]])
+        K2 = kernel.K(X, X2)
+        assert K2.shape == (3, 2)
+        assert np.all(np.isfinite(K2))
+
+    def test_ou_cov_function(self):
+        """Test OU covariance function (lines 2608-2609)."""
+        x = np.array([1.0, 2.0])
+        x_prime = np.array([1.1, 2.1])
+        
+        result = mlai.ou_cov(x, x_prime, variance=1.0, lengthscale=1.0)
+        assert isinstance(result, (float, np.floating))
+        assert result >= 0
+        assert np.isfinite(result)
+
+    def test_relu_cov_function(self):
+        """Test ReLU covariance function (lines 2670-2674)."""
+        x = np.array([1.0, 2.0])
+        x_prime = np.array([1.1, 2.1])
+        
+        result = mlai.relu_cov(x, x_prime, variance=1.0, w=1.0, b=0.0, alpha=0.1)
+        assert isinstance(result, (float, np.floating))
+        assert result >= 0
+        assert np.isfinite(result)
+
 
 class TestGaussianProcessMethods:
     """Test Gaussian Process methods."""
