@@ -100,6 +100,58 @@ class TestPerceptron:
                 assert isinstance(new_b, (int, float))
                 assert len(x_select) == 2
                 assert isinstance(updated, bool)
+    
+    def test_update_perceptron_positive_classification_error(self):
+        """Test update_perceptron when positive point is misclassified (lines 274-276)."""
+        w = np.array([-1.0, -1.0])  # Weights that will misclassify positive points
+        b = -1.0  # Bias that will misclassify positive points
+        x_plus = np.array([[1.0, 1.0]])  # Positive point
+        x_minus = np.array([[0.0, 0.0]])  # Negative point
+        learn_rate = 0.1
+        
+        # Mock random selection to choose positive class
+        with patch('numpy.random.rand') as mock_rand:
+            mock_rand.return_value = np.array([0.3])  # Choose positive class
+            with patch('numpy.random.randint') as mock_randint:
+                mock_randint.return_value = 0  # Choose first positive point
+                
+                new_w, new_b, x_select, updated = mlai.update_perceptron(w, b, x_plus, x_minus, learn_rate)
+                
+                # Check that weights were updated (lines 274-276)
+                # The function modifies w and b in place, so we need to calculate expected values
+                expected_w = np.array([-1.0, -1.0]) + learn_rate * x_plus[0]
+                expected_b = -1.0 + learn_rate
+                
+                assert np.allclose(new_w, expected_w)
+                assert np.isclose(new_b, expected_b)
+                assert updated is True
+                assert np.array_equal(x_select, x_plus[0])
+    
+    def test_update_perceptron_negative_classification_error(self):
+        """Test update_perceptron when negative point is misclassified (lines 283-285)."""
+        w = np.array([1.0, 1.0])  # Weights that will misclassify negative points
+        b = 1.0  # Bias that will misclassify negative points
+        x_plus = np.array([[0.0, 0.0]])  # Positive point
+        x_minus = np.array([[1.0, 1.0]])  # Negative point
+        learn_rate = 0.1
+        
+        # Mock random selection to choose negative class
+        with patch('numpy.random.rand') as mock_rand:
+            mock_rand.return_value = np.array([0.7])  # Choose negative class
+            with patch('numpy.random.randint') as mock_randint:
+                mock_randint.return_value = 0  # Choose first negative point
+                
+                new_w, new_b, x_select, updated = mlai.update_perceptron(w, b, x_plus, x_minus, learn_rate)
+                
+                # Check that weights were updated (lines 283-285)
+                # The function modifies w and b in place, so we need to calculate expected values
+                expected_w = np.array([1.0, 1.0]) - learn_rate * x_minus[0]
+                expected_b = 1.0 - learn_rate
+                
+                assert np.allclose(new_w, expected_w)
+                assert np.isclose(new_b, expected_b)
+                assert updated is True
+                assert np.array_equal(x_select, x_minus[0])
 
 class TestNeuralNetworks:
     """Test neural network implementations."""
