@@ -24,6 +24,7 @@ MLAI was originally developed to support the "Machine Learning and Adaptive Inte
 - *Plotting Utilities*: Tools for visualizing data and models
 - *Tutorials*: Example notebooks and scripts for hands-on learning
 - *Open Science*: Encourages sharing, reproducibility, and contributions
+- *Modular Design*: Clean, organized codebase with logical module separation (see [CIP-0006](cip/cip0006.md))
 
 ---
 
@@ -44,20 +45,38 @@ pip install -e .
 ## 🏁 Quick Start Example
 ```python
 import mlai
-# Example: Load a dataset, fit a model, and plot results
-# (See tutorials and documentation for more details)
+
+# Linear regression example
+X = mlai.generate_cluster_data(n_points_per_cluster=20)
+y = X[:, 0] + 0.1 * mlai.np.random.randn(X.shape[0])
+
+# Fit linear model
+model = mlai.LM(X, y, mlai.linear)
+model.fit()
+
+# Plot results
+mlai.plot.regression_plot(model, X, y)
 ```
+
+For more examples, see the [tutorials](docs/) and [documentation](https://inverseprobability.com/mlai/).
 
 ---
 
 ## 🗂️ Project Structure
 ```
-mlai/                # Core Python package
-├── mlai.py          # Main module
+mlai/                # Core Python package (modular structure)
+├── models.py        # Base model classes (Model, ProbModel, MapModel, ProbMapModel)
+├── linear_models.py # Linear models (LM, BLM, LR) and basis functions
+├── gaussian_processes.py # GP classes and kernel functions
+├── neural_networks.py # Neural network classes, activations, and loss functions
+├── utils.py         # Utility functions (gradient checks, file I/O, optimization)
+├── dimred.py        # Dimensionality reduction and clustering algorithms
+├── data.py          # Data generation utilities
+├── experimental.py  # Experimental features (dropout networks)
+├── plot.py          # Plotting and visualization utilities
 ├── gp_tutorial.py   # Gaussian Process tutorial
 ├── deepgp_tutorial.py # Deep GP tutorial
 ├── mountain_car.py  # Mountain Car example
-├── plot.py          # Plotting utilities
 backlog/             # Project backlog and task tracking
 cip/                 # Code Improvement Proposals (CIPs)
 docs/                # Documentation (Sphinx)
