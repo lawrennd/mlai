@@ -49,6 +49,24 @@ class TestAbstractBaseClasses:
         dummy = Dummy()
         result = dummy.objective()
         assert result == -42.0  # objective() should return -log_likelihood()
+    
+    def test_linear_model_set_param(self):
+        """Test LM set_param method (lines 573, 578-579, 583)."""
+        # Create a simple test case that won't trigger fit issues
+        X = np.array([[1], [2], [3], [4]])  # More data points
+        y = np.array([[1], [2], [3], [4]])
+        basis = mlai.Basis(mlai.polynomial, 2)  # Fewer basis functions
+        
+        # Create LM without triggering fit
+        lm = mlai.LM(X, y, basis)
+        
+        # Test setting a parameter that exists in the model (same value, no fit)
+        lm.set_param('sigma2', 1.0)  # Same as default
+        assert lm.sigma2 == 1.0
+        
+        # Test setting an unknown parameter (should raise ValueError)
+        with pytest.raises(ValueError, match="Unknown parameter"):
+            lm.set_param('unknown_param', 1.0)
     def test_mapmodel_predict_not_implemented(self):
         class Dummy(mlai.MapModel):
             def __init__(self, X, y):
