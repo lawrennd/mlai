@@ -166,6 +166,25 @@ class TestLinearModel:
         # First column should be all 1s (constant term)
         assert np.all(result[:, 0] == 1.0)
     
+    def test_relu_edge_cases(self):
+        """Test relu function edge cases (lines 858-861, 863)."""
+        X = np.array([[0.5], [1.0], [1.5]])
+        data_limits = [0.0, 2.0]
+        
+        # Test with num_basis=2 to trigger elif num_basis==2 branch (lines 858-859)
+        result_2 = mlai.relu(X, num_basis=2, data_limits=data_limits)
+        assert result_2.shape == (X.shape[0], 2)
+        assert np.all(np.isfinite(result_2))
+        # First column should be all 1s (constant term)
+        assert np.all(result_2[:, 0] == 1.0)
+        
+        # Test with num_basis=1 to trigger if num_basis < 3 branch (line 863)
+        result_1 = mlai.relu(X, num_basis=1, data_limits=data_limits)
+        assert result_1.shape == (X.shape[0], 1)
+        assert np.all(np.isfinite(result_1))
+        # Should be all 1s (constant term only)
+        assert np.all(result_1[:, 0] == 1.0)
+    
     def test_lm_fit_and_predict(self):
         """Test LM fit and predict methods."""
         X = np.array([[1], [2], [3]])
