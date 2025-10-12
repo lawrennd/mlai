@@ -2767,24 +2767,6 @@ def slfm_cov(x, x_prime, W, subkernel, **kwargs):
     return icm_cov(x, x_prime, B, subkernel, **kwargs)
 
     
-def add_cov(x, x_prime, kernargs):
-    """
-    Additive covariance function.
-    
-    :param x: First data point
-    :type x: numpy.ndarray
-    :param x_prime: Second data point
-    :type x_prime: numpy.ndarray
-    :param kernargs: List of tuples (kernel, kwargs)
-    :type kernargs: list of tuples
-    :returns: Summed covariance value
-    :rtype: float
-    """
-    k = 0.
-    for kernel, kwargs in kernargs:
-        k+=kernel(x, x_prime, **kwargs)
-    return k
-
 def prod_kern(x, x_prime, kernargs):
     """
     Product covariance function.
