@@ -11,6 +11,7 @@ TODO: Extract from mlai.py during refactoring
 """
 
 import os
+import numpy as np
 import matplotlib.pyplot as plt
 
 __all__ = [
@@ -182,3 +183,154 @@ def load_pgm(filename, directory=None, byteorder='>'):
         count=int(width)*int(height),
         offset=len(header)
     ).reshape((int(height), int(width)))
+
+
+
+
+def finite_difference_gradient(func, x, h=1e-5):
+    """
+    Compute gradient using finite differences.
+    
+    This is a numerical method to approximate gradients by computing
+    the difference quotient: f'(x) ≈ (f(x+h) - f(x-h)) / (2h)
+    
+    This is useful for:
+    1. Verifying analytical gradient implementations
+    2. Educational purposes to understand gradient computation
+    3. Debugging gradient-related issues
+    
+    :param func: Function to compute gradient for
+    :type func: callable
+    :param x: Point at which to compute gradient
+    :type x: numpy.ndarray
+    :param h: Step size for finite differences
+    :type h: float
+    :returns: Numerical gradient approximation
+    :rtype: numpy.ndarray
+    
+    Examples:
+        >>> def f(x): return x**2
+        >>> x = np.array([2.0])
+        >>> grad = finite_difference_gradient(f, x)
+        >>> print(grad)  # Should be close to [4.0]
+    """
+    x = np.asarray(x, dtype=float)
+    gradient = np.zeros_like(x)
+    
+    # Compute gradient for each dimension
+    for i in range(x.size):
+        # Create perturbation vectors
+        x_plus = x.copy()
+        x_minus = x.copy()
+        
+        # Perturb the i-th element
+        x_plus.flat[i] += h
+        x_minus.flat[i] -= h
+        
+        # Compute finite difference
+        # Handle both scalar and array outputs
+        f_plus = func(x_plus)
+        f_minus = func(x_minus)
+        
+        # If function returns array, take the sum (for activation functions)
+        if np.asarray(f_plus).ndim > 0:
+            f_plus = np.sum(f_plus)
+            f_minus = np.sum(f_minus)
+        
+        gradient.flat[i] = (f_plus - f_minus) / (2 * h)
+    
+    return gradient
+
+
+def finite_difference_jacobian(func, x, h=1e-5):
+    """
+    Compute Jacobian matrix using finite differences.
+    
+    This computes the Jacobian matrix of a vector-valued function
+    using finite differences. Useful for testing neural network
+    gradient computations.
+    
+    :param func: Vector-valued function to compute Jacobian for
+    :type func: callable
+    :param x: Point at which to compute Jacobian
+    :type x: numpy.ndarray
+    :param h: Step size for finite differences
+    :type h: float
+    :returns: Jacobian matrix (output_size × input_size)
+    :rtype: numpy.ndarray
+    
+    Examples:
+        >>> def f(x): return np.array([x[0]**2, x[1]**3])
+        >>> x = np.array([2.0, 3.0])
+        >>> jacobian = finite_difference_jacobian(f, x)
+        >>> print(jacobian)  # Should be close to [[4, 0], [0, 27]]
+    """
+    x = np.asarray(x, dtype=float)
+    output = func(x)
+    output = np.asarray(output, dtype=float)
+    
+    # Initialize Jacobian matrix
+    jacobian = np.zeros((output.size, x.size))
+    
+    # Compute gradient for each input dimension
+    for i in range(x.size):
+        # Create perturbation vectors
+        x_plus = x.copy()
+        x_minus = x.copy()
+        
+        # Perturb the i-th element
+        x_plus.flat[i] += h
+        x_minus.flat[i] -= h
+        
+        # Compute finite difference
+        output_plus = func(x_plus)
+        output_minus = func(x_minus)
+        
+        jacobian[:, i] = (output_plus - output_minus).flatten() / (2 * h)
+    
+    return jacobian
+
+
+def verify_gradient_implementation(analytical_grad, numerical_grad, rtol=1e-5, atol=1e-8):
+    """
+    Verify that analytical gradient matches numerical gradient.
+    
+    This function compares analytical and numerical gradients to ensure
+    the analytical implementation is correct. This is crucial for
+    debugging gradient computations in neural networks.
+    
+    :param analytical_grad: Analytically computed gradient
+    :type analytical_grad: numpy.ndarray
+    :param numerical_grad: Numerically computed gradient
+    :type numerical_grad: numpy.ndarray
+    :param rtol: Relative tolerance for comparison
+    :type rtol: float
+    :param atol: Absolute tolerance for comparison
+    :type atol: float
+    :returns: True if gradients match within tolerance
+    :rtype: bool
+    :raises ValueError: If gradient dimensions don't match
+    
+    Examples:
+        >>> analytical = np.array([4.0, 6.0])
+        >>> numerical = np.array([4.0001, 6.0001])
+        >>> verify_gradient_implementation(analytical, numerical)
+        True
+    """
+    # Convert to numpy arrays if needed
+    analytical_grad = np.asarray(analytical_grad)
+    numerical_grad = np.asarray(numerical_grad)
+    
+    # Check dimension compatibility
+    if analytical_grad.shape != numerical_grad.shape:
+        raise ValueError(
+            f"Gradient dimension mismatch: analytical gradient shape {analytical_grad.shape} "
+            f"does not match numerical gradient shape {numerical_grad.shape}"
+        )
+    
+    try:
+        np.testing.assert_allclose(analytical_grad, numerical_grad, rtol=rtol, atol=atol)
+        return True
+    except AssertionError:
+        return False
+
