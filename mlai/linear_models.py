@@ -351,6 +351,45 @@ def radial(x, num_basis=4, data_limits=[-1., 1.], width=None):
         Phi[:, i:i+1] = np.exp(-0.5*((np.asarray(x, dtype=float)-centres[i])/width)**2)
     return Phi
 
+def radial_multivariate(x, num_basis=4, width=None, random_state=0):
+    """
+    Multivariate radial basis function (RBF) for multi-dimensional input.
+
+    :param x: Input features, shape (n_samples, n_features)
+    :type x: numpy.ndarray
+    :param num_basis: Number of radial basis functions
+    :type num_basis: int, optional
+    :param width: Width parameter for the Gaussian functions. If None, auto-computed.
+    :type width: float, optional
+    :param random_state: Seed for reproducible center placement
+    :type random_state: int, optional
+    :returns: Radial basis matrix, shape (n_samples, num_basis)
+    :rtype: numpy.ndarray
+    """
+    x = np.asarray(x, dtype=float)
+    n_samples, n_features = x.shape
+    rng = np.random.RandomState(random_state)
+    # Place centers randomly within the min/max of the data
+    mins = np.min(x, axis=0)
+    maxs = np.max(x, axis=0)
+    centres = rng.uniform(mins, maxs, size=(num_basis, n_features))
+    if width is None:
+        from scipy.spatial.distance import cdist
+        # Calculate distances between all pairs of centers
+        center_dists = cdist(centres, centres)
+        # Set diagonal to infinity to exclude self-distances
+        np.fill_diagonal(center_dists, np.inf)
+        # Use average distance to nearest neighbor as width
+        nearest_dists = np.min(center_dists, axis=1)
+        width = np.mean(nearest_dists) if len(nearest_dists) > 0 else 1.0
+        # Optionally scale down the width for better separation
+        width = width * 0.5
+    Phi = np.zeros((n_samples, num_basis))
+    for i in range(num_basis):
+        diff = x - centres[i]
+        Phi[:, i] = np.exp(-0.5 * np.sum(diff**2, axis=1) / width**2)
+    return Phi
+
 
 def fourier(x, num_basis=4, data_limits=[-1., 1.], frequency_range=None):
     """

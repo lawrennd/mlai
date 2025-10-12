@@ -52,6 +52,7 @@ from numpy import vstack
 
 # Import linear models from the linear_models module
 from .linear_models import LM
+from .utils import dist2
 from .models import Model, ProbModel, MapModel, ProbMapModel
 
 
@@ -806,76 +807,11 @@ def contour_data(model, data, length_scales, log_SNRs):
 
     return np.asarray(lls)
 
-def radial_multivariate(x, num_basis=4, width=None, random_state=0):
-    """
-    Multivariate radial basis function (RBF) for multi-dimensional input.
 
-    :param x: Input features, shape (n_samples, n_features)
-    :type x: numpy.ndarray
-    :param num_basis: Number of radial basis functions
-    :type num_basis: int, optional
-    :param width: Width parameter for the Gaussian functions. If None, auto-computed.
-    :type width: float, optional
-    :param random_state: Seed for reproducible center placement
-    :type random_state: int, optional
-    :returns: Radial basis matrix, shape (n_samples, num_basis)
-    :rtype: numpy.ndarray
-    """
-    x = np.asarray(x, dtype=float)
-    n_samples, n_features = x.shape
-    rng = np.random.RandomState(random_state)
-    # Place centers randomly within the min/max of the data
-    mins = np.min(x, axis=0)
-    maxs = np.max(x, axis=0)
-    centres = rng.uniform(mins, maxs, size=(num_basis, n_features))
-    if width is None:
-        from scipy.spatial.distance import cdist
-        # Calculate distances between all pairs of centers
-        center_dists = cdist(centres, centres)
-        # Set diagonal to infinity to exclude self-distances
-        np.fill_diagonal(center_dists, np.inf)
-        # Use average distance to nearest neighbor as width
-        nearest_dists = np.min(center_dists, axis=1)
-        width = np.mean(nearest_dists) if len(nearest_dists) > 0 else 1.0
-        # Optionally scale down the width for better separation
-        width = width * 0.5
-    Phi = np.zeros((n_samples, num_basis))
-    for i in range(num_basis):
-        diff = x - centres[i]
-        Phi[:, i] = np.exp(-0.5 * np.sum(diff**2, axis=1) / width**2)
-    return Phi
-
-
-def generate_cluster_data(n_points_per_cluster=30):
-    """Generate synthetic data with clear cluster structure for educational purposes"""
-    # Define cluster centres in 2D space
-    cluster_centres = np.array([[2.5, 2.5], [-2.5, -2.5], [2.5, -2.5]])
-    
-    # Generate data points around each center
-    data_points = []
-    for center in cluster_centres:
-        # Generate points with some spread around each center
-        cluster_points = np.random.normal(loc=center, scale=0.8, size=(n_points_per_cluster, 2))
-        data_points.append(cluster_points)
-    
-    return np.vstack(data_points)
 
 
 class ClusterModel():
     pass
-
-def dist2(X1, X2):
-    """
-    Return the squared distance matrix between two 2-D arrays.
-    
-    Key insight: ||x - y||² = ||x||² + ||y||² - 2⟨x,y⟩
-    
-    Why? Expand (x-y)·(x-y) = x·x - 2x·y + y·y
-    """
-
-    return (np.sum(X1*X1, axis=1, keepdims=True)
-            + np.sum(X2*X2, axis=1) 
-            - 2*X1@X2.T)
 
         
 def kmeans_assignments(Y, centres):

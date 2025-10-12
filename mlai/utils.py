@@ -334,3 +334,31 @@ def verify_gradient_implementation(analytical_grad, numerical_grad, rtol=1e-5, a
     except AssertionError:
         return False
 
+
+def dist2(X1, X2):
+    """
+    Return the squared distance matrix between two 2-D arrays.
+    
+    Key insight: ||x - y||² = ||x||² + ||y||² - 2⟨x,y⟩
+    
+    Why? Expand (x-y)·(x-y) = x·x - 2x·y + y·y
+    """
+
+    return (np.sum(X1*X1, axis=1, keepdims=True)
+            + np.sum(X2*X2, axis=1) 
+            - 2*X1@X2.T)
+
+def generate_cluster_data(n_points_per_cluster=30):
+    """Generate synthetic data with clear cluster structure for educational purposes"""
+    # Define cluster centres in 2D space
+    cluster_centres = np.array([[2.5, 2.5], [-2.5, -2.5], [2.5, -2.5]])
+    
+    # Generate data points around each center
+    data_points = []
+    for center in cluster_centres:
+        # Generate points with some spread around each center
+        cluster_points = np.random.normal(loc=center, scale=0.8, size=(n_points_per_cluster, 2))
+        data_points.append(cluster_points)
+    
+    return np.vstack(data_points)
+    
