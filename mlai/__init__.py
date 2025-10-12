@@ -24,14 +24,16 @@ from .mlai import *
 # Import utility functions to make them available at package level
 from .utils import write_figure, write_animation, write_animation_html, filename_join, write_figure_caption, load_pgm, finite_difference_gradient, verify_gradient_implementation, finite_difference_jacobian
 from .mlai import radial_multivariate
-from .linear_models import linear, polynomial, radial, fourier, Basis, Noise, Gaussian
+from .linear_models import linear, polynomial, radial, fourier, Basis, Noise, Gaussian, LM, BLM, LR
 
 # Import neural network classes and functions to make them available at package level
 from .neural_networks import (
     SimpleNeuralNetwork, NeuralNetwork,
     init_perceptron, update_perceptron,
     relu_activation, sigmoid_activation, linear_activation, soft_relu_activation,
-    LinearActivation, ReLUActivation, SigmoidActivation, SoftReLUActivation
+    LinearActivation, ReLUActivation, SigmoidActivation, SoftReLUActivation,
+    LossFunction, MeanSquaredError, MeanAbsoluteError, HuberLoss,
+    BinaryCrossEntropyLoss, CrossEntropyLoss
 )
 
 # Import plot module

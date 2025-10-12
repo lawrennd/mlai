@@ -556,3 +556,296 @@ class Gaussian(Noise):
         dlnZ_dvs = 0.5*(dlnZ_dmu*dlnZ_dmu - nu)
         return dlnZ_dmu, dlnZ_dvs
 
+
+class BLM(LM):
+    """
+    Bayesian Linear Model.
+    
+    This class implements a Bayesian linear model with a Gaussian prior
+    on the weights and Gaussian noise. The model provides uncertainty
+    estimates for predictions.
+    
+    :param X: Input values
+    :type X: numpy.ndarray
+    :param y: Target values, shape (n_samples, 1)
+    :type y: numpy.ndarray
+    :param basis: Basis function
+    :type basis: Basis
+    :param alpha: Scale of prior on parameters (default: 1.0)
+    :type alpha: float, optional
+    :param sigma2: Noise variance (default: 1.0)
+    :type sigma2: float, optional
+    """
+
+    def __init__(self, X, y, basis, alpha=1.0, sigma2=1.0):
+        """
+        Initialize the Bayesian Linear Model.
+        
+        :param X: Input values
+        :type X: numpy.ndarray
+        :param y: Target values, shape (n_samples, 1)
+        :type y: numpy.ndarray
+        :param basis: Basis function
+        :type basis: Basis
+        :param alpha: Scale of prior on parameters (default: 1.0)
+        :type alpha: float, optional
+        :param sigma2: Noise variance (default: 1.0)
+        :type sigma2: float, optional
+        """
+        # Call LM constructor to handle 2D target arrays
+        super().__init__(X, y, basis)
+        self.sigma2 = sigma2
+        self.alpha = alpha
+        self.basis = basis
+        self.Phi = self.basis.Phi(X)
+        self.name = 'BLM_'+self.basis.function.__name__
+        self.objective_name = 'Negative Marginal Likelihood'
+
+    def set_param(self, name, val, update_fit=True):
+        """
+        Set a parameter to a given value.
+        
+        :param name: Name of the parameter to set
+        :type name: str
+        :param val: New value for the parameter
+        :type val: float
+        :param update_fit: Whether to refit the model after setting the parameter
+        :type update_fit: bool, optional
+        """
+        if name in self.__dict__:
+            if self.__dict__[name] == val:
+                update_fit=False
+            else:
+                self.__dict__[name] = val
+        elif name in self.basis.__dict__:
+            if self.basis.__dict__[name] == val:
+                update_fit=False
+            else:
+                self.basis.__dict__[name] = val
+                self.Phi = self.basis.Phi(self.X)            
+        else:
+            raise ValueError("Unknown parameter being set.")
+        if update_fit:
+            self.fit()
+        
+    def update_QR(self):
+        """
+        Perform the QR decomposition on the basis matrix.
+        
+        This method performs QR decomposition on the augmented basis matrix
+        that includes the prior regularization term.
+        """
+        self.Q, self.R = np.linalg.qr(np.vstack([self.Phi, np.sqrt(self.sigma2/self.alpha)*np.eye(self.basis.number)]))
+
+    def fit(self):
+        """
+        Minimize the objective function with respect to the parameters.
+        
+        This method computes the posterior mean and covariance of the weights
+        using the QR decomposition approach.
+        """
+        self.update_QR()
+        self.QTy = self.Q[:self.y.shape[0], :].T@self.y
+        self.mu_w = la.solve_triangular(self.R, self.QTy)
+        self.RTinv = la.solve_triangular(self.R, np.eye(self.R.shape[0]), trans='T')
+        self.C_w = self.RTinv@self.RTinv.T
+        self.update_sum_squares()
+
+    def predict(self, X, full_cov=False):
+        """
+        Return the result of the prediction function.
+        
+        :param X: Input features for prediction
+        :type X: numpy.ndarray
+        :param full_cov: Whether to return full covariance matrix
+        :type full_cov: bool, optional
+        :returns: Tuple of (predictions, uncertainties)
+        :rtype: tuple
+        """
+        Phi = self.basis.Phi(X)
+        # A= R^-T Phi.T
+        A = la.solve_triangular(self.R, Phi.T, trans='T')
+        mu = A.T@self.QTy
+        if full_cov:
+            return mu, self.sigma2*A.T@A
+        else:
+            return mu, self.sigma2*(A*A).sum(0)[:, None]
+        
+    def update_f(self):
+        """
+        Update values at the prediction points.
+        
+        This method computes the posterior mean and variance of the
+        function values at the training points.
+        """
+        self.f_bar = self.Phi@self.mu_w
+        self.f_cov = (self.Q[:self.y.shape[0], :]*self.Q[:self.y.shape[0], :]).sum(1)
+
+    def update_sum_squares(self):
+        """
+        Compute the sum of squares error.
+        
+        This method computes the sum of squared differences between
+        the observed targets and the posterior mean predictions.
+        """
+        self.update_f()
+        self.sum_squares = ((self.y-self.f_bar)**2).sum()
+    
+    def objective(self):
+        """
+        Compute the objective function.
+        
+        For the Bayesian linear model, this is the negative log-likelihood.
+        """
+        return - self.log_likelihood()
+
+    def update_nll(self):
+        """
+        Precompute terms needed for the log likelihood.
+        
+        This method computes the log determinant and quadratic terms
+        that are used in the negative log-likelihood calculation.
+        """
+        self.log_det = self.num_data*np.log(self.sigma2*np.pi*2.)-2*np.log(np.abs(np.linalg.det(self.Q[self.y.shape[0]:, :])))
+        self.quadratic = (self.y*self.y).sum()/self.sigma2 - (self.QTy*self.QTy).sum()/self.sigma2
+        
+    def nll_split(self):
+        """
+        Compute the determinant and quadratic term of the negative log likelihood.
+        
+        :returns: Tuple of (log_det, quadratic) terms
+        :rtype: tuple
+        """
+        self.update_nll()
+        return self.log_det, self.quadratic
+    
+    def log_likelihood(self):
+        """
+        Compute the log likelihood.
+        
+        :returns: Log likelihood value
+        :rtype: float
+        """
+        self.update_nll()
+        return -self.log_det - self.quadratic
+    
+##########          Week 10          ##########
+
+class LR(ProbMapModel):
+    """
+    Logistic regression model.
+
+    :param X: Input values
+    :type X: numpy.ndarray
+    :param y: Target values
+    :type y: numpy.ndarray
+    :param basis: Basis function
+    :type basis: function
+    """
+    def __init__(self, X, y, basis):
+        # Ensure y is 2D (n_samples, 1)
+        if y.ndim == 1:
+            y = y.reshape(-1, 1)
+        elif y.ndim != 2 or y.shape[1] != 1:
+            raise ValueError("y must be 2D with shape (n_samples, 1)")
+        
+        ProbMapModel.__init__(self, X, y)
+        self.basis = basis
+        self.Phi = self.basis.Phi(X)
+        # Ensure w_star is (n_basis, 1)
+        self.w_star = np.zeros((self.basis.number, 1))
+
+    def predict(self, X):
+        """
+        Generate the prediction function and the basis matrix.
+
+        :param X: Input features for prediction
+        :type X: numpy.ndarray
+        :returns: Tuple of (predicted probabilities, basis matrix)
+        :rtype: tuple
+        """
+        Phi = self.basis.Phi(X)
+        f = Phi @ self.w_star  # (n_samples, 1)
+        proba = 1. / (1 + np.exp(-f))
+        return proba, Phi
+
+    def gradient(self):
+        """
+        Generate the gradient of the parameter vector.
+
+        :returns: Gradient vector
+        :rtype: numpy.ndarray
+        """
+        self.update_g()
+        y_bool = self.y.flatten().astype(bool)  # Ensure 1D
+        grad = np.zeros((self.Phi.shape[1], 1))
+        grad += -(self.Phi[y_bool, :].T @ (1 - self.g[y_bool, :]))
+        grad += (self.Phi[~y_bool, :].T @ self.g[~y_bool, :])
+        return grad.flatten()  # Return 1D array 
+    
+    def fit(self, learning_rate=0.1, max_iterations=1000, tolerance=1e-6):
+        """
+        Fit the logistic regression model using gradient descent.
+        
+        :param learning_rate: Learning rate for gradient descent
+        :type learning_rate: float, optional
+        :param max_iterations: Maximum number of iterations
+        :type max_iterations: int, optional
+        :param tolerance: Convergence tolerance
+        :type tolerance: float, optional
+        """
+        for iteration in range(max_iterations):
+            old_objective = self.objective()
+            gradient = self.gradient()
+            # Flatten w_star for optimization, then reshape back
+            w_flat = self.w_star.flatten()
+            w_flat -= learning_rate * gradient
+            self.w_star = w_flat.reshape(self.w_star.shape)
+            new_objective = self.objective()
+            
+            if abs(new_objective - old_objective) < tolerance:
+                break
+
+    def compute_g(self, f):
+        """
+        Compute the transformation and its logarithms.
+
+        :param f: Linear combination of features and weights
+        :type f: numpy.ndarray
+        :returns: Tuple of (g, log_g, log_gminus)
+        :rtype: tuple
+        """
+        eps = 1e-16
+        g = 1./(1+np.exp(f))
+        log_g = np.zeros((f.shape))
+        log_gminus = np.zeros((f.shape))
+        # compute log_g for values out of bound
+        bound = np.log(eps)
+        ind = f<-bound
+        log_g[ind] = -f[ind]
+        log_gminus[ind] = eps
+        ind = f>bound
+        log_g[ind] = eps
+        log_gminus[ind] = f[ind]
+        ind = np.logical_and(f>=-bound, f<=bound)
+        log_g[ind] = np.log(g[ind])
+        log_gminus[ind] = np.log(1-g[ind])
+        return g, log_g, log_gminus
+        
+    def update_g(self):
+        """
+        Compute the prediction function on training data.
+        """
+        self.f = self.Phi @ self.w_star  # (n_samples, 1)
+        self.g, self.log_g, self.log_gminus = self.compute_g(self.f)
+        
+    def objective(self):
+        """
+        Compute the objective function (log-likelihood).
+
+        :returns: Log-likelihood value
+        :rtype: float
+        """
+        self.update_g()
+        y_bool = self.y.flatten().astype(bool)  # Ensure 1D
+        return self.log_g[y_bool, :].sum() + self.log_gminus[~y_bool, :].sum()
