@@ -184,6 +184,21 @@ class TestLinearModel:
         assert np.all(np.isfinite(result_1))
         # Should be all 1s (constant term only)
         assert np.all(result_1[:, 0] == 1.0)
+
+    def test_relu_additional_edge_cases(self):
+        """Test relu function additional edge cases (lines 902-907)."""
+        X = np.array([[0.5], [1.0], [1.5]])
+        data_limits = [0.0, 2.0]
+        
+        # Test with num_basis=2 to trigger elif num_basis==2 branch (lines 902-904)
+        result_2 = mlai.relu(X, num_basis=2, data_limits=data_limits)
+        assert result_2.shape == (X.shape[0], 2)
+        assert np.all(np.isfinite(result_2))
+        
+        # Test with num_basis=1 to trigger else branch (lines 905-907)
+        result_1 = mlai.relu(X, num_basis=1, data_limits=data_limits)
+        assert result_1.shape == (X.shape[0], 1)
+        assert np.all(np.isfinite(result_1))
     
     def test_lm_fit_and_predict(self):
         """Test LM fit and predict methods."""
@@ -241,6 +256,41 @@ class TestLogisticRegression:
         y_invalid = np.array([[1, 2], [3, 4]])  # 2D but wrong shape
         with pytest.raises(ValueError, match="y must be 2D with shape"):
             mlai.LR(X, y_invalid, basis)
+
+    def test_lr_predict_method(self):
+        """Test LR predict method (lines 2295-2298)."""
+        X = np.array([[1], [2], [3]])
+        y = np.array([0, 1, 0]).reshape(-1, 1)
+        basis = mlai.Basis(mlai.linear, 2)  # Need 2 basis functions for linear
+        
+        lr = mlai.LR(X, y, basis)
+        lr.fit()  # Fit the model first
+        
+        # Test predict method
+        X_test = np.array([[1.5], [2.5]])
+        proba, Phi = lr.predict(X_test)
+        
+        assert proba.shape == (2, 1)
+        assert Phi.shape == (2, 2)  # 2 test points, 2 basis functions
+        assert np.all(proba >= 0) and np.all(proba <= 1)  # Probabilities should be in [0,1]
+        assert np.all(np.isfinite(proba))
+        assert np.all(np.isfinite(Phi))
+
+    def test_lr_fit_method(self):
+        """Test LR fit method (lines 2325-2335)."""
+        X = np.array([[1], [2], [3]])
+        y = np.array([0, 1, 0]).reshape(-1, 1)
+        basis = mlai.Basis(mlai.linear, 2)  # Need 2 basis functions for linear
+        
+        lr = mlai.LR(X, y, basis)
+        
+        # Test fit method with small number of iterations
+        lr.fit(max_iterations=5, learning_rate=0.1, tolerance=1e-6)
+        
+        # Check that w_star has been updated
+        assert hasattr(lr, 'w_star')
+        assert lr.w_star is not None
+        assert np.all(np.isfinite(lr.w_star))
 
 
 class TestBayesianLinearModel:
