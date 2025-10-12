@@ -9,6 +9,8 @@ This module contains base model classes including:
 TODO: Extract from mlai.py during refactoring
 """
 
+import numpy as np
+
 # Placeholder for future base models functionality
 # This will be populated during the refactoring process
 

@@ -23,9 +23,15 @@ from .mlai import *
 
 # Import utility functions to make them available at package level
 from .utils import write_figure, write_animation, write_animation_html, filename_join, write_figure_caption, load_pgm
+from .mlai import finite_difference_gradient, verify_gradient_implementation
 
-# Import neural network classes to make them available at package level
-from .neural_networks import SimpleNeuralNetwork
+# Import neural network classes and functions to make them available at package level
+from .neural_networks import (
+    SimpleNeuralNetwork, NeuralNetwork,
+    init_perceptron, update_perceptron,
+    relu_activation, sigmoid_activation, linear_activation, soft_relu_activation,
+    LinearActivation, ReLUActivation, SigmoidActivation, SoftReLUActivation
+)
 
 # Import experimental classes to make them available at package level
 from .experimental import SimpleDropoutNeuralNetwork, NonparametricDropoutNeuralNetwork
