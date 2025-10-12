@@ -24,7 +24,7 @@ from .mlai import *
 
 # Import utility functions to make them available at package level
 from .utils import write_figure, write_animation, write_animation_html, filename_join, write_figure_caption, load_pgm, finite_difference_gradient, verify_gradient_implementation, finite_difference_jacobian, dist2
-from .data import generate_cluster_data
+from .data import generate_cluster_data, generate_swiss_roll
 from .linear_models import linear, polynomial, radial, fourier, radial_multivariate, Basis, Noise, Gaussian, LM, BLM, LR
 
 # Import neural network classes and functions to make them available at package level
@@ -42,6 +42,23 @@ from . import plot
 
 # Import experimental classes to make them available at package level
 from .experimental import SimpleDropoutNeuralNetwork, NonparametricDropoutNeuralNetwork
+
+# Import Gaussian Process functions to make them available at package level
+from .gaussian_processes import (
+    GP, Kernel,
+    eq_cov, ou_cov, matern32_cov, matern52_cov, periodic_cov,
+    linear_cov, polynomial_cov, relu_cov, bias_cov, add_cov, prod_cov,
+    mlp_cov, sinc_cov, brownian_cov, ratquad_cov, basis_cov,
+    icm_cov, lmc_cov, slfm_cov,
+    posterior_f, update_inverse, contour_data
+)
+
+# Import dimensionality reduction and clustering functions to make them available at package level
+from .dimred import (
+    ClusterModel, WardsMethod,
+    kmeans_assignments, kmeans_update, kmeans_objective,
+    ppca_eig, ppca_svd, ppca_posterior, kruskal_stress
+)
 
 # Import GPy-dependent modules if available
 if GPY_AVAILABLE:

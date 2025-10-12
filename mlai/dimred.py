@@ -8,8 +8,9 @@ This module contains dimensionality reduction and clustering implementations inc
 TODO: Extract from mlai.py during refactoring
 """
 
-# Placeholder for future dimensionality reduction functionality
-# This will be populated during the refactoring process
+import numpy as np
+import scipy.linalg as la
+from .utils import dist2
 
 __all__ = [
     # Clustering Algorithms
