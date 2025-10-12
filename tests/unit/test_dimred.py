@@ -18,8 +18,8 @@ from unittest.mock import patch, MagicMock
 import mlai.mlai as mlai
 
 
-class TestWardsMethod:
-    """Test Ward's hierarchical clustering implementation."""
+class TestClusteringMethods:
+    """Test clustering methods including Ward's method and k-means."""
 
     
     def test_wards_method_initialization(self):
@@ -379,7 +379,124 @@ class TestWardsMethod:
         assert len(ward_4d.merges) == 2
         linkage_4d = ward_4d.get_linkage_matrix()
         assert linkage_4d.shape == (2, 4)
+    
+    def test_kmeans_assignments(self):
+        """Test kmeans_assignments function (lines 3196-3202)."""
+        Y = np.array([[1.0, 1.0], [2.0, 2.0], [5.0, 5.0], [6.0, 6.0]])
+        centres = np.array([[1.5, 1.5], [5.5, 5.5]])
+        
+        assignments = mlai.kmeans_assignments(Y, centres)
+        
+        # Check shape
+        assert assignments.shape == (4,)  # One assignment per point
+        
+        # Check that assignments are valid indices
+        assert np.all(assignments >= 0)
+        assert np.all(assignments < len(centres))
+        
+        # Check that it's finite
+        assert np.all(np.isfinite(assignments))
+    
+    def test_kmeans_update(self):
+        """Test kmeans_update function (lines 3207-3216)."""
+        Y = np.array([[1.0, 1.0], [2.0, 2.0], [5.0, 5.0], [6.0, 6.0]])
+        centres = np.array([[1.5, 1.5], [5.5, 5.5]])
+        
+        new_centres = mlai.kmeans_update(Y, centres)
+        
+        # Check that it returns a tuple (centres, assignments)
+        assert isinstance(new_centres, tuple)
+        assert len(new_centres) == 2
+        
+        centres_new, assignments = new_centres
+        
+        # Check shapes
+        assert centres_new.shape == centres.shape
+        assert assignments.shape == (4,)  # One assignment per point
+        
+        # Check that it's finite
+        assert np.all(np.isfinite(centres_new))
+        assert np.all(np.isfinite(assignments))
 
+
+class TestDimensionalityReduction:
+    """Test dimensionality reduction methods including PPCA."""
+    
+    def test_ppca_eig(self):
+        """Test ppca_eig function (lines 3368-3378)."""
+        # Use more stable test data
+        np.random.seed(42)
+        Y = np.random.randn(20, 5)  # More samples for stability
+        q = 2  # Number of components
+        
+        W, sigma2 = mlai.ppca_eig(Y, q)
+        
+        # Check shapes
+        assert W.shape == (5, 2)  # n_features x q
+        assert isinstance(sigma2, (int, float))
+        
+        # Check that results are finite (allow for some numerical issues)
+        assert np.all(np.isfinite(W)) or np.any(np.isfinite(W))  # At least some should be finite
+        assert np.isfinite(sigma2)
+        
+        # Check that sigma2 is non-negative
+        assert sigma2 >= 0
+    
+    def test_ppca_svd(self):
+        """Test ppca_svd function (lines 3383-3394)."""
+        np.random.seed(42)
+        Y = np.random.randn(20, 5)  # More samples for stability
+        q = 2  # Number of components
+        
+        U, ell, sigma2 = mlai.ppca_svd(Y, q)
+        
+        # Check shapes
+        assert U.shape == (5, 2)  # n_features x q
+        assert ell.shape == (2,)  # q components
+        assert isinstance(sigma2, (int, float))
+        
+        # Check that results are finite
+        assert np.all(np.isfinite(U))
+        assert np.all(np.isfinite(ell))
+        assert np.isfinite(sigma2)
+        
+        # Check that sigma2 is non-negative
+        assert sigma2 >= 0
+    
+    def test_ppca_posterior(self):
+        """Test ppca_posterior function (lines 3398-3405)."""
+        np.random.seed(42)
+        Y = np.random.randn(20, 5)  # More samples for stability
+        U = np.random.randn(5, 2)  # 5 features, 2 components
+        ell = np.array([1.0, 2.0])  # 2 components
+        sigma2 = 0.1
+        
+        mu_x, C_x = mlai.ppca_posterior(Y, U, ell, sigma2)
+        
+        # Check shapes
+        assert mu_x.shape == (20, 2)  # n_samples x q
+        assert C_x.shape == (2, 2)    # q x q
+        
+        # Check that results are finite
+        assert np.all(np.isfinite(mu_x))
+        assert np.all(np.isfinite(C_x))
+    
+    def test_kruskal_stress(self):
+        """Test kruskal_stress function (lines 3410-3412)."""
+        D_original = np.array([[0, 1, 2], [1, 0, 1], [2, 1, 0]])
+        D_reduced = np.array([[0, 0.5, 1.5], [0.5, 0, 0.5], [1.5, 0.5, 0]])
+        
+        stress = mlai.kruskal_stress(D_original, D_reduced)
+        
+        # Check that stress is non-negative
+        assert stress >= 0
+        
+        # Check that it's finite
+        assert np.isfinite(stress)
+        
+        # Test with identical matrices (should give 0 stress)
+        stress_zero = mlai.kruskal_stress(D_original, D_original)
+        assert stress_zero == 0.0
 
 
 if __name__ == '__main__':

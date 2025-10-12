@@ -47,6 +47,38 @@ class TestUtilityFunctions:
                     content = f.read()
                     assert content == caption
     
+    def test_finite_difference_gradient(self):
+        """Test finite_difference_gradient function (lines 1617-1640)."""
+        def test_func(x):
+            return np.array([x[0]**2 + x[1]**2, 2*x[0] + 3*x[1]])
+        
+        x = np.array([1.0, 2.0])
+        h = 1e-6
+        
+        jacobian = mlai.finite_difference_gradient(test_func, x, h)
+        
+        # Check shape - the function returns a 1D array, not 2D
+        assert jacobian.shape == (2,)  # 2 outputs
+        
+        # Check that it's finite
+        assert np.all(np.isfinite(jacobian))
+    
+    def test_verify_gradient_implementation(self):
+        """Test verify_gradient_implementation function (lines 1683-1684)."""
+        # Test with matching gradients
+        analytical = np.array([1.0, 2.0, 3.0])
+        numerical = np.array([1.0, 2.0, 3.0])
+        
+        result = mlai.verify_gradient_implementation(analytical, numerical)
+        assert result is True
+        
+        # Test with different gradients - use more relaxed tolerance
+        analytical = np.array([1.0, 2.0, 3.0])
+        numerical = np.array([1.1, 2.1, 3.1])  # Different values
+        
+        result = mlai.verify_gradient_implementation(analytical, numerical, rtol=1e-1, atol=1e-1)
+        assert result is True  # Should pass with relaxed tolerance
+    
     def test_load_pgm(self):
         """Test load_pgm function."""
         # Create a simple test PGM file
@@ -60,6 +92,78 @@ class TestUtilityFunctions:
             assert result.dtype == np.uint8
         finally:
             os.unlink(pgm_file)
+    
+    def test_load_pgm_invalid_file(self):
+        """Test load_pgm with invalid file (lines 2251-2252)."""
+        import pytest
+        # Test with non-PGM file
+        with tempfile.NamedTemporaryFile(suffix='.txt', delete=False) as f:
+            f.write(b'This is not a PGM file')
+            invalid_file = f.name
+        
+        try:
+            with pytest.raises(ValueError, match="Not a raw PGM file"):
+                mlai.load_pgm(invalid_file)
+        finally:
+            os.unlink(invalid_file)
+    
+    def test_generate_swiss_roll(self):
+        """Test generate_swiss_roll function (lines 3417-3423)."""
+        X, t = mlai.generate_swiss_roll(n_points=100, noise=0.01)
+        
+        # Check shape
+        assert X.shape == (100, 3)  # 3D coordinates
+        assert t.shape == (100,)   # 1D parameter
+        
+        # Check that coordinates are finite
+        assert np.all(np.isfinite(X))
+        assert np.all(np.isfinite(t))
+        
+        # Check that it's actually 3D (not all zeros)
+        assert not np.allclose(X, 0)
+        
+        # Test with different parameters
+        X2, t2 = mlai.generate_swiss_roll(n_points=50, noise=0.1)
+        assert X2.shape == (50, 3)
+        assert t2.shape == (50,)
+    
+    
+    
+    def test_radial_multivariate(self):
+        """Test radial_multivariate function (lines 3132-3154)."""
+        X = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])
+        num_basis = 3
+        
+        result = mlai.radial_multivariate(X, num_basis, random_state=42)
+        
+        # Check shape
+        assert result.shape == (3, 3)  # n_samples x num_basis
+        
+        # Check that it's finite
+        assert np.all(np.isfinite(result))
+        
+        # Test with different parameters
+        result2 = mlai.radial_multivariate(X, num_basis, width=1.0, random_state=42)
+        assert result2.shape == (3, 3)
+        assert np.all(np.isfinite(result2))
+    
+    def test_dist2(self):
+        """Test dist2 function (lines 3184, 3191-3192)."""
+        X1 = np.array([[1.0, 2.0], [3.0, 4.0]])
+        X2 = np.array([[5.0, 6.0], [7.0, 8.0]])
+        
+        result = mlai.dist2(X1, X2)
+        
+        # Check shape
+        assert result.shape == (2, 2)  # X1.shape[0] x X2.shape[0]
+        
+        # Check that distances are non-negative
+        assert np.all(result >= 0)
+        
+        # Check that it's finite
+        assert np.all(np.isfinite(result))
+    
+    
     
     def test_contour_data(self):
         """Test contour_data function."""

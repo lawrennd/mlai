@@ -352,6 +352,35 @@ class TestKernelFunctions:
         result = mlai.prod_cov(x, x_prime, kerns, kern_args)
         assert isinstance(result, (int, float))
         assert result > 0
+    
+    def test_add_cov(self):
+        """Test add_cov function (lines 2783-2786)."""
+        def kernel1(x, x_prime, **kwargs):
+            return 1.0
+        def kernel2(x, x_prime, **kwargs):
+            return 2.0
+        
+        x = np.array([1.0])
+        x_prime = np.array([2.0])
+        kerns = [kernel1, kernel2]
+        kern_args = [{}, {}]
+        
+        result = mlai.add_cov(x, x_prime, kerns, kern_args)
+        assert result == 3.0  # 1.0 + 2.0
+    
+    def test_prod_kern(self):
+        """Test prod_kern function (lines 2801-2804)."""
+        def kernel1(x, x_prime, **kwargs):
+            return 2.0
+        def kernel2(x, x_prime, **kwargs):
+            return 3.0
+        
+        x = np.array([1.0])
+        x_prime = np.array([2.0])
+        kernargs = [(kernel1, {}), (kernel2, {})]
+        
+        result = mlai.prod_kern(x, x_prime, kernargs)
+        assert result == 6.0  # 2.0 * 3.0
         
 class TestKernelClass:
     """Test Kernel class functionality."""
@@ -1320,6 +1349,35 @@ class TestContourDataFunction:
         except (AttributeError, TypeError):
             # Expected if the model doesn't have the required attributes
             pass
+    
+    def test_add_cov(self):
+        """Test add_cov function (lines 2783-2786)."""
+        def kernel1(x, x_prime, **kwargs):
+            return 1.0
+        def kernel2(x, x_prime, **kwargs):
+            return 2.0
+        
+        x = np.array([1.0])
+        x_prime = np.array([2.0])
+        kerns = [kernel1, kernel2]
+        kern_args = [{}, {}]
+        
+        result = mlai.add_cov(x, x_prime, kerns, kern_args)
+        assert result == 3.0  # 1.0 + 2.0
+    
+    def test_prod_kern(self):
+        """Test prod_kern function (lines 2801-2804)."""
+        def kernel1(x, x_prime, **kwargs):
+            return 2.0
+        def kernel2(x, x_prime, **kwargs):
+            return 3.0
+        
+        x = np.array([1.0])
+        x_prime = np.array([2.0])
+        kernargs = [(kernel1, {}), (kernel2, {})]
+        
+        result = mlai.prod_kern(x, x_prime, kernargs)
+        assert result == 6.0  # 2.0 * 3.0
         
 
 if __name__ == '__main__':
