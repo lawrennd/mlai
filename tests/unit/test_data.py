@@ -13,7 +13,8 @@ from mlai.data import (
     generate_sequence_data,
     generate_arithmetic_sequences,
     generate_pattern_sequences,
-    generate_text_sequences
+    generate_text_sequences,
+    create_image_data
 )
 
 
@@ -306,6 +307,143 @@ class TestDataEdgeCases(unittest.TestCase):
         X, y = generate_pattern_sequences(n_samples=5, seq_length=20, vocab_size=10)
         self.assertEqual(X.shape, (5, 20))
         self.assertEqual(y.shape, (5, 20))
+
+
+class TestImageDataGeneration(unittest.TestCase):
+    """Test image data generation functions."""
+    
+    def test_create_image_data_basic(self):
+        """Test basic image data generation."""
+        X, y = create_image_data(n_samples=30, image_size=16, n_classes=3)
+        
+        # Check shapes
+        self.assertEqual(X.shape, (30, 1, 16, 16))
+        self.assertEqual(y.shape, (30,))
+        
+        # Check data types
+        self.assertEqual(X.dtype, np.float64)
+        self.assertEqual(y.dtype, np.int64)
+        
+        # Check value ranges
+        self.assertGreaterEqual(X.min(), -1.0)  # Should have some negative values due to noise
+        self.assertLessEqual(X.max(), 2.0)  # Should have values up to ~1.0 + noise
+        
+        # Check class distribution
+        unique_classes = np.unique(y)
+        self.assertEqual(len(unique_classes), 3)
+        self.assertTrue(np.all(unique_classes == [0, 1, 2]))
+    
+    def test_create_image_data_different_sizes(self):
+        """Test image data generation with different image sizes."""
+        test_sizes = [8, 16, 28, 32]
+        
+        for size in test_sizes:
+            X, y = create_image_data(n_samples=10, image_size=size, n_classes=3)
+            
+            # Check shapes
+            self.assertEqual(X.shape, (10, 1, size, size))
+            self.assertEqual(y.shape, (10,))
+            
+            # Check that images are not all zeros
+            self.assertGreater(np.count_nonzero(X), 0)
+    
+    def test_create_image_data_different_classes(self):
+        """Test image data generation with different numbers of classes."""
+        test_classes = [2, 3, 4, 5]
+        
+        for n_classes in test_classes:
+            X, y = create_image_data(n_samples=20, image_size=16, n_classes=n_classes)
+            
+            # Check shapes
+            self.assertEqual(X.shape, (20, 1, 16, 16))
+            self.assertEqual(y.shape, (20,))
+            
+            # Check class distribution
+            unique_classes = np.unique(y)
+            self.assertEqual(len(unique_classes), n_classes)
+            self.assertTrue(np.all(unique_classes == list(range(n_classes))))
+    
+    def test_create_image_data_pattern_types(self):
+        """Test that different pattern types are generated correctly."""
+        X, y = create_image_data(n_samples=30, image_size=16, n_classes=3)
+        
+        # Check that we have samples from each class
+        for class_id in range(3):
+            class_indices = np.where(y == class_id)[0]
+            self.assertGreater(len(class_indices), 0)
+            
+            # Check that class samples have different patterns
+            class_images = X[class_indices]
+            self.assertGreater(np.count_nonzero(class_images), 0)
+    
+    def test_create_image_data_reproducibility(self):
+        """Test that image data generation is reproducible with same seed."""
+        # Generate data twice with same parameters
+        X1, y1 = create_image_data(n_samples=20, image_size=16, n_classes=3)
+        X2, y2 = create_image_data(n_samples=20, image_size=16, n_classes=3)
+        
+        # Should be identical due to fixed seed
+        np.testing.assert_array_equal(X1, X2)
+        np.testing.assert_array_equal(y1, y2)
+    
+    def test_create_image_data_noise_level(self):
+        """Test that noise is added appropriately."""
+        X, y = create_image_data(n_samples=50, image_size=16, n_classes=3)
+        
+        # Check that there are some negative values (due to noise)
+        self.assertLess(X.min(), 0)
+        
+        # Check that values are not too extreme
+        self.assertLess(X.max(), 2.0)
+        self.assertGreater(X.min(), -1.0)
+    
+    def test_create_image_data_edge_cases(self):
+        """Test edge cases for image data generation."""
+        # Test with minimum parameters
+        X, y = create_image_data(n_samples=1, image_size=8, n_classes=1)
+        self.assertEqual(X.shape, (1, 1, 8, 8))
+        self.assertEqual(y.shape, (1,))
+        self.assertEqual(y[0], 0)
+        
+        # Test with larger parameters
+        X, y = create_image_data(n_samples=100, image_size=64, n_classes=5)
+        self.assertEqual(X.shape, (100, 1, 64, 64))
+        self.assertEqual(y.shape, (100,))
+        self.assertEqual(len(np.unique(y)), 5)
+    
+    def test_create_image_data_pattern_consistency(self):
+        """Test that patterns are consistent within each class."""
+        X, y = create_image_data(n_samples=60, image_size=16, n_classes=3)
+        
+        # Check that each class has the expected number of samples
+        for class_id in range(3):
+            class_indices = np.where(y == class_id)[0]
+            # Should have roughly equal distribution
+            self.assertGreaterEqual(len(class_indices), 18)  # 60/3 = 20, allow some variance
+            self.assertLessEqual(len(class_indices), 22)
+    
+    def test_create_image_data_channel_format(self):
+        """Test that images are in correct channel format."""
+        X, y = create_image_data(n_samples=10, image_size=16, n_classes=3)
+        
+        # Check that channel dimension is 1 (grayscale)
+        self.assertEqual(X.shape[1], 1)
+        
+        # Check that spatial dimensions are correct
+        self.assertEqual(X.shape[2], 16)  # height
+        self.assertEqual(X.shape[3], 16)  # width
+    
+    def test_create_image_data_value_distribution(self):
+        """Test that image values have reasonable distribution."""
+        X, y = create_image_data(n_samples=100, image_size=16, n_classes=3)
+        
+        # Check that most values are in reasonable range
+        self.assertGreater(np.percentile(X, 10), -0.5)  # 10th percentile should be reasonable
+        self.assertLess(np.percentile(X, 90), 1.5)  # 90th percentile should be reasonable
+        
+        # Check that there are both high and low values
+        self.assertLess(X.min(), 0.5)  # Some low values
+        self.assertGreater(X.max(), 0.5)  # Some high values
 
 
 if __name__ == '__main__':

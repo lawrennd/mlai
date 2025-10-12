@@ -27,7 +27,7 @@ except ImportError:
 
 # Import utility functions to make them available at package level
 from .utils import write_figure, write_animation, write_animation_html, filename_join, write_figure_caption, load_pgm, finite_difference_gradient, verify_gradient_implementation, finite_difference_jacobian, dist2
-from .data import generate_cluster_data, generate_swiss_roll
+from .data import generate_cluster_data, generate_swiss_roll, create_image_data
 from .linear_models import linear, polynomial, radial, fourier, radial_multivariate, Basis, Noise, Gaussian, LM, BLM, LR
 
 # Import neural network classes and functions to make them available at package level
