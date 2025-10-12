@@ -152,6 +152,20 @@ class TestLinearModel:
         assert np.isfinite(result)
         assert isinstance(result, float)
     
+    def test_fourier_with_frequency_range(self):
+        """Test fourier function with custom frequency_range (line 825)."""
+        X = np.array([[0.5], [1.0], [1.5]])
+        data_limits = [0.0, 2.0]
+        frequency_range = [0.0, 0.5, 1.0, 1.5]  # Custom frequencies
+        
+        # Test with num_basis=4 to trigger the else branch
+        result = mlai.fourier(X, num_basis=4, data_limits=data_limits, frequency_range=frequency_range)
+        
+        assert result.shape == (X.shape[0], 4)
+        assert np.all(np.isfinite(result))
+        # First column should be all 1s (constant term)
+        assert np.all(result[:, 0] == 1.0)
+    
     def test_lm_fit_and_predict(self):
         """Test LM fit and predict methods."""
         X = np.array([[1], [2], [3]])
