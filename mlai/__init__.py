@@ -74,5 +74,4 @@ if GPY_AVAILABLE:
     from . import deepgp_tutorial
 
 # Import transformer components for educational purposes
-from .transformer import Attention, Transformer, SoftmaxActivation, SigmoidAttentionActivation, IdentityMinusSoftmaxActivation
 from .neural_networks import MultiHeadAttentionLayer, PositionalEncodingLayer
