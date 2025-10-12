@@ -3,7 +3,7 @@ Utilities Module
 
 This module contains utility functions including:
 - Optimization utilities (finite_difference_gradient, finite_difference_jacobian, verify_gradient_implementation)
-- Data generation utilities (load_pgm, generate_swiss_roll)
+- File manipluation utilities (load_pgm)
 - Mathematical utilities (radial_multivariate, dist2)
 - Plotting utilities (write_figure_caption)
 
@@ -20,15 +20,15 @@ __all__ = [
     'finite_difference_jacobian', 
     'verify_gradient_implementation',
     
-    # Data Generation
+    # File manipulation
     'load_pgm',
-    'generate_swiss_roll',
     
     # Mathematical Utilities
     'radial_multivariate',
     'dist2',
     
     # Plotting Utilities
+    'write_figure',
     'write_figure_caption',
 ]
 
@@ -348,17 +348,4 @@ def dist2(X1, X2):
             + np.sum(X2*X2, axis=1) 
             - 2*X1@X2.T)
 
-def generate_cluster_data(n_points_per_cluster=30):
-    """Generate synthetic data with clear cluster structure for educational purposes"""
-    # Define cluster centres in 2D space
-    cluster_centres = np.array([[2.5, 2.5], [-2.5, -2.5], [2.5, -2.5]])
-    
-    # Generate data points around each center
-    data_points = []
-    for center in cluster_centres:
-        # Generate points with some spread around each center
-        cluster_points = np.random.normal(loc=center, scale=0.8, size=(n_points_per_cluster, 2))
-        data_points.append(cluster_points)
-    
-    return np.vstack(data_points)
     

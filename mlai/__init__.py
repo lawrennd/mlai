@@ -10,6 +10,7 @@ from . import utils
 from . import dimred
 from . import optimisation
 from . import experimental
+from . import data
 
 # Check for GPy availability
 GPY_AVAILABLE = True
@@ -22,7 +23,8 @@ except ImportError:
 from .mlai import *
 
 # Import utility functions to make them available at package level
-from .utils import write_figure, write_animation, write_animation_html, filename_join, write_figure_caption, load_pgm, finite_difference_gradient, verify_gradient_implementation, finite_difference_jacobian, dist2, generate_cluster_data
+from .utils import write_figure, write_animation, write_animation_html, filename_join, write_figure_caption, load_pgm, finite_difference_gradient, verify_gradient_implementation, finite_difference_jacobian, dist2
+from .data import generate_cluster_data
 from .linear_models import linear, polynomial, radial, fourier, radial_multivariate, Basis, Noise, Gaussian, LM, BLM, LR
 
 # Import neural network classes and functions to make them available at package level
