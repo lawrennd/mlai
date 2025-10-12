@@ -21,12 +21,25 @@ __all__ = [
     'SimpleDropoutNeuralNetwork',
     'NonparametricDropoutNeuralNetwork', 
     'NeuralNetwork',
+    'LayeredNeuralNetwork',
+    
+    # Layer Classes
+    'Layer',
+    'LinearLayer',
     
     # Activation Functions
     'ReLUActivation',
     'SigmoidActivation',
     'LinearActivation',
     'SoftReLUActivation',
+    
+    # Loss Functions
+    'LossFunction',
+    'MeanSquaredError',
+    'MeanAbsoluteError',
+    'HuberLoss',
+    'BinaryCrossEntropyLoss',
+    'CrossEntropyLoss',
     
     # Perceptron
     'update_perceptron',
@@ -1050,6 +1063,285 @@ class HuberLoss(LossFunction):
         gradient = np.where(abs_error <= self.delta, error, self.delta * np.sign(error))
         
         return gradient / predictions.size
+
+
+class Layer:
+    """
+    Abstract base class for neural network layers.
+    
+    A layer is a fundamental building block that contains parameters and
+    implements forward and backward passes. Layers can be composed to
+    create complex neural network architectures.
+    
+    Methods
+    -------
+    forward(input) : numpy.ndarray
+        Forward pass through the layer
+    backward(grad_output) : numpy.ndarray
+        Backward pass through the layer
+    parameters : numpy.ndarray
+        Property to get/set all trainable parameters as a 1D vector
+    
+    Examples:
+        >>> class LinearLayer(Layer):
+        ...     def __init__(self, input_size, output_size):
+        ...         self.W = np.random.normal(0, 0.1, (input_size, output_size))
+        ...         self.b = np.random.normal(0, 0.1, output_size)
+        ...     
+        ...     def forward(self, x):
+        ...         return x @ self.W + self.b
+        ...     
+        ...     def backward(self, grad_output):
+        ...         return grad_output @ self.W.T
+        ...     
+        ...     @property
+        ...     def parameters(self):
+        ...         return np.concatenate([self.W.flatten(), self.b.flatten()])
+        ...     
+        ...     @parameters.setter
+        ...     def parameters(self, value):
+        ...         w_size = self.W.size
+        ...         self.W = value[:w_size].reshape(self.W.shape)
+        ...         self.b = value[w_size:].reshape(self.b.shape)
+    """
+    
+    def __init__(self):
+        pass
+    
+    def forward(self, x):
+        """
+        Forward pass through the layer.
+        
+        :param x: Input to the layer
+        :type x: numpy.ndarray
+        :returns: Layer output
+        :rtype: numpy.ndarray
+        
+        :raises NotImplementedError: If not implemented by subclass
+        """
+        raise NotImplementedError("Subclasses must implement the forward method")
+    
+    def backward(self, grad_output):
+        """
+        Backward pass through the layer.
+        
+        :param grad_output: Gradient from the next layer
+        :type grad_output: numpy.ndarray
+        :returns: Gradient with respect to layer input
+        :rtype: numpy.ndarray
+        
+        :raises NotImplementedError: If not implemented by subclass
+        """
+        raise NotImplementedError("Subclasses must implement the backward method")
+    
+    @property
+    def parameters(self):
+        """
+        Get all trainable parameters as a 1D vector.
+        
+        :returns: 1D array of all trainable parameters
+        :rtype: numpy.ndarray
+        
+        :raises NotImplementedError: If not implemented by subclass
+        """
+        raise NotImplementedError("Subclasses must implement the parameters property")
+    
+    @parameters.setter
+    def parameters(self, value):
+        """
+        Set all trainable parameters from a 1D vector.
+        
+        :param value: 1D array of parameters to set
+        :type value: numpy.ndarray
+        
+        :raises NotImplementedError: If not implemented by subclass
+        """
+        raise NotImplementedError("Subclasses must implement the parameters setter")
+
+
+class LinearLayer(Layer):
+    """
+    Linear (fully connected) layer.
+    
+    This layer implements a linear transformation: y = xW + b
+    where W is the weight matrix and b is the bias vector.
+    
+    :param input_size: Number of input features
+    :type input_size: int
+    :param output_size: Number of output features
+    :type output_size: int
+    """
+    
+    def __init__(self, input_size, output_size):
+        super().__init__()
+        self.input_size = input_size
+        self.output_size = output_size
+        
+        # Initialize weights using Xavier initialization
+        self.W = np.random.normal(0, np.sqrt(2.0 / input_size), (input_size, output_size))
+        self.b = np.random.normal(0, np.sqrt(2.0 / input_size), output_size)
+    
+    def forward(self, x):
+        """
+        Forward pass: linear transformation.
+        
+        :param x: Input tensor of shape (batch_size, input_size)
+        :type x: numpy.ndarray
+        :returns: Output tensor of shape (batch_size, output_size)
+        :rtype: numpy.ndarray
+        """
+        return x @ self.W + self.b
+    
+    def backward(self, grad_output):
+        """
+        Backward pass: compute gradients.
+        
+        :param grad_output: Gradient from next layer, shape (batch_size, output_size)
+        :type grad_output: numpy.ndarray
+        :returns: Gradient with respect to input, shape (batch_size, input_size)
+        :rtype: numpy.ndarray
+        """
+        return grad_output @ self.W.T
+    
+    @property
+    def parameters(self):
+        """
+        Get all trainable parameters as a 1D vector.
+        
+        Returns parameters in the order: [W, b]
+        
+        :returns: 1D array of all trainable parameters
+        :rtype: numpy.ndarray
+        """
+        return np.concatenate([self.W.flatten(), self.b.flatten()])
+    
+    @parameters.setter
+    def parameters(self, value):
+        """
+        Set all trainable parameters from a 1D vector.
+        
+        Updates parameters in the order: [W, b]
+        
+        :param value: 1D array of parameters to set
+        :type value: numpy.ndarray
+        
+        :raises ValueError: If the parameter vector has incorrect length
+        """
+        expected_length = self.W.size + self.b.size
+        if len(value) != expected_length:
+            raise ValueError(f"Expected {expected_length} parameters, got {len(value)}")
+        
+        w_size = self.W.size
+        self.W = value[:w_size].reshape(self.W.shape)
+        self.b = value[w_size:].reshape(self.b.shape)
+
+
+class LayeredNeuralNetwork(Model):
+    """
+    Neural network composed of Layer objects.
+    
+    This class allows for flexible neural network architectures by composing
+    different types of layers. Each layer handles its own parameters and
+    forward/backward passes.
+    
+    :param layers: List of Layer objects to compose
+    :type layers: list[Layer]
+    """
+    
+    def __init__(self, layers):
+        super().__init__()
+        if not layers:
+            raise ValueError("At least one layer must be provided")
+        self.layers = layers
+        
+        # Store activations for backward pass
+        self.activations = []
+    
+    def forward(self, x):
+        """
+        Forward pass through all layers.
+        
+        :param x: Input tensor
+        :type x: numpy.ndarray
+        :returns: Output tensor
+        :rtype: numpy.ndarray
+        """
+        self.activations = [x]  # Store input
+        current = x
+        
+        for layer in self.layers:
+            current = layer.forward(current)
+            self.activations.append(current)
+        
+        return current
+    
+    def backward(self, grad_output):
+        """
+        Backward pass through all layers.
+        
+        :param grad_output: Gradient from the next layer
+        :type grad_output: numpy.ndarray
+        :returns: Dictionary containing gradients for all layers
+        :rtype: dict
+        """
+        gradients = {}
+        current_grad = grad_output
+        
+        # Backpropagate through layers in reverse order
+        for i, layer in enumerate(reversed(self.layers)):
+            layer_idx = len(self.layers) - 1 - i
+            current_grad = layer.backward(current_grad)
+            gradients[f'layer_{layer_idx}'] = current_grad
+        
+        return gradients
+    
+    def predict(self, x):
+        """
+        Predict method for compatibility with Model interface.
+        
+        :param x: Input tensor
+        :type x: numpy.ndarray
+        :returns: Network output
+        :rtype: numpy.ndarray
+        """
+        return self.forward(x)
+    
+    @property
+    def parameters(self):
+        """
+        Get all trainable parameters as a 1D vector.
+        
+        Returns parameters from all layers concatenated in order.
+        
+        :returns: 1D array of all trainable parameters
+        :rtype: numpy.ndarray
+        """
+        params = []
+        for layer in self.layers:
+            params.append(layer.parameters)
+        return np.concatenate(params)
+    
+    @parameters.setter
+    def parameters(self, value):
+        """
+        Set all trainable parameters from a 1D vector.
+        
+        Updates parameters for all layers in order.
+        
+        :param value: 1D array of parameters to set
+        :type value: numpy.ndarray
+        
+        :raises ValueError: If the parameter vector has incorrect length
+        """
+        expected_length = sum(len(layer.parameters) for layer in self.layers)
+        if len(value) != expected_length:
+            raise ValueError(f"Expected {expected_length} parameters, got {len(value)}")
+        
+        start = 0
+        for layer in self.layers:
+            layer_size = len(layer.parameters)
+            layer.parameters = value[start:start + layer_size]
+            start += layer_size
 
 
 
