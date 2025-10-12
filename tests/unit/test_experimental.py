@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 
 # Import mlai modules
-import mlai.mlai as mlai
+import mlai
 
 
 class TestDropoutNeuralNetworks:

@@ -6,7 +6,8 @@ the mathematical principles, particularly the chain rule in attention mechanisms
 """
 
 import numpy as np
-from .mlai import SigmoidActivation, LinearActivation, ReLUActivation, Model
+from .neural_networks import SigmoidActivation, LinearActivation, ReLUActivation
+from .models import Model
 
 
 class SoftmaxActivation:

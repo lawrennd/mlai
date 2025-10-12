@@ -9,6 +9,7 @@ from . import neural_networks
 from . import utils
 from . import dimred
 from . import optimisation
+from . import experimental
 
 # Check for GPy availability
 GPY_AVAILABLE = True
@@ -22,6 +23,12 @@ from .mlai import *
 
 # Import utility functions to make them available at package level
 from .utils import write_figure, write_animation, write_animation_html, filename_join, write_figure_caption, load_pgm
+
+# Import neural network classes to make them available at package level
+from .neural_networks import SimpleNeuralNetwork
+
+# Import experimental classes to make them available at package level
+from .experimental import SimpleDropoutNeuralNetwork, NonparametricDropoutNeuralNetwork
 
 # Import GPy-dependent modules if available
 if GPY_AVAILABLE:
