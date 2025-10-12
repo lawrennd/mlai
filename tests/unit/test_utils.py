@@ -48,20 +48,36 @@ class TestUtilityFunctions:
                     assert content == caption
     
     def test_finite_difference_gradient(self):
-        """Test finite_difference_gradient function (lines 1617-1640)."""
-        def test_func(x):
-            return np.array([x[0]**2 + x[1]**2, 2*x[0] + 3*x[1]])
+        """Test finite_difference_gradient function (lines 1539-1591)."""
+        # Test with a scalar-valued function
+        def scalar_func(x):
+            return x[0]**2 + x[1]**2
         
         x = np.array([1.0, 2.0])
         h = 1e-6
         
-        jacobian = mlai.finite_difference_gradient(test_func, x, h)
-        
-        # Check shape - the function returns a 1D array, not 2D
-        assert jacobian.shape == (2,)  # 2 outputs
+        gradient = mlai.finite_difference_gradient(scalar_func, x, h)
         
         # Check that it's finite
-        assert np.all(np.isfinite(jacobian))
+        assert np.all(np.isfinite(gradient))
+        
+        # Check that it has the right shape (same as input)
+        assert gradient.shape == x.shape
+        
+        # Check approximate values (derivatives of x[0]**2 + x[1]**2)
+        # At x=[1,2]: d/dx[0] = 2*x[0] = 2, d/dx[1] = 2*x[1] = 4
+        expected = np.array([2.0, 4.0])
+        np.testing.assert_allclose(gradient, expected, rtol=1e-3)
+        
+        # Test with an array-valued function (should sum the output)
+        def array_func(x):
+            return np.array([x[0]**2, x[1]**2])  # Returns array, should be summed
+        
+        gradient_array = mlai.finite_difference_gradient(array_func, x, h)
+        
+        # Should still be 1D gradient (sum of array outputs)
+        assert gradient_array.shape == x.shape
+        assert np.all(np.isfinite(gradient_array))
     
     def test_verify_gradient_implementation(self):
         """Test verify_gradient_implementation function (lines 1683-1684)."""
