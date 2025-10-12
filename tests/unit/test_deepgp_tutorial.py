@@ -8,6 +8,8 @@ def test_initialize_function_exists():
     """Test that initialize function exists and is callable."""
     with patch.dict('sys.modules', {'GPy': MagicMock()}):
         import mlai.deepgp_tutorial as deepgp_tutorial
+    # These are methods that get monkey-patched onto GPy models, not standalone functions
+    # So we test that the module can be imported and the functions exist
     assert hasattr(deepgp_tutorial, 'initialize')
     assert callable(deepgp_tutorial.initialize)
 

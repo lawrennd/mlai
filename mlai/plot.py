@@ -3683,6 +3683,11 @@ class network():
              observed_style='shaded', line_width=1,
              origin=[0,0]):
         """Draw the network using daft"""
+        try:
+            import daft
+        except ImportError:
+            raise ImportError("daft module is required for this function. Please install it with: pip install daft")
+        
         shape = [self.depth, self.width]
         xpadding = 2
         ypadding = 0
@@ -3920,6 +3925,11 @@ def stack_gp_sample(kernel=None,
 
 def vertical_chain(depth=5, grid_unit=1.5, node_unit=1, line_width=1.5, shape=None, target='y'):
     """Make a verticle chain representation of a deep GP"""
+    try:
+        import daft
+    except ImportError:
+        raise ImportError("daft module is required for this function. Please install it with: pip install daft")
+    
     if shape is None:
         shape = [node_unit, 2*node_unit+depth]
     direction = [0, -node_unit]
@@ -3955,6 +3965,11 @@ def horizontal_chain(depth=5,
                      line_width=3,
                     target="y"):
     """Plot a horizontal Markov chain."""
+    try:
+        import daft
+    except ImportError:
+        raise ImportError("daft module is required for this function. Please install it with: pip install daft")
+    
     if shape is None:
         shape = [2*node_unit+depth, node_unit]
     
@@ -3983,6 +3998,11 @@ def horizontal_chain(depth=5,
 
 def shared_gplvm():
     """Plot graphical model of a Shared GP-LVM"""
+    try:
+        import daft
+    except ImportError:
+        raise ImportError("daft module is required for this function. Please install it with: pip install daft")
+    
     pgm = daft.PGM(shape=[4, 3],
                    origin=[0, 0], 
                    grid_unit=5, 
@@ -4019,6 +4039,11 @@ def ppca_graphical_model(directory='../diagrams'):
     - W is above Y at +30° angle  
     - σ² is to the right of Y
     """
+    try:
+        import daft
+    except ImportError:
+        raise ImportError("daft module is required for this function. Please install it with: pip install daft")
+    
     # Create the graphical model
     pgm = daft.PGM(shape=[2, 2.5],
                    origin=[0, 0], 
@@ -4071,6 +4096,11 @@ def dppca_graphical_model(directory='../diagrams'):
     - W is above Y at +30° angle  
     - σ² is to the right of Y
     """
+    try:
+        import daft
+    except ImportError:
+        raise ImportError("daft module is required for this function. Please install it with: pip install daft")
+    
     # Create the graphical model
     pgm = daft.PGM(shape=[2, 2.5],
                    origin=[0, 0], 
@@ -4109,6 +4139,11 @@ def dppca_graphical_model(directory='../diagrams'):
 
 def three_pillars_innovation(directory='./diagrams'):
     """Plot graphical model of three pillars of successful innovation"""
+    try:
+        import daft
+    except ImportError:
+        raise ImportError("daft module is required for this function. Please install it with: pip install daft")
+    
     pgm = daft.PGM(shape=[4, 2.5],
                    origin=[0, 0], 
                    grid_unit=5, 

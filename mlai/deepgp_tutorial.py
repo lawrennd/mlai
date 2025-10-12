@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 import GPy
 
 from mlai.gp_tutorial import gpplot
-from mlai.mlai import write_figure
+from mlai.utils import write_figure
 import mlai.plot as plot
 
 def initialize(self, noise_factor=0.01, linear_factor=1):

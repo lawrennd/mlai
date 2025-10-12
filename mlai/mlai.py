@@ -2125,6 +2125,7 @@ def load_pgm(filename, directory=None, byteorder='>'):
     :raises ValueError: If the file is not a valid raw PGM file
     """
     import re
+    from .utils import filename_join
     savename = filename_join(filename, directory)
     with open(savename, 'rb') as f:
         buffer = f.read()
