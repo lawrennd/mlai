@@ -170,6 +170,17 @@ class TestLogisticRegression:
         assert hasattr(lr, 'X')
         assert hasattr(lr, 'y')
         assert hasattr(lr, 'basis')
+    
+    def test_lr_constructor_error_handling(self):
+        """Test LR constructor error handling (line 2278)."""
+        X = np.array([[1, 2], [3, 4]])
+        y = np.array([[1], [2]])
+        basis = mlai.Basis(mlai.linear, 2)
+        
+        # Test with invalid y shape (should raise ValueError)
+        y_invalid = np.array([[1, 2], [3, 4]])  # 2D but wrong shape
+        with pytest.raises(ValueError, match="y must be 2D with shape"):
+            mlai.LR(X, y_invalid, basis)
 
 
 class TestBayesianLinearModel:
@@ -459,6 +470,17 @@ class TestLogisticRegressionMethods:
         basis = mlai.Basis(mlai.linear, number=2)
         lr = mlai.LR(X, y, basis)
         assert lr is not None
+    
+    def test_lr_constructor_error_handling(self):
+        """Test LR constructor error handling (line 2278)."""
+        X = np.array([[1, 2], [3, 4]])
+        y = np.array([[1], [2]])
+        basis = mlai.Basis(mlai.linear, 2)
+        
+        # Test with invalid y shape (should raise ValueError)
+        y_invalid = np.array([[1, 2], [3, 4]])  # 2D but wrong shape
+        with pytest.raises(ValueError, match="y must be 2D with shape"):
+            mlai.LR(X, y_invalid, basis)
 
 class TestLogisticRegressionMethods:
     """Test Logistic Regression methods that were not previously covered."""
