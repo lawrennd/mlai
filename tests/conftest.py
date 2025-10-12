@@ -7,6 +7,13 @@ import matplotlib.pyplot as plt
 from unittest.mock import patch
 
 
+@pytest.fixture(autouse=True)
+def cleanup_matplotlib():
+    """Automatically clean up matplotlib state after each test."""
+    yield
+    plt.close('all')
+
+
 @pytest.fixture(scope="session")
 def random_seed():
     """Set a fixed random seed for reproducible tests."""

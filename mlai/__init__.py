@@ -20,6 +20,9 @@ except ImportError:
 # Import all functions from mlai module for consistent access
 from .mlai import *
 
+# Import utility functions to make them available at package level
+from .utils import write_figure, write_animation, write_animation_html, filename_join, write_figure_caption, load_pgm
+
 # Import GPy-dependent modules if available
 if GPY_AVAILABLE:
     from . import mountain_car

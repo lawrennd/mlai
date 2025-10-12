@@ -1,5 +1,5 @@
 ---
-author: "AI Assistant"
+author: "Neil D. Lawrence"
 created: "2025-10-05"
 id: "2025-10-05_plotting-test-failures"
 last_updated: "2025-10-05"

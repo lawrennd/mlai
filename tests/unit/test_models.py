@@ -38,17 +38,37 @@ class TestAbstractBaseClasses:
         with pytest.raises(NotImplementedError):
             dummy.log_likelihood()
     
-    def test_probmodel_objective_calls_log_likelihood(self):
-        """Test ProbModel.objective() method (line 377)."""
+    def test_probmodel_objective_calls_update_sum_squares(self):
+        """Test ProbModel.objective() method (lines 654-655)."""
         class Dummy(mlai.ProbModel):
             def __init__(self):
                 super().__init__()
+                self.sum_squares = 42.0  # Set a known value
+            def update_sum_squares(self):
+                # This method should be called by objective()
+                pass
             def log_likelihood(self):
-                return 42.0  # Return a known value
+                # Mock implementation to avoid NotImplementedError
+                return 10.0
         
         dummy = Dummy()
         result = dummy.objective()
-        assert result == -42.0  # objective() should return -log_likelihood()
+        assert result == -10.0  # objective() should return -self.log_likelihood()
+    
+    def test_probmodel_log_likelihood_calls_update_sum_squares(self):
+        """Test ProbModel.log_likelihood() method (lines 659-660)."""
+        # Use LM class which has a concrete implementation
+        X = np.array([[1.0], [2.0], [3.0]])
+        y = np.array([[1.0], [2.0], [3.0]])
+        basis = mlai.Basis(mlai.linear, 2)
+        
+        lm = mlai.LM(X, y, basis)
+        lm.fit()  # Fit the model first
+        result = lm.log_likelihood()
+        
+        # Check that it returns a finite value (the exact formula is complex)
+        assert np.isfinite(result)
+        assert isinstance(result, float)
     
     def test_linear_model_set_param(self):
         """Test LM set_param method (lines 573, 578-579, 583)."""

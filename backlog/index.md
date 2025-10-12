@@ -67,6 +67,8 @@ This file provides an overview of all current backlog items organized by categor
 
 ### Proposed
 
+- [Fix Coverage Collection Interference with NumPy](bugs/2025-10-12_coverage-collection-numpy-interference.md)
+
 - [Fix remaining plotting test failures](bugs/2025-10-05_plotting-test-failures.md)
 
 - [Fix test failures due to missing optional dependencies (GPy, Daft)](bugs/2025-10-05_missing-dependencies-test-failures.md)

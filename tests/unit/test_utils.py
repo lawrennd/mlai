@@ -14,6 +14,7 @@ from unittest.mock import patch, MagicMock
 
 # Import mlai modules
 import mlai.mlai as mlai
+import mlai.utils as utils
 
 class TestUtilityFunctions:
     """Test additional utility functions."""
@@ -31,8 +32,8 @@ class TestUtilityFunctions:
             ext = "svg"
             
             # Mock the write_figure function to avoid actual file writing
-            with patch('mlai.mlai.write_figure') as mock_write_figure:
-                mlai.write_figure_caption(counter, caption, filestub, ext=ext, directory=temp_dir)
+            with patch('mlai.utils.write_figure') as mock_write_figure:
+                utils.write_figure_caption(counter, caption, filestub, ext=ext, directory=temp_dir)
                 
                 # Check that write_figure was called with correct parameters
                 expected_filename = f"{filestub}_{counter:0>3}.{ext}"
@@ -103,7 +104,7 @@ class TestUtilityFunctions:
             pgm_file = f.name
         
         try:
-            result = mlai.load_pgm(pgm_file)
+            result = utils.load_pgm(pgm_file)
             assert result.shape == (2, 2)
             assert result.dtype == np.uint8
         finally:
@@ -119,7 +120,7 @@ class TestUtilityFunctions:
         
         try:
             with pytest.raises(ValueError, match="Not a raw PGM file"):
-                mlai.load_pgm(invalid_file)
+                utils.load_pgm(invalid_file)
         finally:
             os.unlink(invalid_file)
     
@@ -230,13 +231,13 @@ class TestUtilityFunctions:
     
     def test_filename_join_no_directory(self):
         """Test filename_join with no directory specified."""
-        result = mlai.filename_join("test.png")
+        result = utils.filename_join("test.png")
         assert result == "test.png"
     
     def test_filename_join_with_directory(self):
         """Test filename_join with directory specified."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            result = mlai.filename_join("test.png", temp_dir)
+            result = utils.filename_join("test.png", temp_dir)
             expected = os.path.join(temp_dir, "test.png")
             assert result == expected
     
@@ -244,7 +245,7 @@ class TestUtilityFunctions:
         """Test filename_join creates directory if it doesn't exist."""
         with tempfile.TemporaryDirectory() as temp_dir:
             new_dir = os.path.join(temp_dir, "new_subdir")
-            result = mlai.filename_join("test.png", new_dir)
+            result = utils.filename_join("test.png", new_dir)
             expected = os.path.join(new_dir, "test.png")
             assert result == expected
             assert os.path.exists(new_dir)
@@ -253,7 +254,7 @@ class TestUtilityFunctions:
         """Test write_animation function."""
         mock_anim = MagicMock()
         with tempfile.TemporaryDirectory() as temp_dir:
-            mlai.write_animation(mock_anim, "test.gif", temp_dir, fps=10)
+            utils.write_animation(mock_anim, "test.gif", temp_dir, fps=10)
             expected_path = os.path.join(temp_dir, "test.gif")
             mock_anim.save.assert_called_once_with(expected_path, fps=10)
     
@@ -263,7 +264,7 @@ class TestUtilityFunctions:
         mock_anim.to_jshtml.return_value = "<html>test</html>"
         
         with tempfile.TemporaryDirectory() as temp_dir:
-            mlai.write_animation_html(mock_anim, "test.html", temp_dir)
+            utils.write_animation_html(mock_anim, "test.html", temp_dir)
             expected_path = os.path.join(temp_dir, "test.html")
             assert os.path.exists(expected_path)
             
@@ -275,7 +276,7 @@ class TestUtilityFunctions:
     def test_write_figure_current_figure(self, mock_savefig):
         """Test write_figure with current figure."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            mlai.write_figure("test.png", directory=temp_dir)
+            utils.write_figure("test.png", directory=temp_dir)
             expected_path = os.path.join(temp_dir, "test.png")
             mock_savefig.assert_called_once_with(expected_path, transparent=True)
     
@@ -284,7 +285,7 @@ class TestUtilityFunctions:
         """Test write_figure with specific figure."""
         mock_figure = MagicMock()
         with tempfile.TemporaryDirectory() as temp_dir:
-            mlai.write_figure("test.png", figure=mock_figure, directory=temp_dir)
+            utils.write_figure("test.png", figure=mock_figure, directory=temp_dir)
             expected_path = os.path.join(temp_dir, "test.png")
             mock_figure.savefig.assert_called_once_with(expected_path, transparent=True)
     
@@ -292,7 +293,7 @@ class TestUtilityFunctions:
         """Test write_figure with custom kwargs."""
         with patch('matplotlib.pyplot.savefig') as mock_savefig:
             with tempfile.TemporaryDirectory() as temp_dir:
-                mlai.write_figure("test.png", directory=temp_dir, dpi=300, transparent=False)
+                utils.write_figure("test.png", directory=temp_dir, dpi=300, transparent=False)
                 expected_path = os.path.join(temp_dir, "test.png")
                 mock_savefig.assert_called_once_with(expected_path, dpi=300, transparent=False)
 
@@ -303,16 +304,16 @@ class TestUtilityFunctionEdgeCases:
     def test_filename_join_edge_cases(self):
         """Test filename_join with edge cases."""
         # Test with empty filename
-        result = mlai.filename_join("")
+        result = utils.filename_join("")
         assert result == ""
         
         # Test with None directory
-        result = mlai.filename_join("test.png", None)
+        result = utils.filename_join("test.png", None)
         assert result == "test.png"
         
         # Test with empty directory - this should work without creating directory
         with tempfile.TemporaryDirectory() as temp_dir:
-            result = mlai.filename_join("test.png", temp_dir)
+            result = utils.filename_join("test.png", temp_dir)
             assert result == os.path.join(temp_dir, "test.png")
     
     def test_write_figure_edge_cases(self):
@@ -320,7 +321,7 @@ class TestUtilityFunctionEdgeCases:
         with tempfile.TemporaryDirectory() as temp_dir:
             # Test with custom kwargs that override defaults
             with patch('matplotlib.pyplot.savefig') as mock_savefig:
-                mlai.write_figure("test.png", directory=temp_dir, transparent=False, dpi=300)
+                utils.write_figure("test.png", directory=temp_dir, transparent=False, dpi=300)
                 expected_path = os.path.join(temp_dir, "test.png")
                 mock_savefig.assert_called_once_with(expected_path, transparent=False, dpi=300) 
 

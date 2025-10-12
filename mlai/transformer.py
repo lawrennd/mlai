@@ -1,5 +1,5 @@
 """
-Transformer components for educational purposes.
+Transformer components for mlai lectures.
 
 This module implements simple transformer components focused on understanding
 the mathematical principles, particularly the chain rule in attention mechanisms.
@@ -58,7 +58,7 @@ class SoftmaxActivation:
 
 class SigmoidAttentionActivation:
     """
-    Sigmoid-based attention activation with normalization.
+    Sigmoid-based attention activation with normalisation.
     
     This applies sigmoid element-wise and then normalizes to ensure
     attention weights sum to 1, making it suitable for attention mechanisms.
@@ -70,28 +70,28 @@ class SigmoidAttentionActivation:
         
         :param x: Input array
         :type x: numpy.ndarray
-        :param axis: Axis along which to normalize
+        :param axis: Axis along which to normalise
         :type axis: int
-        :returns: Normalized sigmoid activated array
+        :returns: Normalised sigmoid activated array
         :rtype: numpy.ndarray
         """
         # Apply sigmoid element-wise
         sigmoid_output = 1.0 / (1.0 + np.exp(-x))
         
-        # Normalize along the specified axis
+        # Normalise along the specified axis
         return sigmoid_output / np.sum(sigmoid_output, axis=axis, keepdims=True)
     
     def gradient(self, x, grad_output, axis=-1):
         """
-        Gradient of sigmoid + normalization.
+        Gradient of sigmoid + normalisation.
         
-        This computes the gradient through both sigmoid and normalization.
+        This computes the gradient through both sigmoid and normalisation.
         
         :param x: Input array
         :type x: numpy.ndarray
         :param grad_output: Gradient from next layer
         :type grad_output: numpy.ndarray
-        :param axis: Axis along which normalization was applied
+        :param axis: Axis along which normalisation was applied
         :type axis: int
         :returns: Gradient array
         :rtype: numpy.ndarray
@@ -99,17 +99,17 @@ class SigmoidAttentionActivation:
         # Compute sigmoid output
         sigmoid_output = 1.0 / (1.0 + np.exp(-x))
         
-        # Compute normalized output
-        normalized_output = sigmoid_output / np.sum(sigmoid_output, axis=axis, keepdims=True)
+        # Compute normalised output
+        normalised_output = sigmoid_output / np.sum(sigmoid_output, axis=axis, keepdims=True)
         
-        # Gradient through normalization: ∂(s/Σs)/∂x = (∂s/∂x * Σs - s * Σ(∂s/∂x)) / (Σs)²
+        # Gradient through normalisation: ∂(s/Σs)/∂x = (∂s/∂x * Σs - s * Σ(∂s/∂x)) / (Σs)²
         sigmoid_grad = sigmoid_output * (1 - sigmoid_output)  # sigmoid derivative
         
         # Sum of gradients along axis
-        grad_sum = np.sum(grad_output * normalized_output, axis=axis, keepdims=True)
+        grad_sum = np.sum(grad_output * normalised_output, axis=axis, keepdims=True)
         sigmoid_sum = np.sum(sigmoid_output, axis=axis, keepdims=True)
         
-        # Apply chain rule: gradient through normalization
+        # Apply chain rule: gradient through normalisation
         grad_through_norm = (grad_output - grad_sum) / sigmoid_sum
         
         # Final gradient: sigmoid_grad * grad_through_norm
@@ -122,7 +122,7 @@ class IdentityMinusSoftmaxActivation:
     
     This creates attention weights where diagonal entries get (1 - softmax)
     and off-diagonal entries get (-softmax). This can encourage the model
-    to focus on specific positions while de-emphasizing others.
+    to focus on specific positions while de-emphasising others.
     """
     
     def forward(self, x, axis=-1):
@@ -184,7 +184,7 @@ class Attention:
     Basic scaled dot-product attention mechanism for educational purposes.
     
     This implementation focuses on clarity and understanding of the chain rule
-    rather than optimization. The forward and backward passes are designed to
+    rather than optimisation. The forward and backward passes are designed to
     clearly show how gradients flow through the Q, K, V transformations.
     
     Parameters
@@ -192,23 +192,23 @@ class Attention:
     d_model : int
         The dimension of the model (input/output dimension)
     dropout : float, optional
-        Dropout rate for regularization, by default 0.0 (disabled for educational clarity)
+        Dropout rate for regularisation, by default 0.0 (disabled for educational clarity)
     activation : Activation, optional
         Activation function for attention weights, by default SoftmaxActivation.
         Options:
         - SoftmaxActivation: Standard softmax (recommended for attention)
-        - SigmoidAttentionActivation: Sigmoid + normalization (attention-appropriate)
+        - SigmoidAttentionActivation: Sigmoid + normalisation (attention-appropriate)
         - IdentityMinusSoftmaxActivation: Identity minus softmax (diagonal=1-softmax, off-diagonal=-softmax)
-        - SigmoidActivation/LinearActivation: Raw activations (set normalize_attention=False)
-    normalize_attention : bool, optional
-        Whether to apply softmax normalization to attention weights, by default True.
+        - SigmoidActivation/LinearActivation: Raw activations (set normalise_attention=False)
+    normalise_attention : bool, optional
+        Whether to apply softmax normalisation to attention weights, by default True.
         Set to False to use raw activation outputs (e.g., for SigmoidActivation).
     """
     
-    def __init__(self, d_model, dropout=0.0, activation=None, normalize_attention=True):
+    def __init__(self, d_model, dropout=0.0, activation=None, normalise_attention=True):
         self.d_model = d_model
         self.dropout = dropout
-        self.normalize_attention = normalize_attention
+        self.normalise_attention = normalise_attention
         
         # Set up activation function (default to softmax for attention)
         if activation is None:
@@ -216,8 +216,8 @@ class Attention:
         else:
             self.activation = activation
         
-        # Initialize weight matrices for Q, K, V transformations
-        # Using Xavier initialization for stability
+        # Initialise weight matrices for Q, K, V transformations
+        # Using Xavier initialisation for stability
         self.W_q = np.random.normal(0, np.sqrt(2.0 / d_model), (d_model, d_model))
         self.W_k = np.random.normal(0, np.sqrt(2.0 / d_model), (d_model, d_model))
         self.W_v = np.random.normal(0, np.sqrt(2.0 / d_model), (d_model, d_model))
@@ -273,8 +273,8 @@ class Attention:
         else:
             # For activations that don't support axis parameter, apply element-wise
             attention_weights = self.activation.forward(attention_scores)
-            # Apply softmax normalization if requested (default for attention mechanisms)
-            if self.normalize_attention:
+            # Apply softmax normalisation if requested (default for attention mechanisms)
+            if self.normalise_attention:
                 attention_weights = self._softmax(attention_weights, axis=-1)
         
         # Apply dropout during training
@@ -345,7 +345,7 @@ class Attention:
             grad_attention_scores = self.activation.gradient(attention_scores, grad_attention_weights, axis=-1)
         else:
             # For activations that don't support axis parameter
-            if self.normalize_attention:
+            if self.normalise_attention:
                 # Use standard softmax gradient formula
                 grad_sum = np.sum(grad_attention_weights * attention_weights, axis=-1, keepdims=True)
                 grad_attention_scores = attention_weights * (grad_attention_weights - grad_sum)

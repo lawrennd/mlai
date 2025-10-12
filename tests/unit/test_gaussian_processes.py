@@ -379,7 +379,7 @@ class TestKernelFunctions:
         x_prime = np.array([2.0])
         kernargs = [(kernel1, {}), (kernel2, {})]
         
-        result = mlai.prod_kern(x, x_prime, kernargs)
+        result = mlai.prod_cov(x, x_prime, [kernel1, kernel2], [{}, {}])
         assert result == 6.0  # 2.0 * 3.0
     
 class TestKernelClass:
@@ -1463,7 +1463,7 @@ class TestContourDataFunction:
         x_prime = np.array([2.0])
         kernargs = [(kernel1, {}), (kernel2, {})]
         
-        result = mlai.prod_kern(x, x_prime, kernargs)
+        result = mlai.prod_cov(x, x_prime, [kernel1, kernel2], [{}, {}])
         assert result == 6.0  # 2.0 * 3.0
         
 
