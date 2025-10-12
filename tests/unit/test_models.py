@@ -37,6 +37,18 @@ class TestAbstractBaseClasses:
         dummy = Dummy()
         with pytest.raises(NotImplementedError):
             dummy.log_likelihood()
+    
+    def test_probmodel_objective_calls_log_likelihood(self):
+        """Test ProbModel.objective() method (line 377)."""
+        class Dummy(mlai.ProbModel):
+            def __init__(self):
+                super().__init__()
+            def log_likelihood(self):
+                return 42.0  # Return a known value
+        
+        dummy = Dummy()
+        result = dummy.objective()
+        assert result == -42.0  # objective() should return -log_likelihood()
     def test_mapmodel_predict_not_implemented(self):
         class Dummy(mlai.MapModel):
             def __init__(self, X, y):

@@ -18,6 +18,35 @@ import mlai.mlai as mlai
 class TestUtilityFunctions:
     """Test additional utility functions."""
     
+    def test_write_figure_caption(self):
+        """Test write_figure_caption function (lines 165-167)."""
+        import tempfile
+        import os
+        
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Test parameters
+            counter = 1
+            caption = "Test caption for figure"
+            filestub = "test_figure"
+            ext = "svg"
+            
+            # Mock the write_figure function to avoid actual file writing
+            with patch('mlai.mlai.write_figure') as mock_write_figure:
+                mlai.write_figure_caption(counter, caption, filestub, ext=ext, directory=temp_dir)
+                
+                # Check that write_figure was called with correct parameters
+                expected_filename = f"{filestub}_{counter:0>3}.{ext}"
+                mock_write_figure.assert_called_once_with(expected_filename, directory=temp_dir, frameon=None)
+                
+                # Check that caption file was created
+                caption_file = os.path.join(temp_dir, f"{filestub}_{counter:0>3}.md")
+                assert os.path.exists(caption_file)
+                
+                # Check caption content
+                with open(caption_file, 'r') as f:
+                    content = f.read()
+                    assert content == caption
+    
     def test_load_pgm(self):
         """Test load_pgm function."""
         # Create a simple test PGM file
