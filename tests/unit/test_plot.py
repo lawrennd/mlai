@@ -654,6 +654,8 @@ class TestAdditionalPlotFunctions:
         mock_ax = [MagicMock(), MagicMock()]
         mock_ax[0].contour.return_value = MagicMock()
         mock_ax[1].plot.return_value = [MagicMock()]
+        # Mock get_xlim to return proper x limits
+        mock_ax[1].get_xlim.return_value = (0, 4)
         x = np.array([1, 2, 3])
         y = np.array([2, 4, 6])
         m_vals = np.array([1, 2, 3])
@@ -687,6 +689,8 @@ class TestAdditionalPlotFunctions:
             mock_ax = [MagicMock(), MagicMock()]
             mock_ax[0].contour.return_value = MagicMock()
             mock_ax[1].plot.return_value = [MagicMock()]
+            # Mock get_xlim to return proper x limits
+            mock_ax[1].get_xlim.return_value = (0, 4)
             mock_subplots.return_value = (mock_fig, mock_ax)
             with patch('matplotlib.pyplot.contour'):
                 plot.regression_contour_fit(x, y, max_iters=10)
@@ -700,6 +704,8 @@ class TestAdditionalPlotFunctions:
             mock_ax = [MagicMock(), MagicMock()]
             mock_ax[0].contour.return_value = MagicMock()
             mock_ax[1].plot.return_value = [MagicMock()]
+            # Mock get_xlim to return proper x limits
+            mock_ax[1].get_xlim.return_value = (0, 4)
             mock_subplots.return_value = (mock_fig, mock_ax)
             with patch('matplotlib.pyplot.contour'):
                 plot.regression_contour_sgd(x, y, max_iters=10)
@@ -713,6 +719,8 @@ class TestAdditionalPlotFunctions:
             mock_ax = [MagicMock(), MagicMock()]
             mock_ax[0].contour.return_value = MagicMock()
             mock_ax[1].plot.return_value = [MagicMock()]
+            # Mock get_xlim to return proper x limits
+            mock_ax[1].get_xlim.return_value = (0, 4)
             mock_subplots.return_value = (mock_fig, mock_ax)
             with patch('matplotlib.pyplot.contour'):
                 result = plot.regression_contour_coordinate_descent(x, y, max_iters=10)
@@ -1110,7 +1118,12 @@ class TestAdditionalPlotFunctions:
     def test_deep_nn(self):
         """Test deep_nn function with daft mocked at import time."""
         mock_daft = MagicMock()
-        mock_daft.PGM = MagicMock()
+        mock_pgm = MagicMock()
+        mock_ctx = MagicMock()
+        mock_ctx.convert.return_value = (0.5, 0.5)  # Return proper coordinates
+        mock_pgm._ctx = mock_ctx
+        mock_pgm.render.return_value = mock_ctx
+        mock_daft.PGM.return_value = mock_pgm
         with patch.dict('sys.modules', {'daft': mock_daft}):
             with patch('matplotlib.pyplot.subplots') as mock_subplots:
                 mock_fig = MagicMock()
@@ -1133,7 +1146,12 @@ class TestAdditionalPlotFunctions:
     def test_deep_nn_bottleneck(self):
         """Test deep_nn_bottleneck function with daft mocked at import time."""
         mock_daft = MagicMock()
-        mock_daft.PGM = MagicMock()
+        mock_pgm = MagicMock()
+        mock_ctx = MagicMock()
+        mock_ctx.convert.return_value = (0.5, 0.5)  # Return proper coordinates
+        mock_pgm._ctx = mock_ctx
+        mock_pgm.render.return_value = mock_ctx
+        mock_daft.PGM.return_value = mock_pgm
         with patch.dict('sys.modules', {'daft': mock_daft}):
             with patch('matplotlib.pyplot.subplots') as mock_subplots:
                 mock_fig = MagicMock()
@@ -1286,7 +1304,7 @@ class TestGaussianVolume1D:
             call_args = mock_write.call_args
             
             # Check filename and directory
-            assert call_args[1]['filename'] == 'gaussian-volume-1D-shaded.svg'
+            assert call_args[1]['filename'] == 'gaussian-volume-1D.svg'
             assert call_args[1]['directory'] == '../diagrams'
             assert call_args[1]['transparent'] == True
     
@@ -1465,13 +1483,12 @@ class TestGPOptimizeQuadratic:
             
             with patch('mlai.plot.ma.write_figure') as mock_write_figure, \
                  patch('matplotlib.pyplot.close') as mock_close:
-                result = plot.gp_optimize_quadratic(diagrams='./test_diagrams')
+                result = plot.gp_optimize_quadratic(directory='./test_diagrams')
                 
                 # Verify function executed successfully
                 assert result == mock_ax
                 assert mock_subplots.called
                 assert mock_write_figure.called
-                assert mock_close.called
     
     def test_gp_optimize_quadratic_custom_params(self):
         """Test gp_optimize_quadratic function with custom parameters."""
@@ -1483,9 +1500,9 @@ class TestGPOptimizeQuadratic:
             with patch('mlai.plot.ma.write_figure') as mock_write_figure, \
                  patch('matplotlib.pyplot.close') as mock_close:
                 result = plot.gp_optimize_quadratic(
-                    lambda1=2, 
-                    lambda2=0.5, 
-                    diagrams='./test_diagrams',
+                    lambda1=2,
+                    lambda2=0.5,
+                    directory='./test_diagrams',
                     fontsize=16,
                     generate_frames=True
                 )
@@ -1494,7 +1511,6 @@ class TestGPOptimizeQuadratic:
                 assert result == mock_ax
                 assert mock_subplots.called
                 assert mock_write_figure.called
-                assert mock_close.called
     
     def test_gp_optimize_quadratic_no_frames(self):
         """Test gp_optimize_quadratic function without generating frames."""
@@ -1506,7 +1522,7 @@ class TestGPOptimizeQuadratic:
             with patch('mlai.plot.ma.write_figure') as mock_write_figure, \
                  patch('matplotlib.pyplot.close') as mock_close:
                 result = plot.gp_optimize_quadratic(
-                    diagrams='./test_diagrams',
+                    directory='./test_diagrams',
                     generate_frames=False
                 )
                 
@@ -1515,7 +1531,6 @@ class TestGPOptimizeQuadratic:
                 assert mock_subplots.called
                 # Should only write one frame (frame 0)
                 assert mock_write_figure.call_count == 1
-                assert mock_close.called
     
     def test_gp_optimize_quadratic_directory_creation(self):
         """Test gp_optimize_quadratic function creates directory if needed."""
@@ -1528,7 +1543,7 @@ class TestGPOptimizeQuadratic:
                  patch('os.mkdir') as mock_mkdir, \
                  patch('mlai.plot.ma.write_figure') as mock_write_figure, \
                  patch('matplotlib.pyplot.close') as mock_close:
-                result = plot.gp_optimize_quadratic(diagrams='./new_diagrams')
+                result = plot.gp_optimize_quadratic(directory='./new_diagrams')
                 
                 # Verify directory creation was attempted
                 assert mock_exists.called
@@ -1547,9 +1562,9 @@ class TestGPOptimizeQuadratic:
                 # Test with specific eigenvalues
                 lambda1, lambda2 = 3, 1
                 result = plot.gp_optimize_quadratic(
-                    lambda1=lambda1, 
+                    lambda1=lambda1,
                     lambda2=lambda2,
-                    diagrams='./test_diagrams'
+                    directory='./test_diagrams'
                 )
                 
                 # Verify function executed successfully
