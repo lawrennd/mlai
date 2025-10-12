@@ -292,6 +292,22 @@ class TestLogisticRegression:
         assert lr.w_star is not None
         assert np.all(np.isfinite(lr.w_star))
 
+    def test_lr_fit_convergence(self):
+        """Test LR fit method convergence (line 2335)."""
+        X = np.array([[1], [2], [3]])
+        y = np.array([0, 1, 0]).reshape(-1, 1)
+        basis = mlai.Basis(mlai.linear, 2)  # Need 2 basis functions for linear
+        
+        lr = mlai.LR(X, y, basis)
+        
+        # Test fit method with very small tolerance to trigger convergence
+        lr.fit(max_iterations=100, learning_rate=0.1, tolerance=1e-10)
+        
+        # Check that w_star has been updated
+        assert hasattr(lr, 'w_star')
+        assert lr.w_star is not None
+        assert np.all(np.isfinite(lr.w_star))
+
     def test_lm_set_param_method(self):
         """Test LM set_param method (lines 573, 578-579, 583)."""
         X = np.array([[1], [2], [3]])

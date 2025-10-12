@@ -381,7 +381,7 @@ class TestKernelFunctions:
         
         result = mlai.prod_kern(x, x_prime, kernargs)
         assert result == 6.0  # 2.0 * 3.0
-        
+    
 class TestKernelClass:
     """Test Kernel class functionality."""
     
@@ -572,6 +572,57 @@ class TestGaussianProcessMethods:
         assert hasattr(gp, 'kernel')
         assert hasattr(gp, 'sigma2')
 
+    def test_gp_nll_split_method(self):
+        """Test GP nll_split method (lines 2431-2432, 2438)."""
+        X = np.array([[1], [2], [3]])
+        y = np.array([[2], [4], [6]])
+        kernel = mlai.Kernel(mlai.eq_cov)
+        sigma2 = 0.1
+        
+        gp = mlai.GP(X, y, sigma2, kernel)
+        
+        # Call update_nll first to set log_det and quadratic attributes
+        gp.update_nll()
+        
+        # Test nll_split method
+        log_det, quadratic = gp.nll_split()
+        
+        assert isinstance(log_det, (int, float))
+        assert isinstance(quadratic, (int, float))
+        assert np.isfinite(log_det)
+        assert np.isfinite(quadratic)
+
+    def test_gp_log_likelihood_method(self):
+        """Test GP log_likelihood method (lines 2447-2448)."""
+        X = np.array([[1], [2], [3]])
+        y = np.array([[2], [4], [6]])
+        kernel = mlai.Kernel(mlai.eq_cov)
+        sigma2 = 0.1
+        
+        gp = mlai.GP(X, y, sigma2, kernel)
+        
+        # Test log_likelihood method
+        log_lik = gp.log_likelihood()
+        
+        assert isinstance(log_lik, (int, float))
+        assert np.isfinite(log_lik)
+
+    def test_gp_objective_method(self):
+        """Test GP objective method (line 2457)."""
+        X = np.array([[1], [2], [3]])
+        y = np.array([[2], [4], [6]])
+        kernel = mlai.Kernel(mlai.eq_cov)
+        sigma2 = 0.1
+        
+        gp = mlai.GP(X, y, sigma2, kernel)
+        
+        # Test objective method
+        objective = gp.objective()
+        
+        assert isinstance(objective, (int, float))
+        assert np.isfinite(objective)
+
+
 
 class TestGPPredict:
     """Test GP prediction functionality."""
@@ -722,7 +773,7 @@ class TestAdditionalKernelFunctionsExtended:
 
 
 
-class TestGaussianProcessMethods:
+class TestGaussianProcessMethodsExtended:
     """Test Gaussian Process methods that were not previously covered."""
     
     def test_gp_posterior_f(self):
