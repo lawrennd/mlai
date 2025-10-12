@@ -125,6 +125,33 @@ class TestLinearModel:
         model.sigma2 = 0.1
         assert model.sigma2 == 0.1
     
+    def test_lm_objective_method(self):
+        """Test LM objective method (lines 654-655)."""
+        X = np.array([[1], [2], [3]])
+        y = np.array([[1], [2], [3]])
+        basis = mlai.Basis(mlai.linear, 1)
+        
+        model = mlai.LM(X, y, basis)
+        model.fit()  # Need to fit first to get w_star
+        # The objective method should call update_sum_squares and return sum_squares
+        result = model.objective()
+        assert np.isfinite(result)
+        assert isinstance(result, float)
+        assert result >= 0  # Sum of squares should be non-negative
+    
+    def test_lm_log_likelihood_method(self):
+        """Test LM log_likelihood method (lines 659-660)."""
+        X = np.array([[1], [2], [3]])
+        y = np.array([[1], [2], [3]])
+        basis = mlai.Basis(mlai.linear, 1)
+        
+        model = mlai.LM(X, y, basis)
+        model.fit()  # Need to fit first to get w_star
+        # The log_likelihood method should call update_sum_squares and return log-likelihood
+        result = model.log_likelihood()
+        assert np.isfinite(result)
+        assert isinstance(result, float)
+    
     def test_lm_fit_and_predict(self):
         """Test LM fit and predict methods."""
         X = np.array([[1], [2], [3]])
