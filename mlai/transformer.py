@@ -396,145 +396,6 @@ class Attention:
         return softmax_output * (grad_output - grad_sum)
 
 
-class MultiHeadAttention:
-    """
-    Multi-head attention built from basic Attention instances.
-    
-    This is a simple composition of multiple Attention heads to demonstrate
-    how multi-head attention is constructed from basic attention mechanisms.
-    
-    Parameters
-    ----------
-    d_model : int
-        The dimension of the model
-    n_heads : int
-        Number of attention heads
-    dropout : float, optional
-        Dropout rate, by default 0.0 (disabled for educational clarity)
-    activation : Activation, optional
-        Activation function for attention weights
-    """
-    
-    def __init__(self, d_model, n_heads, dropout=0.0, activation=None):
-        assert d_model % n_heads == 0, "d_model must be divisible by n_heads"
-        
-        self.d_model = d_model
-        self.n_heads = n_heads
-        self.d_k = d_model // n_heads
-        
-        # Create multiple attention heads
-        self.attention_heads = [Attention(self.d_k, dropout, activation) for _ in range(n_heads)]
-        
-        # Output projection
-        self.W_o = np.random.normal(0, np.sqrt(2.0 / d_model), (d_model, d_model))
-        
-    def forward(self, query, key, value, mask=None):
-        """
-        Forward pass through multiple attention heads.
-        
-        Parameters
-        ----------
-        query : np.ndarray
-            Query tensor of shape (batch_size, seq_len, d_model)
-        key : np.ndarray
-            Key tensor of shape (batch_size, seq_len, d_model)
-        value : np.ndarray
-            Value tensor of shape (batch_size, seq_len, d_model)
-        mask : np.ndarray, optional
-            Attention mask, by default None
-            
-        Returns
-        -------
-        output : np.ndarray
-            Multi-head attention output
-        attention_weights : np.ndarray
-            Attention weights from all heads
-        """
-        batch_size, seq_len, d_model = query.shape
-        
-        # Split input into multiple heads
-        query_heads = query.reshape(batch_size, seq_len, self.n_heads, self.d_k)
-        key_heads = key.reshape(batch_size, seq_len, self.n_heads, self.d_k)
-        value_heads = value.reshape(batch_size, seq_len, self.n_heads, self.d_k)
-        
-        # Transpose to (batch_size, n_heads, seq_len, d_k)
-        query_heads = query_heads.transpose(0, 2, 1, 3)
-        key_heads = key_heads.transpose(0, 2, 1, 3)
-        value_heads = value_heads.transpose(0, 2, 1, 3)
-        
-        # Process each head
-        head_outputs = []
-        all_attention_weights = []
-        
-        for i, attention_head in enumerate(self.attention_heads):
-            # Forward pass through each attention head
-            head_output, head_weights = attention_head.forward(
-                query_heads[:, i], key_heads[:, i], value_heads[:, i], mask
-            )
-            head_outputs.append(head_output)
-            all_attention_weights.append(head_weights)
-        
-        # Concatenate all head outputs
-        concatenated = np.concatenate(head_outputs, axis=-1)
-        
-        # Apply output projection
-        output = concatenated @ self.W_o
-        
-        # Stack attention weights from all heads
-        attention_weights = np.stack(all_attention_weights, axis=1)
-        
-        return output, attention_weights
-
-
-class PositionalEncoding:
-    """
-    Sinusoidal positional encoding for sequence data.
-    
-    This implements the standard sinusoidal positional encoding from
-    "Attention Is All You Need" (Vaswani et al., 2017).
-    
-    Parameters
-    ----------
-    d_model : int
-        The dimension of the model
-    max_length : int, optional
-        Maximum sequence length, by default 5000
-    """
-    
-    def __init__(self, d_model, max_length=5000):
-        self.d_model = d_model
-        
-        # Create positional encoding matrix
-        pe = np.zeros((max_length, d_model))
-        position = np.arange(0, max_length, dtype=float).reshape(-1, 1)
-        
-        # Create the sinusoidal encoding
-        div_term = np.exp(np.arange(0, d_model, 2) * 
-                         (-np.log(10000.0) / d_model))
-        
-        pe[:, 0::2] = np.sin(position * div_term)
-        pe[:, 1::2] = np.cos(position * div_term)
-        
-        self.pe = pe
-        
-    def forward(self, x):
-        """
-        Add positional encoding to input.
-        
-        Parameters
-        ----------
-        x : np.ndarray
-            Input tensor of shape (batch_size, seq_len, d_model)
-            
-        Returns
-        -------
-        np.ndarray
-            Input with positional encoding added
-        """
-        seq_len = x.shape[1]
-        return x + self.pe[:seq_len]
-
-
 class Transformer(Model):
     """
     Simple transformer model for educational purposes.
@@ -650,3 +511,103 @@ class Transformer(Model):
         :raises NotImplementedError: Training not implemented
         """
         raise NotImplementedError("Training logic not implemented. Use as part of a larger training framework.")
+    
+    @property
+    def parameters(self):
+        """
+        Get all trainable parameters as a 1D vector.
+        
+        Returns all transformer parameters (embedding, attention weights, output projection) 
+        as a flattened array in the order: [embedding, attention_weights, output_projection].
+        
+        :returns: 1D array of all trainable parameters
+        :rtype: numpy.ndarray
+        """
+        params = []
+        
+        # Add embedding parameters
+        params.append(self.embedding.flatten())
+        
+        # Add attention parameters from all heads
+        for head in self.attention.attention_heads:
+            params.append(head.W_q.flatten())
+            params.append(head.W_k.flatten())
+            params.append(head.W_v.flatten())
+            params.append(head.W_o.flatten())
+        
+        # Add multi-head attention output projection
+        params.append(self.attention.W_o.flatten())
+        
+        # Add output projection
+        params.append(self.output_projection.flatten())
+        
+        return np.concatenate(params)
+    
+    @parameters.setter
+    def parameters(self, value):
+        """
+        Set all trainable parameters from a 1D vector.
+        
+        Updates all transformer parameters from a flattened array in the order:
+        [embedding, attention_weights, output_projection].
+        
+        :param value: 1D array of parameters to set
+        :type value: numpy.ndarray
+        
+        :raises ValueError: If the parameter vector has incorrect length
+        """
+        # Calculate expected length
+        expected_length = 0
+        expected_length += self.embedding.size
+        
+        # Add attention head parameters
+        for head in self.attention.attention_heads:
+            expected_length += head.W_q.size + head.W_k.size + head.W_v.size + head.W_o.size
+        
+        # Add multi-head attention output projection
+        expected_length += self.attention.W_o.size
+        
+        # Add output projection
+        expected_length += self.output_projection.size
+        
+        if len(value) != expected_length:
+            raise ValueError(f"Expected {expected_length} parameters, got {len(value)}")
+        
+        # Unpack parameters in the same order as the getter
+        start = 0
+        
+        # Set embedding
+        embedding_size = self.embedding.size
+        self.embedding = value[start:start+embedding_size].reshape(self.embedding.shape)
+        start += embedding_size
+        
+        # Set attention head parameters
+        for head in self.attention.attention_heads:
+            # W_q
+            w_q_size = head.W_q.size
+            head.W_q = value[start:start+w_q_size].reshape(head.W_q.shape)
+            start += w_q_size
+            
+            # W_k
+            w_k_size = head.W_k.size
+            head.W_k = value[start:start+w_k_size].reshape(head.W_k.shape)
+            start += w_k_size
+            
+            # W_v
+            w_v_size = head.W_v.size
+            head.W_v = value[start:start+w_v_size].reshape(head.W_v.shape)
+            start += w_v_size
+            
+            # W_o
+            w_o_size = head.W_o.size
+            head.W_o = value[start:start+w_o_size].reshape(head.W_o.shape)
+            start += w_o_size
+        
+        # Set multi-head attention output projection
+        mha_o_size = self.attention.W_o.size
+        self.attention.W_o = value[start:start+mha_o_size].reshape(self.attention.W_o.shape)
+        start += mha_o_size
+        
+        # Set output projection
+        output_size = self.output_projection.size
+        self.output_projection = value[start:start+output_size].reshape(self.output_projection.shape)

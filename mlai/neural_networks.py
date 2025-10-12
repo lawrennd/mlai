@@ -29,6 +29,8 @@ __all__ = [
     'FullyConnectedLayer',
     'MultiInputLayer',
     'AttentionLayer',
+    'MultiHeadAttentionLayer',
+    'PositionalEncodingLayer',
     
     # Activation Functions
     'ReLUActivation',
@@ -1806,6 +1808,302 @@ class AttentionLayer(MultiInputLayer):
         # W_o
         w_o_size = self.W_o.size
         self.W_o = value[start:start+w_o_size].reshape(self.W_o.shape)
+
+
+class MultiHeadAttentionLayer(Layer):
+    """
+    Multi-head attention layer built from multiple AttentionLayer instances.
+    
+    This implements multi-head attention by creating multiple single-head
+    AttentionLayer instances and concatenating their outputs.
+    
+    Parameters
+    ----------
+    d_model : int
+        The dimension of the model
+    n_heads : int
+        Number of attention heads
+    dropout : float, optional
+        Dropout rate, by default 0.0
+    activation : Activation, optional
+        Activation function for attention weights
+    """
+    
+    def __init__(self, d_model, n_heads, dropout=0.0, activation=None):
+        super().__init__()
+        assert d_model % n_heads == 0, "d_model must be divisible by n_heads"
+        
+        self.d_model = d_model
+        self.n_heads = n_heads
+        self.d_k = d_model // n_heads
+        
+        # Create multiple single-head attention layers
+        self.attention_heads = [AttentionLayer(self.d_k, n_heads=1, dropout=dropout, activation=activation) for _ in range(n_heads)]
+        
+        # Output projection to combine all heads
+        self.W_o = np.random.normal(0, np.sqrt(2.0 / d_model), (d_model, d_model))
+        
+        # Store for backward pass
+        self.last_inputs = None
+        self.last_output = None
+        self.last_head_outputs = None
+        
+    def forward(self, x):
+        """
+        Forward pass through multiple attention heads.
+        
+        This implements self-attention where x becomes Q, K, V for all heads.
+        
+        Parameters
+        ----------
+        x : np.ndarray
+            Input tensor of shape (batch_size, seq_len, d_model)
+            
+        Returns
+        -------
+        np.ndarray
+            Multi-head attention output of shape (batch_size, seq_len, d_model)
+        """
+        batch_size, seq_len, d_model = x.shape
+        
+        # Store inputs for backward pass
+        self.last_inputs = x
+        
+        # Split input into multiple heads
+        # Reshape to (batch_size, seq_len, n_heads, d_k)
+        x_heads = x.reshape(batch_size, seq_len, self.n_heads, self.d_k)
+        
+        # Transpose to (batch_size, n_heads, seq_len, d_k)
+        x_heads = x_heads.transpose(0, 2, 1, 3)
+        
+        # Process each head
+        head_outputs = []
+        
+        for i, attention_head in enumerate(self.attention_heads):
+            # Forward pass through each attention head (self-attention)
+            head_output = attention_head.forward(x_heads[:, i])
+            head_outputs.append(head_output)
+        
+        # Concatenate all head outputs along the last dimension
+        concatenated = np.concatenate(head_outputs, axis=-1)
+        
+        # Apply output projection
+        output = concatenated @ self.W_o
+        
+        # Store for backward pass
+        self.last_output = output
+        self.last_head_outputs = head_outputs
+        
+        return output
+    
+    def backward(self, grad_output):
+        """
+        Backward pass through multiple attention heads.
+        
+        Parameters
+        ----------
+        grad_output : np.ndarray
+            Gradient from the next layer
+            
+        Returns
+        -------
+        np.ndarray
+            Gradient with respect to input
+        """
+        if self.last_inputs is None:
+            raise ValueError("Must call forward before backward")
+        
+        x = self.last_inputs
+        batch_size, seq_len, d_model = x.shape
+        
+        # Gradient through output projection
+        grad_concatenated = grad_output @ self.W_o.T
+        
+        # Split gradient back to individual heads
+        grad_head_outputs = []
+        start = 0
+        for i in range(self.n_heads):
+            end = start + self.d_k
+            grad_head = grad_concatenated[:, :, start:end]
+            grad_head_outputs.append(grad_head)
+            start = end
+        
+        # Backward pass through each attention head
+        grad_head_inputs = []
+        for i, attention_head in enumerate(self.attention_heads):
+            # Get gradient for this head
+            grad_head = grad_head_outputs[i]
+            
+            # Backward pass through attention head
+            grad_head_input = attention_head.backward(grad_head)
+            grad_head_inputs.append(grad_head_input[0])  # Extract from tuple
+        
+        # Concatenate gradients from all heads
+        grad_heads_concatenated = np.concatenate(grad_head_inputs, axis=-1)
+        
+        # Reshape back to original input shape
+        grad_input = grad_heads_concatenated.reshape(batch_size, seq_len, d_model)
+        
+        return (grad_input,)
+    
+    @property
+    def parameters(self):
+        """
+        Get all trainable parameters as a 1D vector.
+        
+        Returns parameters from all attention heads plus output projection.
+        
+        Returns
+        -------
+        np.ndarray
+            1D array of all trainable parameters
+        """
+        params = []
+        
+        # Add parameters from all attention heads
+        for head in self.attention_heads:
+            params.append(head.parameters)
+        
+        # Add output projection parameters
+        params.append(self.W_o.flatten())
+        
+        return np.concatenate(params)
+    
+    @parameters.setter
+    def parameters(self, value):
+        """
+        Set all trainable parameters from a 1D vector.
+        
+        Parameters
+        ----------
+        value : np.ndarray
+            1D array of parameters to set
+        """
+        expected_length = 0
+        
+        # Calculate expected length from all attention heads
+        for head in self.attention_heads:
+            expected_length += len(head.parameters)
+        
+        # Add output projection size
+        expected_length += self.W_o.size
+        
+        if len(value) != expected_length:
+            raise ValueError(f"Expected {expected_length} parameters, got {len(value)}")
+        
+        # Set parameters for all attention heads
+        start = 0
+        for head in self.attention_heads:
+            head_size = len(head.parameters)
+            head.parameters = value[start:start + head_size]
+            start += head_size
+        
+        # Set output projection parameters
+        self.W_o = value[start:].reshape(self.W_o.shape)
+
+
+class PositionalEncodingLayer(Layer):
+    """
+    Sinusoidal positional encoding layer for sequence data.
+    
+    This implements the standard sinusoidal positional encoding from
+    "Attention Is All You Need" (Vaswani et al., 2017) as a proper Layer.
+    
+    Parameters
+    ----------
+    d_model : int
+        The dimension of the model
+    max_length : int, optional
+        Maximum sequence length, by default 5000
+    """
+    
+    def __init__(self, d_model, max_length=5000):
+        super().__init__()
+        self.d_model = d_model
+        self.max_length = max_length
+        
+        # Create positional encoding matrix (static, no parameters)
+        self.pe = self._create_positional_encoding(max_length, d_model)
+        
+    def _create_positional_encoding(self, max_length, d_model):
+        """Create sinusoidal positional encoding matrix."""
+        pe = np.zeros((max_length, d_model))
+        position = np.arange(0, max_length, dtype=float).reshape(-1, 1)
+        
+        # Create the sinusoidal encoding
+        div_term = np.exp(np.arange(0, d_model, 2) * 
+                         (-np.log(10000.0) / d_model))
+        
+        pe[:, 0::2] = np.sin(position * div_term)
+        pe[:, 1::2] = np.cos(position * div_term)
+        
+        return pe
+        
+    def forward(self, x):
+        """
+        Add positional encoding to input.
+        
+        Parameters
+        ----------
+        x : np.ndarray
+            Input tensor of shape (batch_size, seq_len, d_model)
+            
+        Returns
+        -------
+        np.ndarray
+            Input with positional encoding added
+        """
+        seq_len = x.shape[1]
+        return x + self.pe[:seq_len]
+    
+    def backward(self, grad_output):
+        """
+        Backward pass for positional encoding.
+        
+        Since positional encoding is just addition, the gradient
+        is passed through unchanged.
+        
+        Parameters
+        ----------
+        grad_output : np.ndarray
+            Gradient from the next layer
+            
+        Returns
+        -------
+        np.ndarray
+            Gradient with respect to input (same as grad_output)
+        """
+        return (grad_output,)
+    
+    @property
+    def parameters(self):
+        """
+        Get all trainable parameters as a 1D vector.
+        
+        Positional encoding has no trainable parameters.
+        
+        Returns
+        -------
+        np.ndarray
+            Empty array (no parameters)
+        """
+        return np.array([])
+    
+    @parameters.setter
+    def parameters(self, value):
+        """
+        Set all trainable parameters from a 1D vector.
+        
+        Positional encoding has no trainable parameters, so this
+        just checks that an empty array is provided.
+        
+        Parameters
+        ----------
+        value : np.ndarray
+            Should be empty array
+        """
+        if len(value) != 0:
+            raise ValueError("PositionalEncodingLayer has no trainable parameters")
 
 
 
