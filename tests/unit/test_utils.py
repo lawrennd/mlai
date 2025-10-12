@@ -15,9 +15,36 @@ from unittest.mock import patch, MagicMock
 # Import mlai modules
 import mlai.mlai as mlai
 
-
 class TestUtilityFunctions:
-    """Test utility functions for file operations and plotting."""
+    """Test additional utility functions."""
+    
+    def test_load_pgm(self):
+        """Test load_pgm function."""
+        # Create a simple test PGM file
+        with tempfile.NamedTemporaryFile(suffix='.pgm', delete=False) as f:
+            f.write(b'P5\n2 2\n255\n\x00\xFF\xFF\x00')
+            pgm_file = f.name
+        
+        try:
+            result = mlai.load_pgm(pgm_file)
+            assert result.shape == (2, 2)
+            assert result.dtype == np.uint8
+        finally:
+            os.unlink(pgm_file)
+    
+    def test_contour_data(self):
+        """Test contour_data function."""
+        # Mock model and data
+        model = MagicMock()
+        data = {'X': np.array([[1, 2], [3, 4]]), 'Y': np.array([1, 2])}  # Proper data structure
+        length_scales = np.array([0.1, 0.5, 1.0])
+        log_SNRs = np.array([0, 1, 2])
+        
+        result = mlai.contour_data(model, data, length_scales, log_SNRs)
+        assert len(result) == 3  # Should return X, Y, Z for contour plot
+        # Just check that we get arrays back
+        assert all(isinstance(arr, np.ndarray) for arr in result) 
+
     
     def test_filename_join_no_directory(self):
         """Test filename_join with no directory specified."""
@@ -87,6 +114,33 @@ class TestUtilityFunctions:
                 expected_path = os.path.join(temp_dir, "test.png")
                 mock_savefig.assert_called_once_with(expected_path, dpi=300, transparent=False)
 
+
+class TestUtilityFunctionEdgeCases:
+    """Test edge cases for utility functions."""
+    
+    def test_filename_join_edge_cases(self):
+        """Test filename_join with edge cases."""
+        # Test with empty filename
+        result = mlai.filename_join("")
+        assert result == ""
+        
+        # Test with None directory
+        result = mlai.filename_join("test.png", None)
+        assert result == "test.png"
+        
+        # Test with empty directory - this should work without creating directory
+        with tempfile.TemporaryDirectory() as temp_dir:
+            result = mlai.filename_join("test.png", temp_dir)
+            assert result == os.path.join(temp_dir, "test.png")
+    
+    def test_write_figure_edge_cases(self):
+        """Test write_figure with edge cases."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Test with custom kwargs that override defaults
+            with patch('matplotlib.pyplot.savefig') as mock_savefig:
+                mlai.write_figure("test.png", directory=temp_dir, transparent=False, dpi=300)
+                expected_path = os.path.join(temp_dir, "test.png")
+                mock_savefig.assert_called_once_with(expected_path, transparent=False, dpi=300) 
 
 if __name__ == '__main__':
     unittest.main()

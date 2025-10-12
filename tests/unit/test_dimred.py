@@ -19,17 +19,122 @@ import mlai.mlai as mlai
 
 
 class TestWardsMethod:
-    """Test Ward's clustering method."""
+    """Test Ward's hierarchical clustering implementation."""
+
     
-    def test_wards_method_basic_functionality(self):
-        """Test basic Ward's method functionality."""
-        X = np.array([[1, 2], [3, 4], [5, 6], [7, 8]])
+    def test_wards_method_initialization(self):
+        """Test WardsMethod initialization."""
+        X = np.array([[1, 2], [3, 4], [5, 6]])
+        ward = mlai.WardsMethod(X)
+        
+        assert ward.numdata == 3
+        assert len(ward.clusters) == 3
+        assert len(ward.centroids) == 3
+        assert len(ward.cluster_sizes) == 3
+        assert len(ward.merges) == 0
+        assert len(ward.distances) == 0
+    
+    def test_wards_method_ward_distance(self):
+        """Test Ward distance calculation."""
+        X = np.array([[1, 2], [3, 4], [5, 6]])
+        ward = mlai.WardsMethod(X)
+        
+        # Test distance between two single-point clusters
+        distance = ward.ward_distance(0, 1)
+        assert isinstance(distance, (int, float))
+        assert distance > 0
+        
+        # Distance should be symmetric
+        distance_reverse = ward.ward_distance(1, 0)
+        assert abs(distance - distance_reverse) < 1e-10
+    
+    def test_wards_method_find_closest_clusters(self):
+        """Test finding closest clusters."""
+        X = np.array([[1, 2], [1.1, 2.1], [10, 20]])  # Two close, one far
+        ward = mlai.WardsMethod(X)
+        
+        closest_pair, min_distance = ward.find_closest_clusters()
+        
+        assert isinstance(closest_pair, tuple)
+        assert len(closest_pair) == 2
+        assert isinstance(min_distance, (int, float))
+        assert min_distance > 0
+        
+        # Should find the two closest points
+        assert 0 in closest_pair or 1 in closest_pair
+    
+    def test_wards_method_merge_clusters(self):
+        """Test cluster merging."""
+        X = np.array([[1, 2], [3, 4], [5, 6]])
+        ward = mlai.WardsMethod(X)
+        
+        # Merge clusters 0 and 1
+        new_cluster_id = ward.merge_clusters(0, 1)
+        
+        # Check that new cluster was created
+        assert new_cluster_id in ward.clusters
+        assert new_cluster_id in ward.centroids
+        assert new_cluster_id in ward.cluster_sizes
+        
+        # Check that old clusters were removed
+        assert 0 not in ward.clusters
+        assert 1 not in ward.clusters
+        assert 0 not in ward.centroids
+        assert 1 not in ward.centroids
+        assert 0 not in ward.cluster_sizes
+        assert 1 not in ward.cluster_sizes
+        
+        # Check cluster size
+        assert ward.cluster_sizes[new_cluster_id] == 2
+    
+    def test_wards_method_fit_simple(self):
+        """Test Ward's method fitting with simple data."""
+        X = np.array([[1, 2], [3, 4], [5, 6]])
+        ward = mlai.WardsMethod(X)
+        
+        ward.fit()
+        
+        # Should have n-1 merges for n points
+        assert len(ward.merges) == 2  # 3 points -> 2 merges
+        assert len(ward.distances) == 2
+        
+        # Should have only one cluster left
+        assert len(ward.clusters) == 1
+        
+        # All distances should be positive
+        assert all(d > 0 for d in ward.distances)
+    
+    def test_wards_method_fit_with_generated_data(self):
+        """Test Ward's method fitting with generated cluster data."""
+        X = mlai.generate_cluster_data(n_points_per_cluster=5)
+        ward = mlai.WardsMethod(X)
+        
+        ward.fit()
+        
+        # Should have n-1 merges for n points
+        n_points = X.shape[0]
+        assert len(ward.merges) == n_points - 1
+        assert len(ward.distances) == n_points - 1
+        
+        # Should have only one cluster left
+        assert len(ward.clusters) == 1
+        
+        # All distances should be positive
+        assert all(d > 0 for d in ward.distances)
+    
+    def test_wards_method_get_linkage_matrix(self):
+        """Test linkage matrix generation."""
+        X = np.array([[1, 2], [3, 4], [5, 6]])
         ward = mlai.WardsMethod(X)
         ward.fit()
         
-        # Check that we get a linkage matrix
         linkage_matrix = ward.get_linkage_matrix()
-        assert linkage_matrix.shape[1] == 4  # Should have 4 columns
+        
+        # Check shape
+        assert linkage_matrix.shape == (2, 4)  # n-1 merges, 4 columns
+        
+        # Check that all values are finite
+        assert np.all(np.isfinite(linkage_matrix))
         
         # Check that distances are positive
         assert np.all(linkage_matrix[:, 2] > 0)
@@ -91,18 +196,190 @@ class TestWardsMethod:
         ward_single = mlai.WardsMethod(X_single)
         ward_single.fit()
         
-        # Should handle single point gracefully
-        linkage_single = ward_single.get_linkage_matrix()
-        assert linkage_single.shape[0] == 0  # No merges for single point
+        # Should have no merges for single point
+        assert len(ward_single.merges) == 0
+        assert len(ward_single.distances) == 0
+        assert len(ward_single.clusters) == 1
         
         # Test with two points
         X_two = np.array([[1, 2], [3, 4]])
         ward_two = mlai.WardsMethod(X_two)
         ward_two.fit()
         
-        linkage_two = ward_two.get_linkage_matrix()
-        assert linkage_two.shape[0] == 1  # One merge for two points
-        assert linkage_two[0, 2] > 0  # Positive distance
+        # Should have one merge for two points
+        assert len(ward_two.merges) == 1
+        assert len(ward_two.distances) == 1
+        assert len(ward_two.clusters) == 1
+    
+    def test_wards_method_centroid_calculation(self):
+        """Test that centroids are calculated correctly during merging."""
+        X = np.array([[0, 0], [2, 0], [0, 2], [2, 2]])
+        ward = mlai.WardsMethod(X)
+        
+        # Merge first two points
+        new_cluster_id = ward.merge_clusters(0, 1)
+        
+        # Centroid should be at [1, 0] (midpoint of [0,0] and [2,0])
+        expected_centroid = np.array([1.0, 0.0])
+        np.testing.assert_allclose(ward.centroids[new_cluster_id], expected_centroid)
+        
+        # Cluster size should be 2
+        assert ward.cluster_sizes[new_cluster_id] == 2
+    
+    def test_wards_method_distance_properties(self):
+        """Test mathematical properties of Ward distances."""
+        X = np.array([[0, 0], [1, 0], [0, 1], [1, 1]])
+        ward = mlai.WardsMethod(X)
+        
+        # Test symmetry
+        d01 = ward.ward_distance(0, 1)
+        d10 = ward.ward_distance(1, 0)
+        assert abs(d01 - d10) < 1e-10
+        
+        # Test that distance increases with separation
+        d02 = ward.ward_distance(0, 2)  # [0,0] to [0,1]
+        d03 = ward.ward_distance(0, 3)  # [0,0] to [1,1]
+        
+        # Distance to [0,1] should be less than distance to [1,1]
+        assert d02 < d03
+    
+    def test_wards_method_progress_tracking(self):
+        """Test that the method correctly tracks clustering progress."""
+        X = np.array([[1, 2], [3, 4], [5, 6], [7, 8]])
+        ward = mlai.WardsMethod(X)
+        
+        # Capture print output to verify progress
+        import io
+        import sys
+        from contextlib import redirect_stdout
+        
+        f = io.StringIO()
+        with redirect_stdout(f):
+            ward.fit()
+        
+        output = f.getvalue()
+        
+        # Should have printed progress for each merge
+        assert "Step 0:" in output
+        assert "Step 1:" in output
+        assert "Step 2:" in output
+        
+        # Should have printed distance values
+        assert "distance =" in output
+    
+    def test_wards_method_cluster_consistency(self):
+        """Test that cluster assignments are consistent throughout the process."""
+        X = np.array([[1, 2], [3, 4], [5, 6]])
+        ward = mlai.WardsMethod(X)
+        
+        # Before fitting, each point should be its own cluster
+        for i in range(ward.numdata):
+            assert i in ward.clusters
+            assert ward.clusters[i] == [i]
+            assert ward.cluster_sizes[i] == 1
+        
+        ward.fit()
+        
+        # After fitting, should have one cluster containing all points
+        assert len(ward.clusters) == 1
+        final_cluster_id = list(ward.clusters.keys())[0]
+        assert ward.cluster_sizes[final_cluster_id] == ward.numdata
+        assert set(ward.clusters[final_cluster_id]) == set(range(ward.numdata))
+    
+    def test_wards_method_numerical_stability(self):
+        """Test numerical stability with various data configurations."""
+        # Test with very close points
+        X_close = np.array([[1, 2], [1.0001, 2.0001], [1.0002, 2.0002]])
+        ward_close = mlai.WardsMethod(X_close)
+        ward_close.fit()
+        
+        # Should complete without errors
+        assert len(ward_close.merges) == 2
+        assert all(np.isfinite(d) for d in ward_close.distances)
+        
+        # Test with very far points
+        X_far = np.array([[1, 2], [100, 200], [1000, 2000]])
+        ward_far = mlai.WardsMethod(X_far)
+        ward_far.fit()
+        
+        # Should complete without errors
+        assert len(ward_far.merges) == 2
+        assert all(np.isfinite(d) for d in ward_far.distances)
+        
+        # Test with mixed scales
+        X_mixed = np.array([[0.001, 0.002], [1, 2], [1000, 2000]])
+        ward_mixed = mlai.WardsMethod(X_mixed)
+        ward_mixed.fit()
+        
+        # Should complete without errors
+        assert len(ward_mixed.merges) == 2
+        assert all(np.isfinite(d) for d in ward_mixed.distances)
+    
+    def test_wards_method_linkage_matrix_format(self):
+        """Test that linkage matrix follows scipy format exactly."""
+        X = np.array([[1, 2], [3, 4], [5, 6], [7, 8]])
+        ward = mlai.WardsMethod(X)
+        ward.fit()
+        
+        linkage_matrix = ward.get_linkage_matrix()
+        
+        # Check that it's a numpy array
+        assert isinstance(linkage_matrix, np.ndarray)
+        
+        # Check shape: (n-1, 4)
+        assert linkage_matrix.shape == (3, 4)
+        
+        # Check data types
+        assert linkage_matrix.dtype in [np.float64, np.float32, np.int64, np.int32]
+        
+        # Check that first two columns contain valid cluster indices
+        for i in range(linkage_matrix.shape[0]):
+            left_idx = int(linkage_matrix[i, 0])
+            right_idx = int(linkage_matrix[i, 1])
+            
+            # Indices should be valid
+            assert 0 <= left_idx < 2 * ward.numdata
+            assert 0 <= right_idx < 2 * ward.numdata
+            
+            # Should not be the same
+            assert left_idx != right_idx
+        
+        # Check that third column (distances) are positive
+        assert np.all(linkage_matrix[:, 2] > 0)
+        
+        # Check that fourth column (cluster sizes) are positive integers
+        assert np.all(linkage_matrix[:, 3] > 0)
+        assert np.all(linkage_matrix[:, 3] == linkage_matrix[:, 3].astype(int))
+    
+    def test_wards_method_with_different_dimensions(self):
+        """Test Ward's method with different dimensional data."""
+        # Test 1D data
+        X_1d = np.array([[1], [2], [3], [4]])
+        ward_1d = mlai.WardsMethod(X_1d)
+        ward_1d.fit()
+        
+        assert len(ward_1d.merges) == 3
+        linkage_1d = ward_1d.get_linkage_matrix()
+        assert linkage_1d.shape == (3, 4)
+        
+        # Test 3D data
+        X_3d = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]])
+        ward_3d = mlai.WardsMethod(X_3d)
+        ward_3d.fit()
+        
+        assert len(ward_3d.merges) == 3
+        linkage_3d = ward_3d.get_linkage_matrix()
+        assert linkage_3d.shape == (3, 4)
+        
+        # Test 4D data
+        X_4d = np.array([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]])
+        ward_4d = mlai.WardsMethod(X_4d)
+        ward_4d.fit()
+        
+        assert len(ward_4d.merges) == 2
+        linkage_4d = ward_4d.get_linkage_matrix()
+        assert linkage_4d.shape == (2, 4)
+
 
 
 if __name__ == '__main__':
