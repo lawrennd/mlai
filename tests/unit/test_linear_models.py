@@ -525,6 +525,21 @@ class TestLogisticRegressionMethods:
         objective = lr.objective()
         assert isinstance(objective, (int, float))
         assert np.isfinite(objective)
+    
+    def test_linear_model_invalid_y_shape(self):
+        """Test LM constructor with invalid y shape (line 537)."""
+        X = np.array([[1, 2], [3, 4]])
+        basis = mlai.Basis(mlai.polynomial, 3)
+        
+        # Test with 1D y (should raise ValueError)
+        y_1d = np.array([1, 2])
+        with pytest.raises(ValueError, match="y must be 2D with shape \\(n_samples, 1\\)"):
+            mlai.LM(X, y_1d, basis)
+        
+        # Test with 2D y but wrong second dimension (should raise ValueError)
+        y_wrong_shape = np.array([[1, 2], [3, 4]])  # shape (2, 2) instead of (2, 1)
+        with pytest.raises(ValueError, match="y must be 2D with shape \\(n_samples, 1\\)"):
+            mlai.LM(X, y_wrong_shape, basis)
         
 
 if __name__ == '__main__':
