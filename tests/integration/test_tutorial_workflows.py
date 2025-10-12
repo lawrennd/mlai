@@ -8,7 +8,7 @@ actually work and stay up-to-date with the codebase.
 import pytest
 import numpy as np
 import matplotlib.pyplot as plt
-import mlai.mlai as mlai
+import mlai
 from pathlib import Path
 import tempfile
 import os
