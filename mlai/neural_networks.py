@@ -26,6 +26,9 @@ __all__ = [
     # Layer Classes
     'Layer',
     'LinearLayer',
+    'FullyConnectedLayer',
+    'MultiInputLayer',
+    'AttentionLayer',
     
     # Activation Functions
     'ReLUActivation',
@@ -1064,12 +1067,57 @@ class HuberLoss(LossFunction):
         
         return gradient / predictions.size
 
+class SoftmaxActivation:
+    """
+    Softmax activation function for attention mechanisms.
+    
+    This implements the standard softmax function used in attention mechanisms,
+    with proper gradient computation for backpropagation.
+    """
+    
+    def forward(self, x, axis=-1):
+        """
+        Forward pass: softmax activation.
+        
+        :param x: Input array
+        :type x: numpy.ndarray
+        :param axis: Axis along which to apply softmax
+        :type axis: int
+        :returns: Softmax activated array
+        :rtype: numpy.ndarray
+        """
+        # Numerical stability: subtract max before softmax
+        exp_x = np.exp(x - np.max(x, axis=axis, keepdims=True))
+        return exp_x / np.sum(exp_x, axis=axis, keepdims=True)
+    
+    def gradient(self, x, grad_output, axis=-1):
+        """
+        Gradient of softmax activation.
+        
+        For softmax: ∂s_i/∂x_j = s_i * (δ_ij - s_j)
+        where δ_ij is the Kronecker delta.
+        
+        :param x: Input array
+        :type x: numpy.ndarray
+        :param grad_output: Gradient from next layer
+        :type grad_output: numpy.ndarray
+        :param axis: Axis along which softmax was applied
+        :type axis: int
+        :returns: Gradient array
+        :rtype: numpy.ndarray
+        """
+        # Compute softmax output
+        softmax_output = self.forward(x, axis=axis)
+        
+        # Compute gradient: softmax * (grad - sum(grad * softmax))
+        grad_sum = np.sum(grad_output * softmax_output, axis=axis, keepdims=True)
+        return softmax_output * (grad_output - grad_sum)
 
 class Layer:
     """
     Abstract base class for neural network layers.
     
-    A layer is a fundamental building block that contains parameters and
+    A layer is a building block that contains parameters and
     implements forward and backward passes. Layers can be composed to
     create complex neural network architectures.
     
@@ -1236,6 +1284,113 @@ class LinearLayer(Layer):
         self.b = value[w_size:].reshape(self.b.shape)
 
 
+class FullyConnectedLayer(Layer):
+    """
+    Fully connected layer combining linear transformation and activation.
+    
+    This layer combines a linear transformation (xW + b) with an activation function,
+    providing a complete fully connected layer implementation.
+    
+    :param input_size: Number of input features
+    :type input_size: int
+    :param output_size: Number of output features
+    :type output_size: int
+    :param activation: Activation function to apply
+    :type activation: Activation
+    """
+    
+    def __init__(self, input_size, output_size, activation):
+        super().__init__()
+        self.input_size = input_size
+        self.output_size = output_size
+        self.activation = activation
+        
+        # Initialize weights using Xavier initialization
+        self.W = np.random.normal(0, np.sqrt(2.0 / input_size), (input_size, output_size))
+        self.b = np.random.normal(0, np.sqrt(2.0 / input_size), output_size)
+        
+        # Store input for backward pass
+        self.last_input = None
+    
+    def forward(self, x):
+        """
+        Forward pass: linear transformation + activation.
+        
+        :param x: Input array of shape (batch_size, input_size)
+        :type x: numpy.ndarray
+        :returns: Output array of shape (batch_size, output_size)
+        :rtype: numpy.ndarray
+        """
+        # Store input for backward pass
+        self.last_input = x
+        
+        # Linear transformation
+        z = x @ self.W + self.b
+        
+        # Apply activation
+        return self.activation.forward(z)
+    
+    def backward(self, grad_output):
+        """
+        Backward pass: compute gradients through activation and linear transformation.
+        
+        :param grad_output: Gradient from next layer, shape (batch_size, output_size)
+        :type grad_output: numpy.ndarray
+        :returns: Gradient with respect to input, shape (batch_size, input_size)
+        :rtype: numpy.ndarray
+        """
+        if self.last_input is None:
+            raise ValueError("Must call forward before backward")
+        
+        # Compute linear transformation for gradient computation
+        z = self.last_input @ self.W + self.b
+        
+        # Gradient through activation
+        if hasattr(self.activation, 'gradient'):
+            activation_grad = self.activation.gradient(z)
+            grad_z = grad_output * activation_grad
+        else:
+            # For activations without gradient method, assume identity
+            grad_z = grad_output
+        
+        # Gradient with respect to input
+        grad_input = grad_z @ self.W.T
+        
+        return grad_input
+    
+    @property
+    def parameters(self):
+        """
+        Get all trainable parameters as a 1D vector.
+        
+        Returns parameters in the order: [W, b]
+        
+        :returns: 1D array of all trainable parameters
+        :rtype: numpy.ndarray
+        """
+        return np.concatenate([self.W.flatten(), self.b.flatten()])
+    
+    @parameters.setter
+    def parameters(self, value):
+        """
+        Set all trainable parameters from a 1D vector.
+        
+        Updates parameters in the order: [W, b]
+        
+        :param value: 1D array of parameters to set
+        :type value: numpy.ndarray
+        
+        :raises ValueError: If the parameter vector has incorrect length
+        """
+        expected_length = self.W.size + self.b.size
+        if len(value) != expected_length:
+            raise ValueError(f"Expected {expected_length} parameters, got {len(value)}")
+        
+        w_size = self.W.size
+        self.W = value[:w_size].reshape(self.W.shape)
+        self.b = value[w_size:].reshape(self.b.shape)
+
+
 class LayeredNeuralNetwork(Model):
     """
     Neural network composed of Layer objects.
@@ -1342,6 +1497,315 @@ class LayeredNeuralNetwork(Model):
             layer_size = len(layer.parameters)
             layer.parameters = value[start:start + layer_size]
             start += layer_size
+
+
+class MultiInputLayer(Layer):
+    """
+    Base class for layers that can process multiple inputs.
+    
+    This class provides a framework for layers that need to handle
+    multiple input streams, such as attention mechanisms, cross-correlation
+    layers, or other interaction-based computations.
+    
+    Methods
+    -------
+    forward(*inputs) : numpy.ndarray
+        Forward pass through the layer with multiple inputs
+    backward(grad_output) : tuple
+        Backward pass returning gradients for each input
+    parameters : numpy.ndarray
+        Property to get/set all trainable parameters as a 1D vector
+    
+    Examples:
+        >>> class AttentionLayer(MultiInputLayer):
+        ...     def forward(self, x, query_input=None, key_value_input=None):
+        ...         # Handle self-attention or cross-attention
+        ...         pass
+    """
+    
+    def __init__(self):
+        super().__init__()
+    
+    def forward(self, *inputs):
+        """
+        Forward pass with multiple inputs.
+        
+        :param inputs: Variable number of input tensors
+        :type inputs: tuple of numpy.ndarray
+        :returns: Layer output
+        :rtype: numpy.ndarray
+        
+        :raises NotImplementedError: If not implemented by subclass
+        """
+        raise NotImplementedError("Subclasses must implement the forward method")
+    
+    def backward(self, grad_output):
+        """
+        Backward pass returning gradients for each input.
+        
+        :param grad_output: Gradient from the next layer
+        :type grad_output: numpy.ndarray
+        :returns: Tuple of gradients for each input
+        :rtype: tuple of numpy.ndarray
+        
+        :raises NotImplementedError: If not implemented by subclass
+        """
+        raise NotImplementedError("Subclasses must implement the backward method")
+
+
+class AttentionLayer(MultiInputLayer):
+    """
+    General attention layer supporting both self and cross attention.
+    
+    This layer implements the scaled dot-product attention mechanism
+    and can handle both self-attention (single input) and cross-attention
+    (multiple inputs) scenarios.
+    
+    :param d_model: Model dimension
+    :type d_model: int
+    :param n_heads: Number of attention heads
+    :type n_heads: int
+    :param dropout: Dropout rate for regularization
+    :type dropout: float, optional
+    :param activation: Activation function for attention weights
+    :type activation: Activation, optional
+    """
+    
+    def __init__(self, d_model, n_heads, dropout=0.0, activation=None):
+        super().__init__()
+        self.d_model = d_model
+        self.n_heads = n_heads
+        self.dropout = dropout
+        
+        # Set up activation function (default to softmax for attention)
+        if activation is None:
+            self.activation = SoftmaxActivation()
+        else:
+            self.activation = activation
+        
+        # Initialize weight matrices for Q, K, V transformations
+        # Using Xavier initialization for stability
+        self.W_q = np.random.normal(0, np.sqrt(2.0 / d_model), (d_model, d_model))
+        self.W_k = np.random.normal(0, np.sqrt(2.0 / d_model), (d_model, d_model))
+        self.W_v = np.random.normal(0, np.sqrt(2.0 / d_model), (d_model, d_model))
+        self.W_o = np.random.normal(0, np.sqrt(2.0 / d_model), (d_model, d_model))
+        
+        # Scale factor for attention
+        self.scale = 1.0 / np.sqrt(d_model)
+        
+        # Store for backward pass
+        self.last_inputs = None
+        self.last_output = None
+        self.last_attention_weights = None
+    
+    def forward(self, x, query_input=None, key_value_input=None):
+        """
+        Forward pass of the attention mechanism.
+        
+        Supports three modes:
+        1. Self-attention: forward(x) - x becomes Q, K, V
+        2. Cross-attention: forward(x, query_input=q, key_value_input=kv) - Q=q, K=V=kv
+        3. Mixed: forward(x, key_value_input=kv) - Q=x, K=V=kv
+        
+        :param x: Primary input tensor
+        :type x: numpy.ndarray
+        :param query_input: Optional separate query input (for cross-attention)
+        :type query_input: numpy.ndarray, optional
+        :param key_value_input: Optional separate key/value input (for cross-attention)
+        :type key_value_input: numpy.ndarray, optional
+        :returns: Attention output
+        :rtype: numpy.ndarray
+        """
+        # Store inputs for backward pass
+        self.last_inputs = (x, query_input, key_value_input)
+        
+        # Determine Q, K, V based on inputs
+        if query_input is not None:
+            # Cross-attention: Q from query_input, K,V from key_value_input
+            if key_value_input is None:
+                raise ValueError("key_value_input must be provided when query_input is given")
+            Q = query_input @ self.W_q
+            K = key_value_input @ self.W_k
+            V = key_value_input @ self.W_v
+        else:
+            # Self-attention or mixed attention
+            if key_value_input is not None:
+                # Mixed attention: Q from x, K,V from key_value_input
+                Q = x @ self.W_q
+                K = key_value_input @ self.W_k
+                V = key_value_input @ self.W_v
+            else:
+                # Self-attention: Q, K, V from x
+                Q = x @ self.W_q
+                K = x @ self.W_k
+                V = x @ self.W_v
+        
+        # Compute attention scores: Q @ K^T / sqrt(d_k)
+        attention_scores = (Q @ K.transpose(0, 2, 1)) * self.scale
+        
+        # Apply activation function to get attention weights
+        if hasattr(self.activation, 'forward') and 'axis' in self.activation.forward.__code__.co_varnames:
+            attention_weights = self.activation.forward(attention_scores, axis=-1)
+        else:
+            # For activations that don't support axis parameter, apply element-wise
+            attention_weights = self.activation.forward(attention_scores)
+            # Apply softmax normalisation if requested (default for attention mechanisms)
+            attention_weights = self._softmax(attention_weights, axis=-1)
+        
+        # Apply dropout during training
+        if self.dropout > 0:
+            dropout_mask = np.random.binomial(1, 1 - self.dropout, attention_weights.shape)
+            attention_weights = attention_weights * dropout_mask / (1 - self.dropout)
+        
+        # Apply attention to values
+        output = attention_weights @ V
+        
+        # Output projection
+        output = output @ self.W_o
+        
+        # Store for backward pass
+        self.last_output = output
+        self.last_attention_weights = attention_weights
+        
+        return output
+    
+    def backward(self, grad_output):
+        """
+        Backward pass implementing the attention gradient computation.
+        
+        :param grad_output: Gradient from the next layer
+        :type grad_output: numpy.ndarray
+        :returns: Tuple of gradients for each input
+        :rtype: tuple of numpy.ndarray
+        """
+        if self.last_inputs is None:
+            raise ValueError("Must call forward before backward")
+        
+        x, query_input, key_value_input = self.last_inputs
+        
+        # Recompute Q, K, V for gradient computation
+        if query_input is not None:
+            # Cross-attention case
+            if key_value_input is None:
+                raise ValueError("key_value_input must be provided when query_input is given")
+            Q = query_input @ self.W_q
+            K = key_value_input @ self.W_k
+            V = key_value_input @ self.W_v
+        else:
+            # Self-attention or mixed attention
+            if key_value_input is not None:
+                # Mixed attention: Q from x, K,V from key_value_input
+                Q = x @ self.W_q
+                K = key_value_input @ self.W_k
+                V = key_value_input @ self.W_v
+            else:
+                # Self-attention: Q, K, V from x
+                Q = x @ self.W_q
+                K = x @ self.W_k
+                V = x @ self.W_v
+        
+        # Gradient through output projection
+        grad_attention_output = grad_output @ self.W_o.T
+        
+        # Gradients for attention weights and values
+        grad_attention_weights = grad_attention_output @ V.transpose(0, 2, 1)
+        grad_V = self.last_attention_weights.transpose(0, 2, 1) @ grad_attention_output
+        
+        # Gradient through activation function
+        attention_scores = (Q @ K.transpose(0, 2, 1)) * self.scale
+        
+        # Handle different activation function interfaces
+        if hasattr(self.activation, 'gradient') and 'axis' in self.activation.gradient.__code__.co_varnames:
+            grad_attention_scores = self.activation.gradient(attention_scores, grad_attention_weights, axis=-1)
+        else:
+            # Use standard softmax gradient formula
+            grad_sum = np.sum(grad_attention_weights * self.last_attention_weights, axis=-1, keepdims=True)
+            grad_attention_scores = self.last_attention_weights * (grad_attention_weights - grad_sum)
+        
+        # Gradients for Q and K
+        grad_Q = grad_attention_scores @ K
+        grad_K = grad_attention_scores.transpose(0, 2, 1) @ Q
+        
+        # Scale gradients
+        grad_Q *= self.scale
+        grad_K *= self.scale
+        
+        # Compute input gradients
+        if query_input is not None:
+            # Cross-attention: separate gradients for query and key_value inputs
+            grad_query = grad_Q @ self.W_q.T
+            grad_key_value = (grad_K @ self.W_k.T + grad_V @ self.W_v.T)
+            return grad_query, grad_key_value
+        else:
+            if key_value_input is not None:
+                # Mixed attention: separate gradients for x and key_value_input
+                grad_x = grad_Q @ self.W_q.T  # Only Q comes from x
+                grad_key_value = (grad_K @ self.W_k.T + grad_V @ self.W_v.T)  # K,V from key_value_input
+                return grad_x, grad_key_value
+            else:
+                # Self-attention: single gradient for input (three-path chain rule)
+                grad_input = (grad_Q @ self.W_q.T + grad_K @ self.W_k.T + grad_V @ self.W_v.T)
+                return (grad_input,)
+    
+    def _softmax(self, x, axis=-1):
+        """Numerically stable softmax implementation."""
+        exp_x = np.exp(x - np.max(x, axis=axis, keepdims=True))
+        return exp_x / np.sum(exp_x, axis=axis, keepdims=True)
+    
+    @property
+    def parameters(self):
+        """
+        Get all trainable parameters as a 1D vector.
+        
+        Returns parameters in the order: [W_q, W_k, W_v, W_o]
+        
+        :returns: 1D array of all trainable parameters
+        :rtype: numpy.ndarray
+        """
+        return np.concatenate([
+            self.W_q.flatten(),
+            self.W_k.flatten(),
+            self.W_v.flatten(),
+            self.W_o.flatten()
+        ])
+    
+    @parameters.setter
+    def parameters(self, value):
+        """
+        Set all trainable parameters from a 1D vector.
+        
+        Updates parameters in the order: [W_q, W_k, W_v, W_o]
+        
+        :param value: 1D array of parameters to set
+        :type value: numpy.ndarray
+        
+        :raises ValueError: If the parameter vector has incorrect length
+        """
+        expected_length = self.W_q.size + self.W_k.size + self.W_v.size + self.W_o.size
+        if len(value) != expected_length:
+            raise ValueError(f"Expected {expected_length} parameters, got {len(value)}")
+        
+        # Unpack parameters in the same order as the getter
+        start = 0
+        
+        # W_q
+        w_q_size = self.W_q.size
+        self.W_q = value[start:start+w_q_size].reshape(self.W_q.shape)
+        start += w_q_size
+        
+        # W_k
+        w_k_size = self.W_k.size
+        self.W_k = value[start:start+w_k_size].reshape(self.W_k.shape)
+        start += w_k_size
+        
+        # W_v
+        w_v_size = self.W_v.size
+        self.W_v = value[start:start+w_v_size].reshape(self.W_v.shape)
+        start += w_v_size
+        
+        # W_o
+        w_o_size = self.W_o.size
+        self.W_o = value[start:start+w_o_size].reshape(self.W_o.shape)
 
 
 
