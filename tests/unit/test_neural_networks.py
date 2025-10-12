@@ -1280,6 +1280,136 @@ class TestParametersProperty:
         output = network.predict(1.0)
         assert isinstance(output, np.ndarray)
         assert output.shape == (1,)
+    
+    def test_neural_network_parameters_getter(self):
+        """Test getting parameters from NeuralNetwork."""
+        from mlai.neural_networks import ReLUActivation, LinearActivation
+        
+        # Create a 2-layer network: 2 inputs -> 3 hidden -> 1 output
+        dimensions = [2, 3, 1]
+        activations = [ReLUActivation(), LinearActivation()]
+        network = mlai.NeuralNetwork(dimensions, activations)
+        
+        # Get parameters
+        params = network.parameters
+        
+        # Check it's a 1D numpy array
+        assert isinstance(params, np.ndarray)
+        assert params.ndim == 1
+        
+        # Check expected length: weights[0](2x3=6) + biases[0](3) + weights[1](3x1=3) + biases[1](1) = 13
+        expected_length = 6 + 3 + 3 + 1
+        assert len(params) == expected_length
+        
+        # Check that parameters match individual attributes
+        expected_params = []
+        for i in range(len(network.weights)):
+            expected_params.append(network.weights[i].flatten())
+            expected_params.append(network.biases[i].flatten())
+        expected_params = np.concatenate(expected_params)
+        np.testing.assert_array_equal(params, expected_params)
+    
+    def test_neural_network_parameters_setter(self):
+        """Test setting parameters in NeuralNetwork."""
+        from mlai.neural_networks import ReLUActivation, LinearActivation
+        
+        # Create a 2-layer network: 2 inputs -> 2 hidden -> 1 output
+        dimensions = [2, 2, 1]
+        activations = [ReLUActivation(), LinearActivation()]
+        network = mlai.NeuralNetwork(dimensions, activations)
+        
+        # Store original parameters
+        original_params = network.parameters.copy()
+        original_weights = [w.copy() for w in network.weights]
+        original_biases = [b.copy() for b in network.biases]
+        
+        # Set new parameters
+        new_params = np.array([1.0, 2.0, 3.0, 4.0,  # weights[0] (2x2)
+                               0.1, 0.2,             # biases[0] (2)
+                               5.0, 6.0,             # weights[1] (2x1)
+                               0.3])                 # biases[1] (1)
+        network.parameters = new_params
+        
+        # Check that parameters were set correctly
+        np.testing.assert_array_equal(network.weights[0], [[1.0, 2.0], [3.0, 4.0]])
+        np.testing.assert_array_equal(network.biases[0], [0.1, 0.2])
+        np.testing.assert_array_equal(network.weights[1], [[5.0], [6.0]])
+        np.testing.assert_array_equal(network.biases[1], [0.3])
+        np.testing.assert_array_equal(network.parameters, new_params)
+        
+        # Test round-trip: set back to original
+        network.parameters = original_params
+        for i in range(len(network.weights)):
+            np.testing.assert_array_equal(network.weights[i], original_weights[i])
+            np.testing.assert_array_equal(network.biases[i], original_biases[i])
+        np.testing.assert_array_equal(network.parameters, original_params)
+    
+    def test_neural_network_parameters_setter_wrong_length(self):
+        """Test that setting parameters with wrong length raises ValueError."""
+        from mlai.neural_networks import ReLUActivation, LinearActivation
+        
+        dimensions = [2, 2, 1]
+        activations = [ReLUActivation(), LinearActivation()]
+        network = mlai.NeuralNetwork(dimensions, activations)
+        
+        # Test too few parameters
+        with pytest.raises(ValueError, match="Expected 9 parameters, got 3"):
+            network.parameters = np.array([1.0, 2.0, 3.0])
+        
+        # Test too many parameters
+        with pytest.raises(ValueError, match="Expected 9 parameters, got 15"):
+            network.parameters = np.array([1.0] * 15)
+    
+    def test_neural_network_parameters_different_sizes(self):
+        """Test parameters property with different network architectures."""
+        from mlai.neural_networks import ReLUActivation, LinearActivation
+        
+        # Test different architectures
+        test_cases = [
+            ([2, 1], [LinearActivation()]),  # Simple: 2->1
+            ([3, 2, 1], [ReLUActivation(), LinearActivation()]),  # 3->2->1
+            ([1, 4, 2, 1], [ReLUActivation(), ReLUActivation(), LinearActivation()]),  # 1->4->2->1
+        ]
+        
+        for dimensions, activations in test_cases:
+            network = mlai.NeuralNetwork(dimensions, activations)
+            
+            # Calculate expected parameter count
+            expected_length = 0
+            for i in range(len(dimensions) - 1):
+                expected_length += dimensions[i] * dimensions[i+1]  # weights
+                expected_length += dimensions[i+1]  # biases
+            
+            assert len(network.parameters) == expected_length
+            
+            # Test round-trip
+            original_params = network.parameters.copy()
+            network.parameters = original_params
+            np.testing.assert_array_equal(network.parameters, original_params)
+    
+    def test_dropout_neural_network_parameters_inheritance(self):
+        """Test that dropout neural networks inherit parameters property."""
+        from mlai.experimental import SimpleDropoutNeuralNetwork
+        
+        # Test SimpleDropoutNeuralNetwork
+        dropout_net = SimpleDropoutNeuralNetwork(nodes=2, drop_p=0.5)
+        
+        # Check that it has parameters property
+        params = dropout_net.parameters
+        assert isinstance(params, np.ndarray)
+        assert params.ndim == 1
+        
+        # Check expected length: w1(2) + b1(2) + w2(2) + b2(1) = 7
+        expected_length = 2 + 2 + 2 + 1
+        assert len(params) == expected_length
+        
+        # Test setting parameters
+        new_params = np.array([1.0, 2.0,  # w1
+                               0.1, 0.2,  # b1
+                               3.0, 4.0,  # w2
+                               0.5])      # b2
+        dropout_net.parameters = new_params
+        np.testing.assert_array_equal(dropout_net.parameters, new_params)
             
 if __name__ == '__main__':
     unittest.main()

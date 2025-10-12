@@ -650,6 +650,56 @@ class NeuralNetwork(Model):
         
         return final_gradient
     
+    @property
+    def parameters(self):
+        """
+        Get all trainable parameters as a 1D vector.
+        
+        Returns all network parameters (weights and biases for all layers) as a flattened array
+        in the order: [weights[0], biases[0], weights[1], biases[1], ...].
+        
+        :returns: 1D array of all trainable parameters
+        :rtype: numpy.ndarray
+        """
+        params = []
+        for i in range(len(self.weights)):
+            params.append(self.weights[i].flatten())
+            params.append(self.biases[i].flatten())
+        return np.concatenate(params)
+    
+    @parameters.setter
+    def parameters(self, value):
+        """
+        Set all trainable parameters from a 1D vector.
+        
+        Updates all network parameters from a flattened array in the order:
+        [weights[0], biases[0], weights[1], biases[1], ...].
+        
+        :param value: 1D array of parameters to set
+        :type value: numpy.ndarray
+        
+        :raises ValueError: If the parameter vector has incorrect length
+        """
+        # Calculate expected length
+        expected_length = 0
+        for i in range(len(self.weights)):
+            expected_length += self.weights[i].size + self.biases[i].size
+        
+        if len(value) != expected_length:
+            raise ValueError(f"Expected {expected_length} parameters, got {len(value)}")
+        
+        # Unpack parameters in the same order as the getter
+        start = 0
+        for i in range(len(self.weights)):
+            # Set weights
+            w_size = self.weights[i].size
+            self.weights[i] = value[start:start+w_size].reshape(self.weights[i].shape)
+            start += w_size
+            
+            # Set biases
+            b_size = self.biases[i].size
+            self.biases[i] = value[start:start+b_size].reshape(self.biases[i].shape)
+            start += b_size
 
 
 
