@@ -206,6 +206,24 @@ class TestExperimentalFeatures:
                 # Experimental features may not be fully stable
                 pass
 
+    def test_nonparametric_dropout_constructor_error_handling(self):
+        """Test NonparametricDropoutNeuralNetwork constructor error handling (lines 1091, 1093)."""
+        # Test with negative beta (should raise ValueError)
+        with pytest.raises(ValueError, match="Beta parameter must be positive"):
+            mlai.NonparametricDropoutNeuralNetwork(beta=-1.0)
+        
+        # Test with zero beta (should raise ValueError)
+        with pytest.raises(ValueError, match="Beta parameter must be positive"):
+            mlai.NonparametricDropoutNeuralNetwork(beta=0.0)
+        
+        # Test with negative n (should raise ValueError)
+        with pytest.raises(ValueError, match="Number of data points must be positive"):
+            mlai.NonparametricDropoutNeuralNetwork(n=0)
+        
+        # Test with negative n (should raise ValueError)
+        with pytest.raises(ValueError, match="Number of data points must be positive"):
+            mlai.NonparametricDropoutNeuralNetwork(n=-1)
+
 
 if __name__ == '__main__':
     unittest.main()
