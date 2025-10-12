@@ -163,6 +163,18 @@ class TestUtilityFunctions:
         assert result2.shape == (3, 3)
         assert np.all(np.isfinite(result2))
     
+    def test_radial_single_basis(self):
+        """Test radial function with single basis (lines 783-785)."""
+        X = np.array([[0.5], [1.0], [1.5]])
+        data_limits = [0.0, 2.0]
+        
+        # Test with num_basis=1 to trigger the else branch
+        result = mlai.radial(X, num_basis=1, data_limits=data_limits)
+        
+        assert result.shape == (X.shape[0], 1)
+        assert np.all(np.isfinite(result))
+        assert np.all(result >= 0)  # Gaussian values should be non-negative
+    
     def test_dist2(self):
         """Test dist2 function (lines 3184, 3191-3192)."""
         X1 = np.array([[1.0, 2.0], [3.0, 4.0]])
