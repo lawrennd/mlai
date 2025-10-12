@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mlai"
-version = "0.1.2"
+version = "0.1.3"
 description = "Package of simple models and plotting routines for teaching and lecturing about machine learning."
 authors = ["Neil D. Lawrence <lawrennd@gmail.com>"]
 license = "MIT"
