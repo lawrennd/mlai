@@ -221,6 +221,84 @@ class LM(ProbMapModel):
         self.update_sum_squares()
         return -self.num_data/2.*np.log(np.pi*2.)-self.num_data/2.*np.log(self.sigma2)-self.sum_squares/(2.*self.sigma2)
     
+    @property
+    def parameters(self):
+        """
+        Get all trainable parameters as a 1D vector: [weights, bias].
+        
+        This property returns the model parameters in the standard format
+        [weights, bias] to be consistent with neural networks and GLMs.
+        The internal w_star format [bias, weights] is reordered for external use.
+        
+        :returns: 1D array of parameters in order [weights, bias]
+        :rtype: numpy.ndarray
+        
+        Examples:
+            >>> model = LM(X, y, basis)
+            >>> model.fit()
+            >>> params = model.parameters
+            >>> print(f"Parameters shape: {params.shape}")
+            >>> print(f"First {len(params)-1} are weights, last is bias")
+        """
+        if not hasattr(self, 'w_star'):
+            raise ValueError("Model must be fitted or initialised before accessing parameters")
+        
+        return self.w_star.flatten()
+        
+    @parameters.setter
+    def parameters(self, value):
+        """
+        Set all trainable parameters from a 1D vector: [weights, bias].
+        
+        This property setter allows updating all model parameters from a
+        single 1D array in the standard format [weights, bias]. The parameters
+        are reordered to the internal w_star format [bias, weights].
+        
+        :param value: 1D array of parameters in order [weights, bias]
+        :type value: numpy.ndarray
+        
+        Examples:
+            >>> model = LM(X, y, basis)
+            >>> model.fit()
+            >>> new_params = model.parameters + 0.1  # Add small perturbation
+            >>> model.parameters = new_params
+        """
+        
+        value = np.asarray(value)
+        if value.ndim != 1:
+            raise ValueError("Parameters must be a 1D array")
+        
+        expected_length = self.w_star.size
+        if len(value) != expected_length:
+            raise ValueError(f"Expected {expected_length} parameters, got {len(value)}")
+        
+        n_weights = len(value)
+        self.w_star = value.reshape(-1, 1)
+        self.update_f()  # Update cached values after setting new parameters
+    
+    @property
+    def gradients(self):
+        """
+        Get the gradients of the objective function with respect to parameters.
+        
+        This property computes and returns the gradients of the sum of squares
+        objective function with respect to the model parameters.
+        
+        :returns: 1D array of gradients
+        :rtype: numpy.ndarray
+        
+        Examples:
+            >>> model = LM(X, y, basis)
+            >>> model.fit()
+            >>> grads = model.gradients
+            >>> print(f"Gradients shape: {grads.shape}")
+        """
+        # Compute gradient of sum of squares: 2 * Phi^T * (Phi * w_star - y)
+        self.update_f()
+        residual = self.f - self.y  # (n_samples, 1)
+        grad = 2 * (self.Phi.T @ residual)  # (n_params, 1)
+        return grad.flatten()
+    
 
 class Basis():
     """
@@ -281,8 +359,6 @@ def linear(x, **kwargs):
         >>> print(Phi.shape)  # (2, 3) - includes bias term
     """
     return np.hstack([np.ones((x.shape[0], 1)), np.asarray(x, dtype=float)])
-
-
 
 def polynomial(x, num_basis=4, data_limits=[-1., 1.]):
     """
@@ -810,9 +886,9 @@ class LR(ProbMapModel):
 
     def gradient(self):
         """
-        Generate the gradient of the parameter vector.
+        Generate the gradient of the objective function (the negative log-likelihood).
 
-        :returns: Gradient vector
+        :returns: Gradient vector of negative log-likelihood
         :rtype: numpy.ndarray
         """
         self.update_g()
@@ -820,7 +896,7 @@ class LR(ProbMapModel):
         grad = np.zeros((self.Phi.shape[1], 1))
         grad += -(self.Phi[y_bool, :].T @ (1 - self.g[y_bool, :]))
         grad += (self.Phi[~y_bool, :].T @ self.g[~y_bool, :])
-        return grad.flatten()  # Return 1D array 
+        return -grad.flatten()  # Return negative gradient for minimization 
     
     def fit(self, learning_rate=0.1, max_iterations=1000, tolerance=1e-6):
         """
@@ -835,11 +911,7 @@ class LR(ProbMapModel):
         """
         for iteration in range(max_iterations):
             old_objective = self.objective()
-            gradient = self.gradient()
-            # Flatten w_star for optimization, then reshape back
-            w_flat = self.w_star.flatten()
-            w_flat -= learning_rate * gradient
-            self.w_star = w_flat.reshape(self.w_star.shape)
+            self.parameters -= learning_rate * self.gradients  # Minimize negative log-likelihood (go in direction of negative gradient)
             new_objective = self.objective()
             
             if abs(new_objective - old_objective) < tolerance:
@@ -878,9 +950,9 @@ class LR(ProbMapModel):
         self.f = self.Phi @ self.w_star  # (n_samples, 1)
         self.g, self.log_g, self.log_gminus = self.compute_g(self.f)
         
-    def objective(self):
+    def log_likelihood(self):
         """
-        Compute the objective function (log-likelihood).
+        Compute the log-likelihood.
 
         :returns: Log-likelihood value
         :rtype: float
@@ -888,3 +960,70 @@ class LR(ProbMapModel):
         self.update_g()
         y_bool = self.y.flatten().astype(bool)  # Ensure 1D
         return self.log_g[y_bool, :].sum() + self.log_gminus[~y_bool, :].sum()
+            
+    @property
+    def parameters(self):
+        """
+        Get all trainable parameters as a 1D vector.
+        
+        This property returns the model parameters as a flattened version
+        of w_star. The bias is included as the first element due to the
+        design of the Phi matrix (with a column of ones).
+        
+        :returns: 1D array of parameters
+        :rtype: numpy.ndarray
+        
+        Examples:
+            >>> model = LR(X, y, basis)
+            >>> model.fit()
+            >>> params = model.parameters
+            >>> print(f"Parameters shape: {params.shape}")
+        """
+        return self.w_star.flatten()
+    
+    @parameters.setter
+    def parameters(self, value):
+        """
+        Set all trainable parameters from a 1D vector.
+        
+        This property setter allows updating all model parameters from a
+        single 1D array. The parameters are reshaped to match w_star.
+        
+        :param value: 1D array of parameters
+        :type value: numpy.ndarray
+        
+        Examples:
+            >>> model = LR(X, y, basis)
+            >>> model.fit()
+            >>> new_params = model.parameters + 0.1  # Add small perturbation
+            >>> model.parameters = new_params
+        """
+        value = np.asarray(value)
+        if value.ndim != 1:
+            raise ValueError("Parameters must be a 1D array")
+        
+        expected_length = self.w_star.size
+        if len(value) != expected_length:
+            raise ValueError(f"Expected {expected_length} parameters, got {len(value)}")
+        
+        self.w_star = value.reshape(-1, 1)
+        self.update_g()  # Update cached values after setting new parameters
+    
+    @property
+    def gradients(self):
+        """
+        Get the gradients of the objective function with respect to parameters.
+        
+        This property computes and returns the gradients of the log-likelihood
+        objective function with respect to the model parameters.
+        
+        :returns: 1D array of gradients
+        :rtype: numpy.ndarray
+        
+        Examples:
+            >>> model = LR(X, y, basis)
+            >>> model.fit()
+            >>> grads = model.gradients
+            >>> print(f"Gradients shape: {grads.shape}")
+        """
+        return self.gradient()
