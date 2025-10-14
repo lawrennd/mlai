@@ -928,21 +928,17 @@ class LR(ProbMapModel):
         :returns: Tuple of (g, log_g, log_gminus)
         :rtype: tuple
         """
-        eps = 1e-16
+        # Use log-sum-exp trick for numerical stability
         g = 1./(1+np.exp(-f))
-        log_g = np.zeros((f.shape))
-        log_gminus = np.zeros((f.shape))
-        # compute log_g for values out of bound
-        bound = np.log(eps)
-        ind = f<-bound
-        log_g[ind] = -f[ind]
-        log_gminus[ind] = eps
-        ind = f>bound
-        log_g[ind] = eps
-        log_gminus[ind] = f[ind]
-        ind = np.logical_and(f>=-bound, f<=bound)
-        log_g[ind] = np.log(g[ind])
-        log_gminus[ind] = np.log(1-g[ind])
+        
+        # log_g = log(g) = log(1/(1+exp(-f))) = -log(1+exp(-f))
+        # Use log-sum-exp trick: log(1+exp(-f)) = max(0, -f) + log(1+exp(-max(0, -f)))
+        max_val = np.maximum(0, -f)
+        log_g = -max_val - np.log(1 + np.exp(-f - max_val))
+        
+        # log_gminus = log(1-g) = log(1-1/(1+exp(-f))) = log(exp(-f)/(1+exp(-f)))
+        # = -f - log(1+exp(-f)) = -f + log_g
+        log_gminus = -f + log_g
         return g, log_g, log_gminus
         
     def update_g(self):
@@ -954,16 +950,17 @@ class LR(ProbMapModel):
         
     def log_likelihood(self):
         """
-        Compute the log-likelihood using standard formula.
+        Compute the log-likelihood.
 
         :returns: Log-likelihood value
         :rtype: float
         """
         self.update_g()
         y_flat = self.y.flatten()
+        g_flat = self.g.flatten()
         # Standard log-likelihood: sum(y * log(p) + (1-y) * log(1-p))
         # Avoid log(0) by clipping probabilities
-        proba = np.clip(self.g.flatten(), 1e-15, 1 - 1e-15)
+        proba = np.clip(g_flat, 1e-15, 1 - 1e-15)
         log_likelihood = np.sum(y_flat * np.log(proba) + (1 - y_flat) * np.log(1 - proba))
         return log_likelihood
             
