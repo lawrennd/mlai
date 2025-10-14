@@ -268,11 +268,10 @@ class LM(ProbMapModel):
         if value.ndim != 1:
             raise ValueError("Parameters must be a 1D array")
         
-        expected_length = self.w_star.size
+        expected_length = self.Phi.shape[1]
         if len(value) != expected_length:
             raise ValueError(f"Expected {expected_length} parameters, got {len(value)}")
         
-        n_weights = len(value)
         self.w_star = value.reshape(-1, 1)
         self.update_f()  # Update cached values after setting new parameters
     
@@ -887,16 +886,19 @@ class LR(ProbMapModel):
     def gradient(self):
         """
         Generate the gradient of the objective function (the negative log-likelihood).
-
+        
         :returns: Gradient vector of negative log-likelihood
         :rtype: numpy.ndarray
         """
         self.update_g()
         y_bool = self.y.flatten().astype(bool)  # Ensure 1D
-        grad = np.zeros((self.Phi.shape[1], 1))
-        grad += -(self.Phi[y_bool, :].T @ (1 - self.g[y_bool, :]))
-        grad += (self.Phi[~y_bool, :].T @ self.g[~y_bool, :])
-        return -grad.flatten()  # Return negative gradient for minimization 
+        
+        # Compute deltas: (y - g) for each data point
+        deltas = self.y - self.g
+        
+        # Gradient is Phi^T @ deltas
+        grad = self.Phi.T @ deltas
+        return -grad.flatten()  # Negative because we're minimizing negative log-likelihood 
     
     def fit(self, learning_rate=0.1, max_iterations=1000, tolerance=1e-6):
         """
@@ -927,7 +929,7 @@ class LR(ProbMapModel):
         :rtype: tuple
         """
         eps = 1e-16
-        g = 1./(1+np.exp(f))
+        g = 1./(1+np.exp(-f))
         log_g = np.zeros((f.shape))
         log_gminus = np.zeros((f.shape))
         # compute log_g for values out of bound
@@ -952,14 +954,18 @@ class LR(ProbMapModel):
         
     def log_likelihood(self):
         """
-        Compute the log-likelihood.
+        Compute the log-likelihood using standard formula.
 
         :returns: Log-likelihood value
         :rtype: float
         """
         self.update_g()
-        y_bool = self.y.flatten().astype(bool)  # Ensure 1D
-        return self.log_g[y_bool, :].sum() + self.log_gminus[~y_bool, :].sum()
+        y_flat = self.y.flatten()
+        # Standard log-likelihood: sum(y * log(p) + (1-y) * log(1-p))
+        # Avoid log(0) by clipping probabilities
+        proba = np.clip(self.g.flatten(), 1e-15, 1 - 1e-15)
+        log_likelihood = np.sum(y_flat * np.log(proba) + (1 - y_flat) * np.log(1 - proba))
+        return log_likelihood
             
     @property
     def parameters(self):
