@@ -207,7 +207,27 @@ class SimpleNeuralNetwork(Model):
         """
         vxmb = self.w1*x + self.b1
         phi = vxmb*(vxmb>0)
-        return np.sum(self.w2*phi) + self.b2
+        output = np.sum(self.w2*phi) + self.b2
+        
+        # Cache values needed for gradient computation
+        self._last_input = x
+        self._last_vxmb = vxmb
+        self._last_phi = phi
+        self._last_output = output
+        
+        return output
+
+    def set_output_gradient(self, output_gradient):
+        """
+        Set the gradient of the loss with respect to the network output.
+        
+        This method should be called after computing the loss to enable
+        gradient computation via the gradients property.
+        
+        :param output_gradient: Gradient of loss with respect to network output
+        :type output_gradient: float
+        """
+        self._last_output_gradient = output_gradient
 
     @property
     def parameters(self):
@@ -259,6 +279,62 @@ class SimpleNeuralNetwork(Model):
         self.w2 = value[start:start+w2_size].reshape(self.w2.shape)
         start += w2_size
         self.b2 = value[start:start+b2_size].reshape(self.b2.shape)
+
+    @property
+    def gradients(self):
+        """
+        Get gradients of the loss with respect to all parameters.
+        
+        This property computes the gradients of the loss function with respect
+        to all trainable parameters (w1, b1, w2, b2) using backpropagation.
+        
+        Note: This requires that the network has been used in a forward pass
+        and that the loss has been computed. The gradients are computed
+        using the chain rule through the ReLU activation function.
+        
+        :returns: 1D array of gradients in the same order as parameters
+        :rtype: numpy.ndarray
+        
+        :raises ValueError: If the network hasn't been used in a forward pass
+        """
+        if not hasattr(self, '_last_input') or not hasattr(self, '_last_output_gradient'):
+            raise ValueError("Network must be used in a forward pass with loss computation before accessing gradients")
+        
+        x = self._last_input
+        output_grad = self._last_output_gradient
+        
+        # Use cached values from last forward pass
+        vxmb = self._last_vxmb
+        phi = self._last_phi
+        
+        # Gradients for output layer (w2, b2)
+        # dL/dw2 = dL/dy * dy/dw2 = output_grad * phi
+        # dL/db2 = dL/dy * dy/db2 = output_grad * 1
+        grad_w2 = output_grad * phi
+        grad_b2 = output_grad
+        
+        # Gradients for hidden layer (w1, b1) using chain rule
+        # dL/dw1 = dL/dy * dy/dphi * dphi/dvxmb * dvxmb/dw1
+        # dL/db1 = dL/dy * dy/dphi * dphi/dvxmb * dvxmb/db1
+        
+        # dy/dphi = w2 (from output layer)
+        # dphi/dvxmb = (vxmb > 0) (ReLU derivative)
+        # dvxmb/dw1 = x, dvxmb/db1 = 1
+        
+        # Chain: output_grad * w2 * (vxmb > 0) * x
+        relu_derivative = (vxmb > 0).astype(float)
+        hidden_grad = output_grad * self.w2 * relu_derivative
+        
+        grad_w1 = hidden_grad * x
+        grad_b1 = hidden_grad
+        
+        # Return gradients in the same order as parameters: [w1, b1, w2, b2]
+        return np.concatenate([
+            grad_w1.flatten(),
+            grad_b1.flatten(),
+            grad_w2.flatten(),
+            np.array([grad_b2])  # Convert scalar to array
+        ])
 
 
 def relu_activation(x):

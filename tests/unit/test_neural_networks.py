@@ -1412,6 +1412,121 @@ class TestParametersProperty:
         np.testing.assert_array_equal(dropout_net.parameters, new_params)
 
 
+class TestSimpleNeuralNetworkGradients(unittest.TestCase):
+    """Test gradient computation for SimpleNeuralNetwork using numerical gradient verification."""
+    
+    def test_simple_neural_network_gradients_consistency(self):
+        """Test that SimpleNeuralNetwork gradients match numerical gradients."""
+        from mlai.neural_networks import SimpleNeuralNetwork
+        from mlai import finite_difference_gradient, verify_gradient_implementation
+        
+        # Create a simple network
+        network = SimpleNeuralNetwork(nodes=3)
+        
+        # Test input
+        x = 2.0
+        
+        # Forward pass
+        output = network.predict(x)
+        network.set_output_gradient(1.0)  # Set output gradient to 1.0
+        
+        # Get analytical gradients
+        analytical_grad = network.gradients
+        
+        # Define objective function for numerical gradient
+        def objective_func(params):
+            temp_network = SimpleNeuralNetwork(nodes=3)
+            temp_network.parameters = params
+            return temp_network.predict(x)
+        
+        # Compute numerical gradients
+        numerical_grad = finite_difference_gradient(objective_func, network.parameters)
+        
+        # Verify gradients match
+        self.assertTrue(verify_gradient_implementation(analytical_grad, numerical_grad, rtol=1e-4))
+    
+    def test_simple_neural_network_gradients_with_different_outputs(self):
+        """Test gradients with different output gradient values."""
+        from mlai.neural_networks import SimpleNeuralNetwork
+        
+        network = SimpleNeuralNetwork(nodes=2)
+        x = 1.5
+        
+        # Forward pass
+        output = network.predict(x)
+        
+        # Test with different output gradients
+        for output_grad in [0.5, 2.0, -1.0]:
+            network.set_output_gradient(output_grad)
+            gradients = network.gradients
+            
+            # Check that gradients are proportional to output gradient
+            # (since the network is linear in the output layer)
+            assert len(gradients) == len(network.parameters)
+            assert np.all(np.isfinite(gradients))
+    
+    def test_simple_neural_network_gradients_error_handling(self):
+        """Test that gradients property raises appropriate errors."""
+        from mlai.neural_networks import SimpleNeuralNetwork
+        
+        network = SimpleNeuralNetwork(nodes=2)
+        
+        # Should raise error if no forward pass has been done
+        with self.assertRaises(ValueError, msg="Network must be used in a forward pass with loss computation before accessing gradients"):
+            _ = network.gradients
+        
+        # Forward pass but no output gradient set
+        network.predict(1.0)
+        with self.assertRaises(ValueError, msg="Network must be used in a forward pass with loss computation before accessing gradients"):
+            _ = network.gradients
+    
+    def test_simple_neural_network_gradients_parameter_consistency(self):
+        """Test that gradients have the same shape as parameters."""
+        from mlai.neural_networks import SimpleNeuralNetwork
+        
+        for nodes in [1, 2, 5]:
+            network = SimpleNeuralNetwork(nodes=nodes)
+            x = 1.0
+            
+            # Forward pass and set output gradient
+            network.predict(x)
+            network.set_output_gradient(1.0)
+            
+            # Get gradients
+            gradients = network.gradients
+            parameters = network.parameters
+            
+            # Check shapes match
+            self.assertEqual(len(gradients), len(parameters))
+            self.assertEqual(gradients.shape, parameters.shape)
+    
+    def test_simple_neural_network_gradients_optimization_step(self):
+        """Test that gradients can be used for optimization steps."""
+        from mlai.neural_networks import SimpleNeuralNetwork
+        
+        network = SimpleNeuralNetwork(nodes=3)
+        x = 1.0
+        learning_rate = 0.01
+        
+        # Forward pass
+        output = network.predict(x)
+        network.set_output_gradient(1.0)
+        
+        # Get current parameters and gradients
+        params = network.parameters.copy()
+        grads = network.gradients
+        
+        # Simulate one optimization step: params = params - lr * grads
+        new_params = params - learning_rate * grads
+        network.parameters = new_params
+        
+        # Verify parameters were updated
+        np.testing.assert_array_almost_equal(network.parameters, new_params, decimal=10)
+        
+        # Verify that the new parameters are different from original
+        self.assertFalse(np.allclose(params, new_params))
+
+
 class TestLayerArchitecture(unittest.TestCase):
     """Test the new layer architecture (Layer, LinearLayer, FullyConnectedLayer, LayeredNeuralNetwork)."""
     
