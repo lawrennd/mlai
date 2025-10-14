@@ -14,6 +14,7 @@ from . import dimred
 from . import optimisation
 from . import experimental
 from . import data
+from . import loss
 
 # Import base model classes to make them available at package level
 from .models import Model, ProbModel, MapModel, ProbMapModel
@@ -38,13 +39,17 @@ from .neural_networks import (
     SimpleNeuralNetwork, NeuralNetwork, LayeredNeuralNetwork,
     init_perceptron, update_perceptron,
     relu_activation, sigmoid_activation, linear_activation, soft_relu_activation,
-    LinearActivation, ReLUActivation, SigmoidActivation, SoftReLUActivation,
-    LossFunction, MeanSquaredError, MeanAbsoluteError, HuberLoss,
-    BinaryCrossEntropyLoss, CrossEntropyLoss,
+    Activation, LinearActivation, ReLUActivation, SigmoidActivation, SoftReLUActivation,
     # Layer classes
     Layer, LinearLayer, FullyConnectedLayer, MultiInputLayer,
     AttentionLayer, MultiHeadAttentionLayer, PositionalEncodingLayer,
     ConvolutionalLayer, MaxPoolingLayer, FlattenLayer
+)
+
+# Import loss functions to make them available at package level
+from .loss import (
+    LossFunction, MeanSquaredError, MeanAbsoluteError, HuberLoss,
+    BinaryCrossEntropyLoss, CrossEntropyLoss
 )
 
 # Import plot module
