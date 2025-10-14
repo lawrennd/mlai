@@ -800,6 +800,48 @@ class NeuralNetwork(Model):
             self.biases[i] = value[start:start+b_size].reshape(self.biases[i].shape)
             start += b_size
 
+    def set_output_gradient(self, output_gradient):
+        """
+        Set the gradient of the loss with respect to the network output.
+        
+        This method should be called after computing the loss to enable
+        gradient computation via the gradients property.
+        
+        :param output_gradient: Gradient of loss with respect to network output
+        :type output_gradient: numpy.ndarray
+        """
+        self._last_output_gradient = output_gradient
+
+    @property
+    def gradients(self):
+        """
+        Get gradients of the loss with respect to all parameters.
+        
+        This property computes the gradients of the loss function with respect
+        to all trainable parameters using backpropagation through the network.
+        
+        Note: This requires that the network has been used in a forward pass
+        and that the loss gradient has been set via set_output_gradient().
+        
+        :returns: 1D array of gradients in the same order as parameters
+        :rtype: numpy.ndarray
+        
+        :raises ValueError: If the network hasn't been used in a forward pass
+        """
+        if not hasattr(self, '_last_output_gradient'):
+            raise ValueError("Network must be used in a forward pass with loss computation before accessing gradients")
+        
+        # Use the existing backward method to compute gradients
+        gradient_dict = self.backward(self._last_output_gradient)
+        
+        # Flatten gradients in the same order as parameters: [weights[0], biases[0], weights[1], biases[1], ...]
+        gradients = []
+        for i in range(len(self.weights)):
+            gradients.append(gradient_dict['weight_gradients'][i].flatten())
+            gradients.append(gradient_dict['bias_gradients'][i].flatten())
+        
+        return np.concatenate(gradients)
+
 
 
 class LossFunction:
