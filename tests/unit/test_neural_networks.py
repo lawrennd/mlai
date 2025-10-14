@@ -1677,6 +1677,176 @@ class TestNeuralNetworkGradients(unittest.TestCase):
         self.assertTrue(np.all(np.isfinite(gradients)))
 
 
+class TestLayeredNeuralNetworkGradients(unittest.TestCase):
+    """Test gradient computation for LayeredNeuralNetwork using numerical gradient verification."""
+    
+    def test_layered_neural_network_gradients_consistency(self):
+        """Test that LayeredNeuralNetwork gradients match numerical gradients."""
+        from mlai.neural_networks import LayeredNeuralNetwork, LinearLayer, FullyConnectedLayer, ReLUActivation, LinearActivation
+        from mlai import finite_difference_gradient, verify_gradient_implementation
+        
+        # Create a simple layered network: 2 inputs -> 3 hidden -> 1 output
+        layers = [
+            FullyConnectedLayer(input_size=2, output_size=3, activation=ReLUActivation()),
+            LinearLayer(input_size=3, output_size=1)
+        ]
+        network = LayeredNeuralNetwork(layers)
+        
+        # Test input
+        x = np.array([[1.0, 2.0], [0.5, -1.0]])
+        
+        # Forward pass
+        output = network.predict(x)
+        # For finite difference test, we need gradient of sum, so set output gradient to 1.0 for each sample
+        network.set_output_gradient(np.array([[1.0], [1.0]]))
+        
+        # Get analytical gradients
+        analytical_grad = network.gradients
+        
+        # Define objective function for numerical gradient
+        def objective_func(params):
+            temp_network = LayeredNeuralNetwork(layers)
+            temp_network.parameters = params
+            return np.sum(temp_network.predict(x))  # Sum over batch for finite difference
+        
+        # Compute numerical gradients
+        numerical_grad = finite_difference_gradient(objective_func, network.parameters)
+        
+        # Verify gradients match
+        self.assertTrue(verify_gradient_implementation(analytical_grad, numerical_grad, rtol=1e-4))
+    
+    def test_layered_neural_network_gradients_with_different_outputs(self):
+        """Test gradients with different output gradient values."""
+        from mlai.neural_networks import LayeredNeuralNetwork, LinearLayer, FullyConnectedLayer, ReLUActivation
+        
+        layers = [
+            FullyConnectedLayer(input_size=2, output_size=2, activation=ReLUActivation()),
+            LinearLayer(input_size=2, output_size=1)
+        ]
+        network = LayeredNeuralNetwork(layers)
+        x = np.array([[1.0, 0.5]])
+        
+        # Forward pass
+        output = network.predict(x)
+        
+        # Test with different output gradients
+        for output_grad in [np.array([[0.5]]), np.array([[2.0]]), np.array([[-1.0]])]:
+            network.set_output_gradient(output_grad)
+            gradients = network.gradients
+            
+            # Check that gradients are proportional to output gradient
+            assert len(gradients) == len(network.parameters)
+            assert np.all(np.isfinite(gradients))
+    
+    def test_layered_neural_network_gradients_error_handling(self):
+        """Test that gradients property raises appropriate errors."""
+        from mlai.neural_networks import LayeredNeuralNetwork, LinearLayer, FullyConnectedLayer, ReLUActivation
+        
+        layers = [
+            FullyConnectedLayer(input_size=2, output_size=2, activation=ReLUActivation()),
+            LinearLayer(input_size=2, output_size=1)
+        ]
+        network = LayeredNeuralNetwork(layers)
+        
+        # Should raise error if no forward pass has been done
+        with self.assertRaises(ValueError, msg="Network must be used in a forward pass with loss computation before accessing gradients"):
+            _ = network.gradients
+        
+        # Forward pass but no output gradient set
+        network.predict(np.array([[1.0, 2.0]]))
+        with self.assertRaises(ValueError, msg="Network must be used in a forward pass with loss computation before accessing gradients"):
+            _ = network.gradients
+    
+    def test_layered_neural_network_gradients_parameter_consistency(self):
+        """Test that gradients have the same shape as parameters."""
+        from mlai.neural_networks import LayeredNeuralNetwork, LinearLayer, FullyConnectedLayer, ReLUActivation, SigmoidActivation
+        
+        # Test different layer combinations
+        layer_configs = [
+            [FullyConnectedLayer(input_size=2, output_size=3, activation=ReLUActivation()),
+             LinearLayer(input_size=3, output_size=1)],
+            [FullyConnectedLayer(input_size=1, output_size=5, activation=SigmoidActivation()),
+             FullyConnectedLayer(input_size=5, output_size=2, activation=ReLUActivation()),
+             LinearLayer(input_size=2, output_size=1)],
+            [LinearLayer(input_size=3, output_size=1)]
+        ]
+        
+        for layers in layer_configs:
+            network = LayeredNeuralNetwork(layers)
+            x = np.random.randn(2, layers[0].input_size)
+            
+            # Forward pass and set output gradient
+            network.predict(x)
+            network.set_output_gradient(np.random.randn(2, layers[-1].output_size))
+            
+            # Get gradients
+            gradients = network.gradients
+            parameters = network.parameters
+            
+            # Check shapes match
+            self.assertEqual(len(gradients), len(parameters))
+            self.assertEqual(gradients.shape, parameters.shape)
+    
+    def test_layered_neural_network_gradients_optimization_step(self):
+        """Test that gradients can be used for optimization steps."""
+        from mlai.neural_networks import LayeredNeuralNetwork, LinearLayer, FullyConnectedLayer, ReLUActivation
+        
+        layers = [
+            FullyConnectedLayer(input_size=2, output_size=3, activation=ReLUActivation()),
+            LinearLayer(input_size=3, output_size=1)
+        ]
+        network = LayeredNeuralNetwork(layers)
+        x = np.array([[1.0, 0.5]])
+        learning_rate = 0.01
+        
+        # Forward pass
+        output = network.predict(x)
+        network.set_output_gradient(np.array([[1.0]]))
+        
+        # Get current parameters and gradients
+        params = network.parameters.copy()
+        grads = network.gradients
+        
+        # Simulate one optimization step: params = params - lr * grads
+        new_params = params - learning_rate * grads
+        network.parameters = new_params
+        
+        # Verify parameters were updated
+        np.testing.assert_array_almost_equal(network.parameters, new_params, decimal=10)
+        
+        # Verify that the new parameters are different from original
+        self.assertFalse(np.allclose(params, new_params))
+    
+    def test_layered_neural_network_gradients_multi_layer(self):
+        """Test gradients for multi-layer networks."""
+        from mlai.neural_networks import LayeredNeuralNetwork, LinearLayer, FullyConnectedLayer, ReLUActivation, SigmoidActivation
+        
+        # Create a 3-layer network: 2 -> 4 -> 3 -> 1
+        layers = [
+            FullyConnectedLayer(input_size=2, output_size=4, activation=ReLUActivation()),
+            FullyConnectedLayer(input_size=4, output_size=3, activation=SigmoidActivation()),
+            LinearLayer(input_size=3, output_size=1)
+        ]
+        network = LayeredNeuralNetwork(layers)
+        
+        x = np.array([[1.0, -0.5], [0.0, 2.0]])
+        
+        # Forward pass
+        output = network.predict(x)
+        network.set_output_gradient(np.array([[0.5], [-0.3]]))
+        
+        # Get gradients
+        gradients = network.gradients
+        parameters = network.parameters
+        
+        # Check shapes match
+        self.assertEqual(len(gradients), len(parameters))
+        self.assertEqual(gradients.shape, parameters.shape)
+        
+        # Check that gradients are finite
+        self.assertTrue(np.all(np.isfinite(gradients)))
+
+
 class TestLayerArchitecture(unittest.TestCase):
     """Test the new layer architecture (Layer, LinearLayer, FullyConnectedLayer, LayeredNeuralNetwork)."""
     

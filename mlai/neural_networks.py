@@ -1623,6 +1623,99 @@ class LayeredNeuralNetwork(Model):
             layer.parameters = value[start:start + layer_size]
             start += layer_size
 
+    def set_output_gradient(self, output_gradient):
+        """
+        Set the gradient of the loss with respect to the network output.
+        
+        This method should be called after computing the loss to enable
+        gradient computation via the gradients property.
+        
+        :param output_gradient: Gradient of loss with respect to network output
+        :type output_gradient: numpy.ndarray
+        """
+        self._last_output_gradient = output_gradient
+
+    @property
+    def gradients(self):
+        """
+        Get gradients of the loss with respect to all parameters.
+        
+        This property computes the gradients of the loss function with respect
+        to all trainable parameters using backpropagation through all layers.
+        
+        Note: This requires that the network has been used in a forward pass
+        and that the loss gradient has been set via set_output_gradient().
+        
+        :returns: 1D array of gradients in the same order as parameters
+        :rtype: numpy.ndarray
+        
+        :raises ValueError: If the network hasn't been used in a forward pass
+        """
+        if not hasattr(self, '_last_output_gradient'):
+            raise ValueError("Network must be used in a forward pass with loss computation before accessing gradients")
+        
+        # Compute gradients for each layer
+        gradients = []
+        current_grad = self._last_output_gradient
+        
+        # Backpropagate through layers in reverse order and compute parameter gradients
+        for i, layer in enumerate(reversed(self.layers)):
+            layer_idx = len(self.layers) - 1 - i
+            
+            # Get the input to this layer (stored during forward pass)
+            if layer_idx == 0:
+                layer_input = self.activations[0]  # Input to first layer
+            else:
+                layer_input = self.activations[layer_idx]  # Input to this layer
+            
+            # Compute parameter gradients for this layer
+            layer_gradients = self._compute_layer_parameter_gradients(layer, layer_input, current_grad)
+            gradients.insert(0, layer_gradients)  # Insert at beginning to maintain order
+            
+            # Propagate gradient backward through this layer
+            current_grad = layer.backward(current_grad)
+        
+        return np.concatenate(gradients)
+    
+    def _compute_layer_parameter_gradients(self, layer, layer_input, grad_output):
+        """
+        Compute parameter gradients for a specific layer.
+        
+        This method handles different layer types and computes their parameter gradients.
+        
+        :param layer: The layer to compute gradients for
+        :type layer: Layer
+        :param layer_input: Input to the layer
+        :type layer_input: numpy.ndarray
+        :param grad_output: Gradient from the next layer
+        :type grad_output: numpy.ndarray
+        :returns: Parameter gradients for the layer
+        :rtype: numpy.ndarray
+        """
+        if isinstance(layer, LinearLayer):
+            # For LinearLayer: y = xW + b
+            # dL/dW = x^T @ grad_output
+            # dL/db = sum(grad_output, axis=0)
+            weight_grad = layer_input.T @ grad_output
+            bias_grad = np.sum(grad_output, axis=0)
+            return np.concatenate([weight_grad.flatten(), bias_grad.flatten()])
+        
+        elif isinstance(layer, FullyConnectedLayer):
+            # For FullyConnectedLayer: y = activation(xW + b)
+            # Need to compute gradients through the activation
+            z = layer_input @ layer.W + layer.b  # Pre-activation
+            activation_grad = layer.activation.gradient(z)
+            grad_z = grad_output * activation_grad
+            
+            weight_grad = layer_input.T @ grad_z
+            bias_grad = np.sum(grad_z, axis=0)
+            return np.concatenate([weight_grad.flatten(), bias_grad.flatten()])
+        
+        else:
+            # For other layer types, we need to implement specific gradient computation
+            # This is a placeholder - would need to implement for each layer type
+            raise NotImplementedError(f"Parameter gradient computation not implemented for {type(layer)}")
+
 
 class MultiInputLayer(Layer):
     """
