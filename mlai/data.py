@@ -28,6 +28,7 @@ __all__ = [
     'generate_pattern_sequences',
     'generate_text_sequences',
     'create_image_data',
+    'create_synthetic_data',
 ]
 
 def generate_cluster_data(n_points_per_cluster=30):
@@ -274,3 +275,19 @@ def create_image_data(n_samples=100, image_size=28, n_classes=3):
         y.append(i % n_classes)
     
     return np.array(X), np.array(y)
+
+def create_synthetic_data(n_samples=100, task='regression'):
+    """Create synthetic datasets for demonstration."""
+    np.random.seed(42)
+    
+    if task == 'regression':
+        # Non-linear regression: y = x1^2 + x2^2 + noise
+        X = np.random.randn(n_samples, 2)
+        y = (X[:, 0]**2 + X[:, 1]**2).reshape(-1, 1) + 0.1 * np.random.randn(n_samples, 1)
+        return X, y
+    
+    elif task == 'classification':
+        # Binary classification: x1^2 + x2^2 > 1
+        X = np.random.randn(n_samples, 2)
+        y = ((X[:, 0]**2 + X[:, 1]**2) > 1.0).astype(float).reshape(-1, 1)
+        return X, y
