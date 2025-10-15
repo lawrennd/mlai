@@ -75,6 +75,9 @@ from .dimred import (
     ppca_eig, ppca_svd, ppca_posterior, kruskal_stress
 )
 
+# Import optimization functions to make them available at package level
+from .optimisation import Optimiser, SGD, Adam, train_model
+
 # Import GPy-dependent modules if available
 if GPY_AVAILABLE:
     from . import mountain_car
