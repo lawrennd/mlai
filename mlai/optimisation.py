@@ -224,6 +224,10 @@ def train_model(model, X, y, loss_fn, optimiser, n_epochs=100, verbose=True):
         # Forward pass
         y_pred = model.predict(X)
         
+        # Handle models that return (predictions, uncertainty) tuples
+        if isinstance(y_pred, tuple):
+            y_pred = y_pred[0]
+        
         # Compute loss
         loss = loss_fn.forward(y_pred, y)
         losses.append(loss)
@@ -231,8 +235,9 @@ def train_model(model, X, y, loss_fn, optimiser, n_epochs=100, verbose=True):
         # Compute loss gradient
         loss_gradient = loss_fn.gradient(y_pred, y)
         
-        # Set output gradient for the model
-        model.set_output_gradient(loss_gradient)
+        # Set output gradient for the model (if it has this method)
+        if hasattr(model, 'set_output_gradient'):
+            model.set_output_gradient(loss_gradient)
         
         # optimisation step
         optimiser.step(model)
