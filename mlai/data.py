@@ -278,7 +278,7 @@ def create_image_data(n_samples=100, image_size=28, n_classes=3):
 
 def create_synthetic_data(n_samples=100, task='regression'):
     """Create synthetic datasets for demonstration."""
-    np.random.seed(42)
+    np.random.seed(24)
     
     if task == 'regression':
         # Non-linear regression: y = x1^2 + x2^2 + noise

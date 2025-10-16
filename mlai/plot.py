@@ -3749,7 +3749,7 @@ def neural_network(directory='../diagrams'):
     model.add_layer(layer(width=8, label='h_{{1, {index}}}',
                     text=r'$\mathbf{h}_1=\boldsymbol{\phi}\left(\mathbf{W}_1\mathbf{x}\right)$'))
     model.add_layer(layer(width=1, label='y',
-                    text=r'$y=\mathbf{w}_2^\top\mathbf{h}_31',
+                    text=r'$y=\mathbf{w}_2^\top\mathbf{h}_{1}$',
                     observed=True))
     fig, ax = model.draw(grid_unit=3)
     ma.write_figure('neural-network.svg',
