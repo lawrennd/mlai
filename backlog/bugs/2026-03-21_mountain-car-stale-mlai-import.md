@@ -42,6 +42,8 @@ The functions actually used via the `ma` alias (`write_figure` and `write_animat
 ## Related
 
 - Commit: `970c4bb` — Fix stale mlai.mlai import in mountain_car and add tests
+- `backlog/bugs/2025-10-05_missing-dependencies-test-failures.md` — broader task for handling
+  optional dependencies in tests; this fix establishes the GPy mocking pattern
 
 ## Progress Updates
 
