@@ -13,7 +13,7 @@ from IPython.display import display, HTML
 from pylab import cm
 
 import mlai.plot as plot
-import mlai.mlai as ma
+import mlai.utils as ma
 
 N_STEPS_MAX = 500
 
