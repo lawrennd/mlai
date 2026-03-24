@@ -1930,28 +1930,37 @@ def height_weight(h=None, w=None, muh=1.7, varh=0.0225,
     weight(ax[1], w, pw)
     ma.write_figure('height_weight_gaussian.svg', directory=diagrams, transparent=True)
 
-def independent_height_weight(h=None, w=None, muh=1.7, varh=0.0225,
-                              muw=75, varw=36, num_samps=20,
+def independent_gaussians_sample(x=None, y=None, mu_x=1.7, var_x=0.0225,
+                              mu_y=75, var_y=36, num_samps=20,
+                              xlabel='$h/m$', ylabel='$w/kg$',
+                              filestub="independent_height_weight",
                               diagrams='../diagrams'):
     """
     Plot independent height and weight samples.
 
-    :param h: Height data (optional).
-    :param w: Weight data (optional).
-    :param muh: Mean height (default: 1.7).
-    :param varh: Variance of height (default: 0.0225).
-    :param muw: Mean weight (default: 75).
-    :param varw: Variance of weight (default: 36).
+    :param x: Height data (optional).
+    :param y: Weight data (optional).
+    :param mu_x: Mean x (default: 0).
+    :param var_x: Variance of x (default: 1).
+    :param mu_y: Mean y (default: 1).
+    :param var_y: Variance of y (default: 1).
     :param num_samps: Number of samples to generate (default: 20).
+    :param xlabel: label for the x axis.
+    :param ylabel: label for the y axis.
+    :param filestub: filestub for saved diagrams.
     :param diagrams: Directory to save the plot (default: '../diagrams').
     """
-    if h is None:
-        h = np.linspace(1.25, 2.15, 100)[:, np.newaxis]
-    if w is None:
-        w = np.linspace(55, 95, 100)[:, np.newaxis]
+    sd_x = np.sqrt(var_x)
+    sd_y = np.sqrt(var_y)
+    if not os.path.exists(diagrams):
+        os.mkdir(diagrams)
+    if x is None:
+        x = np.linspace(mu_x-3*sd_x, mu_x+3*sd_x, 100)[:, np.newaxis]
+    if y is None:
+        y = np.linspace(mu_y-3*sd_y, mu_y+3*sd_y, 100)[:, np.newaxis]
 
-    ph = 1/np.sqrt(tau*varh)*np.exp(-1/(2*varh)*(h - muh)**2)
-    pw = 1/np.sqrt(tau*varw)*np.exp(-1/(2*varw)*(w - muw)**2)
+    p_x = 1/np.sqrt(tau*var_x)*np.exp(-1/(2*var_x)*(x - mu_x)**2)
+    p_y = 1/np.sqrt(tau*var_y)*np.exp(-1/(2*var_y)*(y - mu_y)**2)
     
     fig, axs = plt.subplots(2, 4, figsize=two_figsize)
     for a in axs.flatten():
@@ -1961,71 +1970,80 @@ def independent_height_weight(h=None, w=None, muh=1.7, varh=0.0225,
     ax.append(plt.subplot2grid((2,4), (0,3)))
     ax.append(plt.subplot2grid((2,4), (1,3)))
 
-    ax[0].plot(muh, muw, 'x', color=[1., 0., 1.], markersize=5., linewidth=3)
+    ax[0].plot(mu_x, mu_y, 'x', color=[1., 0., 1.], markersize=5., linewidth=3)
     theta = np.linspace(0, tau, 100)
-    xel = np.sin(theta)*np.sqrt(varh) + muh
-    yel = np.cos(theta)*np.sqrt(varw) + muw
+    xel = np.sin(theta)*np.sqrt(var_x) + mu_x
+    yel = np.cos(theta)*np.sqrt(var_y) + mu_y
     ax[0].plot(xel, yel, '-', color=[1., 0., 1.], linewidth=3)
-    ax[0].set_xlim([np.min(h), np.max(h)])
-    ax[0].set_ylim([np.min(w)+10, np.max(w)-10])
-    ax[0].set_yticks([65, 75, 85])
-    ax[0].set_xticks([1.25, 1.7, 2.15])
-    ax[0].set_xlabel('$h/m$', fontsize=20)
-    ax[0].set_ylabel('$w/kg$', fontsize=20)
+    ax[0].set_xlim([np.min(x), np.max(x)])
+    ax[0].set_ylim([np.min(y), np.max(y)])
+    ax[0].set_xticks([mu_x-3*sd_x, mu_x, mu_x+3*sd_x])
+    ax[2].set_yticks([mu_y-3*sd_y, mu_y, mu_y+3*sd_y])
+    ax[0].set_xlabel(xlabel, fontsize=20)
+    ax[0].set_ylabel(ylabel, fontsize=20)
 
     ylim = ax[0].get_ylim()
     xlim = ax[0].get_xlim()
     ax[0].vlines(xlim[0], ylim[0], ylim[1], color=[0.,0.,0.])
     ax[0].hlines(ylim[0], xlim[0], xlim[1], color=[0., 0., 0.])
 
-    height(ax[1], h, ph)
-    weight(ax[2], w, pw)
+    ax[1].plot(x, p_x, '-', color=[1, 0, 0], linewidth=3)
+    ax[1].set_xticks([mu_x-3*sd_x, mu_x, mu_x+3*sd_x])
+    ax[1].set_xlabel(xlabel, fontsize=20)
+    ax[1].set_ylabel('$p$', fontsize=20)
+
+    ax[2].plot(y, p_y, '-', color=[1, 0, 0], linewidth=3)
+    ax[2].set_xticks([mu_y-3*sd_y, mu_y, mu_y+3*sd_y])
+    ax[2].set_xlabel(ylabel, fontsize=20)
+    ax[2].set_ylabel('$p$', fontsize=20)
+
     count = 0
 
 
     for i in range(num_samps):
-        hval = np.random.normal(size=(1,1))*np.sqrt(varh) + muh
-        wval = np.random.normal(size=(1,1))*np.sqrt(varw) + muw
-        a1 = ax[1].plot(hval, 0.1, marker='o', linewidth=3, color=[1., 0., 0.])
-        #ma.write_figure(figure=fig, filename=os.path.join(diagrams, 'independent_height_weight{count:0>3}.svg').format(count=count), transparent=True)
-        #count+=1
-        a2 = ax[2].plot(wval, 0.002, marker='o', linewidth=3, color=[1., 0., 0.])
-        #ma.write_figure(figure=fig, filename=os.path.join(diagrams, 'independent_height_weight{count:0>3}.svg').format(count=count), transparent=True)
-        #count+=1
-        a0 = ax[0].plot(hval, wval, marker='o', linewidth=3, color=[1., 0., 0.])
-        ma.write_figure(figure=fig, filename='independent_height_weight{count:0>3}.svg'.format(count=count), directory=diagrams, transparent=True)
+        x_val = np.random.normal(size=(1,1))*np.sqrt(var_x) + mu_x
+        y_val = np.random.normal(size=(1,1))*np.sqrt(var_y) + mu_y
+        a1 = ax[1].plot(x_val, 0.1, marker='o', linewidth=3, color=[1., 0., 0.])
+        a2 = ax[2].plot(y_val, 0.002, marker='o', linewidth=3, color=[1., 0., 0.])
+        a0 = ax[0].plot(x_val, y_val, marker='o', linewidth=3, color=[1., 0., 0.])
+        ma.write_figure(figure=fig, filename=f'{filestub}{count:0>3}.svg', directory=diagrams, transparent=True)
         count+=1
 
         a0[0].set(color=[0.,0.,0.])
         a1[0].set(color=[0.,0.,0.])
         a2[0].set(color=[0.,0.,0.])
         
-        #ma.write_figure(figure=fig, filename=os.path.join(diagrams, 'independent_height_weight{count:0>3}.svg').format(count=count), transparent=True)
-        #count+=1
 
-def correlated_height_weight(h=None, w=None, muh=1.7, varh=0.0225,
-                             muw=75, varw=36, num_samps=20, diagrams='../diagrams'):
+def correlated_gaussians_sample(x=None, y=None, mu_x=0, var_x=1,
+                                mu_y=0, var_y=1, num_samps=20,
+                                xlabel='$x$', ylabel='$y$',
+                                filestub='correlated_gaussians_sample',
+                                diagrams='../diagrams'):
     """
     Plot correlated height and weight samples.
 
-    :param h: Height data (optional).
-    :param w: Weight data (optional).
-    :param muh: Mean height (default: 1.7).
-    :param varh: Variance of height (default: 0.0225).
-    :param muw: Mean weight (default: 75).
-    :param varw: Variance of weight (default: 36).
+    :param x: x input range (optional).
+    :param y: y input range (optional).
+    :param mu_x: Mean height (default: 1.7).
+    :param var_x: Variance of height (default: 0.0225).
+    :param mu_y: Mean weight (default: 75).
+    :param var_y: Variance of weight (default: 36).
     :param num_samps: Number of samples to generate (default: 20).
+    :param xlabel: label for the x axis.
+    :param ylabel: label for the y axis.    
     :param diagrams: Directory to save the plot (default: '../diagrams').
     """
+    sd_x = np.sqrt(var_x)
+    sd_y = np.sqrt(var_y)
     if not os.path.exists(diagrams):
         os.mkdir(diagrams)
-    if h is None:
-        h = np.linspace(1.25, 2.15, 100)[:, np.newaxis]
-    if w is None:
-        w = np.linspace(55, 95, 100)[:, np.newaxis]
+    if x is None:
+        x = np.linspace(mu_x-3*sd_x, mu_x+3*sd_x, 100)[:, np.newaxis]
+    if y is None:
+        y = np.linspace(mu_y-3*sd_y, mu_y+3*sd_y, 100)[:, np.newaxis]
 
-    ph = 1/np.sqrt(tau*varh)*np.exp(-1/(2*varh)*(h - muh)**2)
-    pw = 1/np.sqrt(tau*varw)*np.exp(-1/(2*varw)*(w - muw)**2)
+    p_x = 1/np.sqrt(tau*var_x)*np.exp(-1/(2*var_x)*(x - mu_x)**2)
+    p_y = 1/np.sqrt(tau*var_y)*np.exp(-1/(2*var_y)*(y - mu_y)**2)
 
     fig, axs = plt.subplots(2, 4, figsize=two_figsize)
     for a in axs.flatten():
@@ -2036,46 +2054,47 @@ def correlated_height_weight(h=None, w=None, muh=1.7, varh=0.0225,
     ax.append(plt.subplot2grid((2,4), (1,3)))
 
     covMat = np.asarray([[1, 0.995], [0.995, 1]])
-    fact = np.asarray([[np.sqrt(varh), 0], [0, np.sqrt(varw)]])
+    fact = np.asarray([[sd_x, 0], [0, sd_y]])
     covMat = np.dot(np.dot(fact,covMat), fact)
     _, R = np.linalg.eig(covMat)
 
-    ax[0].plot(muh, muw, 'x', color=[1., 0., 1.], markersize=5, linewidth=3)
+    ax[0].plot(mu_x, mu_y, 'x', color=[1., 0., 1.], markersize=5, linewidth=3)
     theta = np.linspace(0, tau, 100)
-    xel = np.sin(theta)*np.sqrt(varh)
-    yel = np.cos(theta)*np.sqrt(varw)
+    xel = np.sin(theta)*sd_x
+    yel = np.cos(theta)*sd_y
     vals = np.dot(R,np.vstack([xel, yel]))
-    ax[0].plot(vals[0, :]+muh, vals[1, :]+muw, '-', color=[1., 0., 1.], linewidth=3)
-    ax[0].set_xlim([np.min(h), np.max(h)])
-    ax[0].set_ylim([np.min(w)+10, np.max(w)-10])
-    ax[0].set_yticks([65, 75, 85])
-    ax[0].set_xticks([1.25, 1.7, 2.15])
-    ax[0].set_xlabel('$h/m$', fontsize=20)
-    ax[0].set_ylabel('$w/kg$', fontsize=20)
+    ax[0].plot(vals[0, :]+mu_x, vals[1, :]+mu_y, '-', color=[1., 0., 1.], linewidth=3)
+    ax[0].set_xlim([np.min(x), np.max(x)])
+    ax[0].set_ylim([np.min(y), np.max(y)])
+    ax[0].set_xticks([mu_x-3*sd_x, mu_x, mu_x+3*sd_x])
+    ax[0].set_yticks([mu_y-3*sd_y, mu_y, mu_y+3*sd_y])
+    ax[0].set_xlabel(xlabel, fontsize=20)
+    ax[0].set_ylabel(ylabel, fontsize=20)
 
-    height(ax[1], h, ph)
-    weight(ax[2], w, pw)
+    ax[1].plot(x, p_x, '-', color=[1, 0, 0], linewidth=3)
+    ax[1].set_xticks([mu_x-3*sd_x, mu_x, mu_x+3*sd_x])
+    ax[1].set_xlabel(xlabel, fontsize=20)
+    ax[1].set_ylabel('$p$', fontsize=20)
+
+    ax[2].plot(y, p_y, '-', color=[1, 0, 0], linewidth=3)
+    ax[2].set_xticks([mu_y-3*sd_y, mu_y, mu_y+3*sd_y])
+    ax[2].set_xlabel(ylabel, fontsize=20)
+    ax[2].set_ylabel('$p$', fontsize=20)
+    
     count = 0
     for i in range(num_samps):
         vec_s = np.dot(np.dot(R,fact),np.random.normal(size=(2,1)))
-        hval = vec_s[0] + muh
-        wval = vec_s[1] + muw
-        a1 = ax[1].plot(hval, 0.1, marker='o', linewidth=3, color=[1., 0., 0.])
-        #ma.write_figure(figure=fig, filename=os.path.join(diagrams, 'correlated_height_weight{count:0>3}.svg').format(count=count), transparent=True)
-        a2 = ax[2].plot(wval, 0.002, marker='o', linewidth=3, color=[1., 0., 0.])
-        #count+=1
-        #ma.write_figure(figure=fig, filename=os.path.join(diagrams, 'correlated_height_weight{count:0>3}.svg').format(count=count), transparent=True)
-
-        a0 = ax[0].plot(hval, wval, marker='o', linewidth=3, color=[1., 0., 0.])
-        #count+=1
-        ma.write_figure(figure=fig, filename='correlated_height_weight{count:0>3}.svg'.format(count=count), directory=diagrams, transparent=True)
-        #count+=1
+        xval = vec_s[0] + mu_x
+        yval = vec_s[1] + mu_y
+        a1 = ax[1].plot(xval, sd_y/75, marker='o', linewidth=3, color=[1., 0., 0.])
+        a2 = ax[2].plot(yval, sd_x/75, marker='o', linewidth=3, color=[1., 0., 0.])
+        a0 = ax[0].plot(xval, yval, marker='o', linewidth=3, color=[1., 0., 0.])
+        ma.write_figure(figure=fig, filename=f'{filestub}{count:0>3}.svg', directory=diagrams, transparent=True)
 
         a0[0].set(color=[0.,0.,0.])
         a1[0].set(color=[0.,0.,0.])
         a2[0].set(color=[0.,0.,0.])
 
-        #ma.write_figure(figure=fig, filename=os.path.join(diagrams, 'correlated_height_weight{count:0>3}.svg').format(count=count), transparent=True)
         count+=1
 
 
@@ -2738,7 +2757,7 @@ def multi_output_covariance_func(kernel, x=None, num_outputs=2,
     K, anim = _multi_output_animate_covariance_function(kernel, x, num_outputs, num_samps, diagrams)
     
     # Save animation as {shortname}_covariance.gif (expected by includecovariance macro)
-    ma.write_animation(anim,
+    ma.utils.write_animation(anim,
                       shortname + '_covariance.gif',
                       directory=diagrams,
                       writer='imagemagick',
