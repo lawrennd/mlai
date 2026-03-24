@@ -1930,10 +1930,10 @@ def height_weight(h=None, w=None, muh=1.7, varh=0.0225,
     weight(ax[1], w, pw)
     ma.write_figure('height_weight_gaussian.svg', directory=diagrams, transparent=True)
 
-def independent_gaussians_sample(x=None, y=None, mu_x=1.7, var_x=0.0225,
-                              mu_y=75, var_y=36, num_samps=20,
-                              xlabel='$h/m$', ylabel='$w/kg$',
-                              filestub="independent_height_weight",
+def independent_gaussians_sample(x=None, y=None, mu_x=0, var_x=1,
+                              mu_y=0, var_y=1, num_samps=20,
+                              xlabel='$x$', ylabel='$y$',
+                              filestub="independent_gaussians",
                               diagrams='../diagrams'):
     """
     Plot independent height and weight samples.
@@ -1978,7 +1978,7 @@ def independent_gaussians_sample(x=None, y=None, mu_x=1.7, var_x=0.0225,
     ax[0].set_xlim([np.min(x), np.max(x)])
     ax[0].set_ylim([np.min(y), np.max(y)])
     ax[0].set_xticks([mu_x-3*sd_x, mu_x, mu_x+3*sd_x])
-    ax[2].set_yticks([mu_y-3*sd_y, mu_y, mu_y+3*sd_y])
+    ax[0].set_yticks([mu_y-3*sd_y, mu_y, mu_y+3*sd_y])
     ax[0].set_xlabel(xlabel, fontsize=20)
     ax[0].set_ylabel(ylabel, fontsize=20)
 
@@ -2017,6 +2017,7 @@ def independent_gaussians_sample(x=None, y=None, mu_x=1.7, var_x=0.0225,
 def correlated_gaussians_sample(x=None, y=None, mu_x=0, var_x=1,
                                 mu_y=0, var_y=1, num_samps=20,
                                 xlabel='$x$', ylabel='$y$',
+                                correlation=0.995,
                                 filestub='correlated_gaussians_sample',
                                 diagrams='../diagrams'):
     """
@@ -2024,13 +2025,15 @@ def correlated_gaussians_sample(x=None, y=None, mu_x=0, var_x=1,
 
     :param x: x input range (optional).
     :param y: y input range (optional).
-    :param mu_x: Mean height (default: 1.7).
-    :param var_x: Variance of height (default: 0.0225).
-    :param mu_y: Mean weight (default: 75).
-    :param var_y: Variance of weight (default: 36).
+    :param mu_x: Mean x (default: 0).
+    :param var_x: Variance of x (default: 1).
+    :param mu_y: Mean y (default: 0).
+    :param var_y: Variance of y (default: 1).
     :param num_samps: Number of samples to generate (default: 20).
     :param xlabel: label for the x axis.
-    :param ylabel: label for the y axis.    
+    :param ylabel: label for the y axis.
+    :param correlation: Correlation between variables.
+    :param filestub: Filename stub for the file.
     :param diagrams: Directory to save the plot (default: '../diagrams').
     """
     sd_x = np.sqrt(var_x)
@@ -2053,15 +2056,15 @@ def correlated_gaussians_sample(x=None, y=None, mu_x=0, var_x=1,
     ax.append(plt.subplot2grid((2,4), (0,3)))
     ax.append(plt.subplot2grid((2,4), (1,3)))
 
-    covMat = np.asarray([[1, 0.995], [0.995, 1]])
+    covMat = np.asarray([[1, correlation], [correlation, 1]])
     fact = np.asarray([[sd_x, 0], [0, sd_y]])
     covMat = np.dot(np.dot(fact,covMat), fact)
-    _, R = np.linalg.eig(covMat)
+    v, R = np.linalg.eig(covMat)
 
     ax[0].plot(mu_x, mu_y, 'x', color=[1., 0., 1.], markersize=5, linewidth=3)
     theta = np.linspace(0, tau, 100)
-    xel = np.sin(theta)*sd_x
-    yel = np.cos(theta)*sd_y
+    xel = np.sin(theta)*np.sqrt(v[0])
+    yel = np.cos(theta)*np.sqrt(v[1])
     vals = np.dot(R,np.vstack([xel, yel]))
     ax[0].plot(vals[0, :]+mu_x, vals[1, :]+mu_y, '-', color=[1., 0., 1.], linewidth=3)
     ax[0].set_xlim([np.min(x), np.max(x)])
