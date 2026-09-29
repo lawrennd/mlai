@@ -51,3 +51,6 @@ Requirement extracted from CIP-0008, then generalized away from a single sampler
 
 ### 2026-09-29 (CIP-0008 Accepted)
 CIP-0008 accepted and marked In Progress with backlog for core sampler, contour/trace plots, and teaching/lecture wiring. This requirement stays **Proposed** until at least one teachable sampling method ships in `mlai`.
+
+### 2026-09-29 (Core sampler landed)
+`HamiltonianMonteCarlo` is available from `mlai` with tests. Contour helpers and teaching-example wiring remain; mark this requirement further along once a classroom demo path exists (plots + snippet).

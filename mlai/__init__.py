@@ -12,6 +12,7 @@ from . import neural_networks
 from . import utils
 from . import dimred
 from . import optimisation
+from . import hmc
 from . import experimental
 from . import data
 from . import loss
@@ -77,6 +78,9 @@ from .dimred import (
 
 # Import optimization functions to make them available at package level
 from .optimisation import Optimiser, SGD, Adam, train_model
+
+# Import teachable HMC (CIP-0008) at package level
+from .hmc import HamiltonianMonteCarlo, HMCResult, leapfrog, kinetic_energy
 
 # Import GPy-dependent modules if available
 if GPY_AVAILABLE:

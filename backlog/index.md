@@ -54,8 +54,6 @@ This file provides an overview of all current backlog items organized by categor
 
 ### Proposed
 
-- [Implement teachable Neal-style HMC core sampler](features/2026-09-29_hmc-core-sampler.md)
-
 - [Wire HMC teaching example and lecture placeholders](features/2026-09-29_hmc-teaching-example.md)
 
 - [Optional extra optimisers and training utilities for mlai.optimisation](features/2026-09-29_optimisation-extra-algorithms.md)
@@ -100,7 +98,7 @@ This file provides an overview of all current backlog items organized by categor
 
 - [Implement gp_optimize_quadratic Python teaching animation](features/2025-09-17_gp-optimize-quadratic-python.md)
 
-- [Fix lagrange_parallel_vectors stationarity and frame animation](bugs/2026-09-29_lagrange-parallel-vectors-stationarity.md)
+- [Implement teachable Neal-style HMC core sampler](features/2026-09-29_hmc-core-sampler.md)
 
 
 ## Recently Abandoned Tasks
