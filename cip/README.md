@@ -8,11 +8,11 @@ Use `cip_template.md` to create new CIPs.
 
 | CIP | Title | Status |
 |-----|-------|--------|
-| [0001](cip0001.md) | Documentation Improvements with Sphinx | — |
-| [0002](cip0002.md) | Comprehensive Test Framework with pytest | — |
-| [0003](cip0003.md) | Complete Docstring Updates for mlai.plot Module | — |
-| [0004](cip0004.md) | Replace MATLAB GP Optimization Visualization with Python | — |
-| [0005](cip0005.md) | Transformer Implementation for `mlai` Library | — |
+| [0001](cip0001.md) | Documentation Improvements with Sphinx | In Progress |
+| [0002](cip0002.md) | Comprehensive Test Framework with pytest | Proposed |
+| [0003](cip0003.md) | Complete Docstring Updates for mlai.plot Module | Proposed |
+| [0004](cip0004.md) | Replace MATLAB GP Optimization Visualization with Python | Proposed |
+| [0005](cip0005.md) | Transformer Implementation for `mlai` Library | Proposed |
 | [0006](cip0006.md) | Refactor mlai.py into Modular Structure | Implemented |
 | [0007](cip0007.md) | Unified Optimization Interface and Algorithms | Proposed |
 | [0008](cip0008.md) | Teachable Hamiltonian Monte Carlo Component (Neal) | Proposed |

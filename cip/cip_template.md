@@ -3,7 +3,12 @@ author: "[Your Name]"
 created: "[YYYY-MM-DD]"
 id: "XXXX"
 last_updated: "[YYYY-MM-DD]"
-status: proposed
+status: "Proposed"
+compressed: false  # Set to true after compressing into formal documentation (README, Sphinx, etc.)
+related_requirements: []  # Optional: Requirements this CIP implements (IDs like "0001")
+related_cips: []  # Optional: Related CIPs (IDs like "0002")
+# blocked_by: "YYYY"  # Optional: CIP ID that blocks this (use with Deferred status)
+# superseded_by: "ZZZZ"  # Optional: CIP ID that replaces this (use with Rejected status)
 tags:
 - cip
 - "[additional tags]"
@@ -12,14 +17,36 @@ title: "[Title]"
 
 # CIP-XXXX: [Title]
 
+> **Note**: CIPs describe HOW to achieve requirements (WHAT).  
+> Use `related_requirements` to link to the requirements this CIP implements.
+
+> **Compression Metadata**: The `compressed` field tracks whether this CIP's key decisions have been compressed into formal documentation (README, Sphinx, architecture docs). Set to `false` by default. After closing a CIP and updating formal documentation with its essential outcomes, set `compressed: true`. This enables `whats-next` to prompt for documentation compression. See [REQ-000E](../../requirements/req000E_documentation-synchronization.md) and [CIP-0013](../../cip/cip0013.md).
+
+## Status
+
+- [ ] Proposed - Initial idea documented
+- [ ] Accepted - Approved, ready to start work
+- [ ] In Progress - Actively being implemented
+- [ ] Implemented - Work complete, awaiting verification
+- [ ] Closed - Verified and complete
+- [ ] Rejected - Will not be implemented (add reason, use superseded_by if replaced)
+- [ ] Deferred - Postponed (use blocked_by field to indicate blocker)
+
 ## Summary
 A brief summary of the proposed improvement.
+
+**Which requirements does this CIP address?** List them in `related_requirements` above.
 
 ## Motivation
 Why is this change needed? What problem does it solve?
 
 ## Detailed Description
 More detailed explanation of the proposed improvement, including technical details.
+
+> **Important**: CIPs should be self-contained design documents (REQ-000D).  
+> Include all design rationale, architecture decisions, and technical analysis HERE in this section.  
+> Don't create separate design documents like `cip0012-design.md` or `cip0012-architecture.md`.  
+> If you need supplementary materials (research notes, alternatives), use a subdirectory: `cip/cip0012/`
 
 ## Implementation Plan
 Step-by-step plan for implementing the improvement:
