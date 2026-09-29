@@ -54,9 +54,15 @@ This file provides an overview of all current backlog items organized by categor
 
 ### Proposed
 
+- [Implement teachable Neal-style HMC core sampler](features/2026-09-29_hmc-core-sampler.md)
+
+- [Wire HMC teaching example and lecture placeholders](features/2026-09-29_hmc-teaching-example.md)
+
 - [Optional extra optimisers and training utilities for mlai.optimisation](features/2026-09-29_optimisation-extra-algorithms.md)
 
 - [Expose GP parameters and gradients on the shared optimisation surface](features/2026-09-29_gp-shared-optimization-surface.md)
+
+- [Add HMC leapfrog trajectory and trace plot helpers](features/2026-09-29_hmc-contour-trajectory-plots.md)
 
 - [Build Comprehensive Tests for plot.py](features/2025-07-16_plot-py-testing.md)
 
