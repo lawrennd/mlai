@@ -47,3 +47,6 @@ CIP-0004 is one HOW (replacing a legacy MATLAB GP optimization animation). The r
 
 ### 2026-09-29
 Requirement extracted from CIP-0004, then generalized away from a single algorithm/topic.
+
+### 2026-09-29
+CIP-0004 accepted and marked Implemented (GP quadratic teaching animation now Python/SVG). REQ-0004 stays Proposed: it still asks for the open-toolchain outcome across teaching topics, not only this GP instance.

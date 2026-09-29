@@ -86,6 +86,8 @@ This file provides an overview of all current backlog items organized by categor
 
 - [Establish Sphinx documentation foundation for MLAI](documentation/2025-07-09_sphinx-documentation-foundation.md)
 
+- [Implement gp_optimize_quadratic Python teaching animation](features/2025-09-17_gp-optimize-quadratic-python.md)
+
 - [Fix lagrange_parallel_vectors stationarity and frame animation](bugs/2026-09-29_lagrange-parallel-vectors-stationarity.md)
 
 - [Fix stale mlai.mlai import in mountain_car.py](bugs/2026-03-21_mountain-car-stale-mlai-import.md)

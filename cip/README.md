@@ -11,7 +11,7 @@ Use `cip_template.md` to create new CIPs.
 | [0001](cip0001.md) | Documentation Improvements with Sphinx | In Progress |
 | [0002](cip0002.md) | Comprehensive Test Framework with pytest | In Progress |
 | [0003](cip0003.md) | Complete Docstring Updates for mlai.plot Module | In Progress |
-| [0004](cip0004.md) | Replace MATLAB GP Optimization Visualization with Python | Proposed |
+| [0004](cip0004.md) | Replace MATLAB GP Optimization Visualization with Python | Implemented |
 | [0005](cip0005.md) | Transformer Implementation for `mlai` Library | Proposed |
 | [0006](cip0006.md) | Refactor mlai.py into Modular Structure | Implemented |
 | [0007](cip0007.md) | Unified Optimization Interface and Algorithms | Proposed |
