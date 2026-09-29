@@ -263,6 +263,68 @@ class TestRegressionFunctions:
         # Should have called some plotting methods
         assert mock_ax.contour.called or mock_ax.contourf.called
 
+
+class TestHMCPlotHelpers:
+    """Test HMC contour trajectory and trace helpers (CIP-0008)."""
+
+    def test_hmc_contour_trajectories_smoke(self):
+        q1 = np.linspace(-2, 2, 20)
+        q2 = np.linspace(-2, 2, 20)
+        Q1, Q2 = np.meshgrid(q1, q2)
+        V = 0.5 * (Q1 ** 2 + Q2 ** 2)
+        traj = [np.array([[0.0, 0.0], [0.1, -0.1], [0.2, 0.0]])]
+        samples = np.array([[0.0, 0.0], [0.5, 0.5]])
+
+        fig, ax = plt.subplots()
+        artists = plot.hmc_contour_trajectories(
+            ax, q1, q2, V, trajectories=traj, samples=samples, fontsize=12
+        )
+        assert artists['contour'] is not None
+        assert len(artists['trajectories']) == 1
+        assert artists['samples'] is not None
+        plt.close(fig)
+
+    def test_hmc_contour_trajectories_overlay_only(self):
+        q1 = np.linspace(-1, 1, 10)
+        q2 = np.linspace(-1, 1, 10)
+        V = np.zeros((10, 10))
+        fig, ax = plt.subplots()
+        artists = plot.hmc_contour_trajectories(
+            ax, q1, q2, V, trajectories=[np.zeros((3, 2))], draw_contour=False
+        )
+        assert artists['contour'] is None
+        assert len(artists['trajectories']) == 1
+        plt.close(fig)
+
+    def test_hmc_traces_hamiltonian_and_params(self):
+        from mlai.hmc import HMCResult
+
+        result = HMCResult(
+            samples=np.column_stack([np.linspace(0, 1, 20), np.linspace(1, 0, 20)]),
+            accept_rate=0.9,
+            hamiltonian_trace=np.linspace(2, 1, 20),
+            n_accepted=18,
+        )
+        fig, axes = plt.subplots(3, 1)
+        lines = plot.hmc_traces(axes, result, param_indices=[0, 1])
+        assert len(lines) == 3
+        plt.close(fig)
+
+    def test_hmc_traces_single_axis_h_only(self):
+        from mlai.hmc import HMCResult
+
+        result = HMCResult(
+            samples=np.zeros((10, 2)),
+            accept_rate=1.0,
+            hamiltonian_trace=np.ones(10),
+            n_accepted=10,
+        )
+        fig, ax = plt.subplots()
+        lines = plot.hmc_traces(ax, result)
+        assert len(lines) == 1
+        plt.close(fig)
+
+
 class TestFileOperations:
     """Test file and directory operations."""
     

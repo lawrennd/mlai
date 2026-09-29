@@ -193,5 +193,40 @@ class TestHamiltonianMonteCarlo(unittest.TestCase):
         self.assertGreater(result.accept_rate, 0.0)
 
 
+class TestHMCTeachingExample(unittest.TestCase):
+    """Teaching path: logistic SGD point estimate vs HMC samples."""
+
+    def test_logistic_sgd_vs_hmc(self):
+        from mlai import LR, Basis, linear
+
+        rng = np.random.default_rng(0)
+        X = rng.normal(size=(50, 1))
+        y = (1.2 * X[:, 0] + 0.2 * rng.normal(size=50) > 0).astype(float).reshape(-1, 1)
+        model = LR(X, y, Basis(linear, number=2))
+
+        def potential(q):
+            model.parameters = q
+            return -float(model.log_likelihood())
+
+        def grad_potential(q):
+            model.parameters = q
+            return np.asarray(model.gradients, dtype=float)
+
+        q = np.zeros(2)
+        for _ in range(200):
+            q = q - 0.05 * grad_potential(q)
+        v_sgd = potential(q)
+
+        hmc = mlai.HamiltonianMonteCarlo(
+            potential, grad_potential, step_size=0.04, n_steps=8
+        )
+        result = hmc.sample(q0=q, n_samples=150, random_state=1)
+        self.assertGreater(result.accept_rate, 0.5)
+        self.assertEqual(result.samples.shape, (150, 2))
+        # Posterior mean should stay in the same basin as the SGD point
+        self.assertLess(np.linalg.norm(result.samples.mean(0) - q), 3.0)
+        self.assertLess(v_sgd, potential(np.zeros(2)))
+
+
 if __name__ == '__main__':
     unittest.main()

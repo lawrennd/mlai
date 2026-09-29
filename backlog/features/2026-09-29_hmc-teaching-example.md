@@ -7,7 +7,7 @@ owner: Neil D. Lawrence
 priority: Medium
 related_cips:
 - '0008'
-status: Proposed
+status: Completed
 tags:
 - backlog
 - features
@@ -25,15 +25,16 @@ Add at least one logistic / small-MLP HMC vs SGD teaching path using existing `m
 
 ## Acceptance Criteria
 
-- [ ] Example shows SGD point estimate vs HMC samples / posterior predictive on a small problem
-- [ ] Commentary links $V=-\log p(q\mid\mathcal{D})$ to lecture energy language
-- [ ] Snippet or notebook imports the real `mlai` HMC API (no placeholder-only stubs)
-- [ ] Example is reproducible with a fixed seed
+- [x] Example shows SGD point estimate vs HMC samples / posterior predictive on a small problem
+- [x] Commentary links $V=-\log p(q\mid\mathcal{D})$ to lecture energy language
+- [x] Snippet or notebook imports the real `mlai` HMC API (no placeholder-only stubs)
+- [x] Example is reproducible with a fixed seed
 
 ## Implementation Notes
 
-- Depends on core sampler; plot helpers strongly preferred for the 2D quadratic overlay path
-- Snippets live in the `snippets` repo; coordinate changes there when wiring
+- Snippet updated in `snippets` repo: `_ml/includes/from-loss-to-hamiltonian.md`
+- Quadratic trajectory demo + logistic SGD vs HMC traces
+- Library regression: `TestHMCTeachingExample` in `tests/unit/test_hmc.py`
 
 ## Related
 
@@ -46,3 +47,6 @@ Add at least one logistic / small-MLP HMC vs SGD teaching path using existing `m
 
 ### 2026-09-29
 Task created when CIP-0008 was accepted.
+
+### 2026-09-29
+Completed: lecture placeholder replaced; logistic teaching test added.

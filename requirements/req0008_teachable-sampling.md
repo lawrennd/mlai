@@ -1,7 +1,7 @@
 ---
 id: "0008"
 title: "Students can explore sampling-based inference inside the teaching stack"
-status: "Proposed"
+status: "Implemented"
 priority: "Medium"
 created: "2026-09-29"
 last_updated: "2026-09-29"
@@ -29,11 +29,11 @@ After point-estimate fitting (losses, gradients, downhill motion), learners can 
 
 ## Acceptance Criteria
 
-- [ ] At least one teachable sampling method is available from `mlai` for notebooks and lectures
-- [ ] The interface makes the link between a potential (or target density) and familiar loss/energy language clear
-- [ ] Classroom-useful diagnostics (e.g. accept rate or energy/trace summaries where relevant) are available
-- [ ] At least one demo path connects samples or trajectories to existing contour-style teaching plots
-- [ ] Further sampling methods can be added under the same teaching pattern without inventing a separate stack
+- [x] At least one teachable sampling method is available from `mlai` for notebooks and lectures
+- [x] The interface makes the link between a potential (or target density) and familiar loss/energy language clear
+- [x] Classroom-useful diagnostics (e.g. accept rate or energy/trace summaries where relevant) are available
+- [x] At least one demo path connects samples or trajectories to existing contour-style teaching plots
+- [x] Further sampling methods can be added under the same teaching pattern without inventing a separate stack
 
 ## Notes
 
@@ -54,3 +54,6 @@ CIP-0008 accepted and marked In Progress with backlog for core sampler, contour/
 
 ### 2026-09-29 (Core sampler landed)
 `HamiltonianMonteCarlo` is available from `mlai` with tests. Contour helpers and teaching-example wiring remain; mark this requirement further along once a classroom demo path exists (plots + snippet).
+
+### 2026-09-29 (CIP-0008 Implemented)
+Plot helpers and lecture wiring landed. REQ-0008 acceptance criteria satisfied by the Neal-style HMC path; status → **Implemented** (validation/Close still optional).

@@ -929,6 +929,159 @@ def regression_contour(f, ax, m_vals, c_vals, E_grid, fontsize=30):
     ax.set_xlabel('$m$', fontsize=fontsize)
     ax.set_ylabel('$c$', fontsize=fontsize)
 
+
+def hmc_contour_trajectories(
+    ax,
+    q1_vals,
+    q2_vals,
+    V_grid,
+    trajectories=None,
+    samples=None,
+    levels=None,
+    fontsize=20,
+    draw_contour=True,
+    trajectory_kwargs=None,
+    sample_kwargs=None,
+):
+    """
+    Overlay HMC leapfrog trajectories (and optional samples) on a 2D potential contour.
+
+    Designed for teaching demos that reuse the same contour style as
+    :func:`regression_contour`, but with generic coordinate labels
+    :math:`q_1,q_2` for an arbitrary potential :math:`V(q)`.
+
+    :param ax: Matplotlib axes.
+    :type ax: matplotlib.axes.Axes
+    :param q1_vals: Grid coordinates for the first parameter (x-axis).
+    :type q1_vals: numpy.ndarray
+    :param q2_vals: Grid coordinates for the second parameter (y-axis).
+    :type q2_vals: numpy.ndarray
+    :param V_grid: Potential values on the ``(q2, q1)`` mesh (``contour`` layout).
+    :type V_grid: numpy.ndarray
+    :param trajectories: Optional sequence of arrays each shape ``(T, 2)`` —
+        leapfrog position paths from :meth:`mlai.hmc.HamiltonianMonteCarlo.sample`
+        with ``return_trajectory=True``.
+    :type trajectories: sequence of numpy.ndarray, optional
+    :param samples: Optional chain of positions shape ``(n, 2)`` to scatter.
+    :type samples: numpy.ndarray, optional
+    :param levels: Contour levels (default: auto via matplotlib).
+    :type levels: sequence, optional
+    :param fontsize: Axis label font size (default: 20).
+    :type fontsize: int
+    :param draw_contour: If False, only overlay paths/samples (contour already drawn).
+    :type draw_contour: bool
+    :param trajectory_kwargs: Extra kwargs for trajectory ``plot`` calls.
+    :type trajectory_kwargs: dict, optional
+    :param sample_kwargs: Extra kwargs for sample ``scatter``.
+    :type sample_kwargs: dict, optional
+    :returns: Dict of artists (``contour``, ``trajectories``, ``samples``).
+    :rtype: dict
+    """
+    artists = {'contour': None, 'trajectories': [], 'samples': None}
+    traj_kw = {'color': 'C1', 'linewidth': 1.0, 'alpha': 0.7}
+    if trajectory_kwargs:
+        traj_kw.update(trajectory_kwargs)
+    samp_kw = {'c': 'C3', 's': 12, 'alpha': 0.35, 'zorder': 3}
+    if sample_kwargs:
+        samp_kw.update(sample_kwargs)
+
+    if draw_contour:
+        if levels is None:
+            artists['contour'] = ax.contour(q1_vals, q2_vals, V_grid)
+        else:
+            artists['contour'] = ax.contour(q1_vals, q2_vals, V_grid, levels=levels)
+        try:
+            plt.clabel(artists['contour'], inline=1, fontsize=max(fontsize // 2, 8))
+        except Exception:
+            # clabel can fail on degenerate grids in tests; contour still drawn
+            pass
+
+    if trajectories is not None:
+        for path in trajectories:
+            path = np.asarray(path, dtype=float)
+            if path.ndim != 2 or path.shape[1] < 2:
+                raise ValueError("each trajectory must have shape (T, 2)")
+            line, = ax.plot(path[:, 0], path[:, 1], **traj_kw)
+            artists['trajectories'].append(line)
+
+    if samples is not None:
+        samples = np.asarray(samples, dtype=float)
+        if samples.ndim != 2 or samples.shape[1] < 2:
+            raise ValueError("samples must have shape (n, 2)")
+        artists['samples'] = ax.scatter(samples[:, 0], samples[:, 1], **samp_kw)
+
+    ax.set_xlabel(r'$q_1$', fontsize=fontsize)
+    ax.set_ylabel(r'$q_2$', fontsize=fontsize)
+    return artists
+
+
+def hmc_traces(
+    axes,
+    result,
+    param_indices=None,
+    fontsize=14,
+    label_params=True,
+):
+    """
+    Plot Hamiltonian and parameter traces from an :class:`~mlai.hmc.HMCResult`.
+
+    :param axes: Single axes (typically for :math:`H` only) or a sequence of
+        axes. When plotting parameters, pass ``1 + n_params`` axes (index 0
+        for :math:`H``, then one axis per parameter).
+    :type axes: matplotlib.axes.Axes or sequence
+    :param result: Output of :meth:`mlai.hmc.HamiltonianMonteCarlo.sample`.
+    :type result: mlai.hmc.HMCResult
+    :param param_indices: Sample columns to plot. Default: none if a single
+        axis is given; all columns that fit remaining axes if several axes.
+    :type param_indices: sequence of int, optional
+    :param fontsize: Label font size (default: 14).
+    :type fontsize: int
+    :param label_params: If True, ylabel parameters as ``$q_i$``.
+    :type label_params: bool
+    :returns: List of line artists drawn.
+    :rtype: list
+    """
+    # Avoid list(ax): Axes iterates child artists.
+    if hasattr(axes, 'plot') and not isinstance(axes, (list, tuple, np.ndarray)):
+        axes_list = [axes]
+    else:
+        axes_list = list(axes)
+    if len(axes_list) < 1:
+        raise ValueError("axes must contain at least one Axes")
+
+    samples = np.asarray(result.samples, dtype=float)
+    n = samples.shape[0]
+    t = np.arange(n)
+    lines = []
+
+    ax_h = axes_list[0]
+    if result.hamiltonian_trace is not None:
+        (line,) = ax_h.plot(t, result.hamiltonian_trace, color='C0')
+        lines.append(line)
+        ax_h.set_ylabel(r'$H$', fontsize=fontsize)
+    else:
+        ax_h.text(
+            0.5, 0.5, 'no $H$ trace\n(store_hamiltonian=False)',
+            ha='center', va='center', transform=ax_h.transAxes,
+        )
+
+    if param_indices is None:
+        if len(axes_list) > 1:
+            param_indices = list(range(min(samples.shape[1], len(axes_list) - 1)))
+        else:
+            param_indices = []
+
+    for i, idx in enumerate(param_indices):
+        ax_i = axes_list[i + 1] if (i + 1) < len(axes_list) else axes_list[-1]
+        (line,) = ax_i.plot(t, samples[:, idx], color='C{}'.format((i + 1) % 10))
+        lines.append(line)
+        if label_params:
+            ax_i.set_ylabel(r'$q_{{{}}}$'.format(idx), fontsize=fontsize)
+
+    axes_list[-1].set_xlabel('iteration', fontsize=fontsize)
+    return lines
+
+
 def init_regression(f, ax, x, y, m_vals, c_vals, E_grid, m_star, c_star, fontsize=20):
     """
     Initialize regression visualization plots.

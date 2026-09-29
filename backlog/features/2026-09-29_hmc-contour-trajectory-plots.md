@@ -7,7 +7,7 @@ owner: Neil D. Lawrence
 priority: Medium
 related_cips:
 - '0008'
-status: Proposed
+status: Completed
 tags:
 - backlog
 - features
@@ -25,23 +25,26 @@ Extend `mlai.plot` so HMC teaching demos can show leapfrog trajectory segments o
 
 ## Acceptance Criteria
 
-- [ ] Contour helper overlays leapfrog path segments for a 2D potential
-- [ ] Trace helper plots $H$ and/or parameter components from an HMC run
-- [ ] Helpers compose with existing contour / figure-writing conventions
-- [ ] Basic unit or smoke tests for the new plot entry points
+- [x] Contour helper overlays leapfrog path segments for a 2D potential
+- [x] Trace helper plots $H$ and/or parameter components from an HMC run
+- [x] Helpers compose with existing contour / figure-writing conventions
+- [x] Basic unit or smoke tests for the new plot entry points
 
 ## Implementation Notes
 
-- Depends on a usable sampler API from `2026-09-29_hmc-core-sampler` (can stub trajectories for early plot work if needed)
-- Keep API small; match docstring quality expectations from CIP-0003
+- `plot.hmc_contour_trajectories` and `plot.hmc_traces` in `mlai/plot.py`
+- Tests: `TestHMCPlotHelpers` in `tests/unit/test_plot.py`
 
 ## Related
 
 - CIP: 0008
 - REQ: 0008
-- Depends on: 2026-09-29_hmc-core-sampler (preferred)
+- Depends on: 2026-09-29_hmc-core-sampler
 
 ## Progress Updates
 
 ### 2026-09-29
 Task created when CIP-0008 was accepted.
+
+### 2026-09-29
+Completed plot helpers and smoke tests.
