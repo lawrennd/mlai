@@ -16,6 +16,8 @@ This file provides an overview of all current backlog items organized by categor
 
 ### Proposed
 
+- [Raise remaining mlai.plot docstrings to Sphinx teaching quality](documentation/2026-09-29_plot-docstring-quality-pass.md)
+
 - [Final review and testing for CIP-0001 documentation](documentation/2026-09-29_cip0001-final-docs-review.md)
 
 - [Ensure Tutorials are Shared in Documentation and Integration with Tests is](documentation/2025-07-16_tutorial-documentation-integration.md)

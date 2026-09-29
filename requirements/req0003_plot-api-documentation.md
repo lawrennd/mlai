@@ -46,3 +46,6 @@ Extracted from CIP-0003. Distinct from REQ-0001 (discoverable docs infrastructur
 
 ### 2026-09-29
 Requirement extracted from CIP-0003.
+
+### 2026-09-29
+CIP-0003 accepted and moved to In Progress. Requirement stays Proposed until the residual Sphinx-quality pass (and Kronecker duplicate fix) lands.
