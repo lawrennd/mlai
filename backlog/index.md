@@ -16,7 +16,9 @@ This file provides an overview of all current backlog items organized by categor
 
 ### Proposed
 
-- [Ensure Tutorials are Shared in Documentation and Integration with Tests is Documented](documentation/2025-07-16_tutorial-documentation-integration.md)
+- [Final review and testing for CIP-0001 documentation](documentation/2026-09-29_cip0001-final-docs-review.md)
+
+- [Ensure Tutorials are Shared in Documentation and Integration with Tests is](documentation/2025-07-16_tutorial-documentation-integration.md)
 
 
 ## Infrastructure
@@ -77,6 +79,10 @@ This file provides an overview of all current backlog items organized by categor
 ---
 
 ## Recently Completed Tasks
+
+- [Add Sphinx tutorial pages aligned with tested workflows](documentation/2025-07-15_sphinx-tutorial-pages.md)
+
+- [Establish Sphinx documentation foundation for MLAI](documentation/2025-07-09_sphinx-documentation-foundation.md)
 
 - [Fix stale mlai.mlai import in mountain_car.py](bugs/2026-03-21_mountain-car-stale-mlai-import.md)
 

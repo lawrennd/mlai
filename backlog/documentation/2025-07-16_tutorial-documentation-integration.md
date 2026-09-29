@@ -3,10 +3,12 @@ author: Neil Lawrence
 category: documentation
 created: '2025-07-16'
 id: 2025-07-16_tutorial-documentation-integration
-last_updated: '2025-07-16'
+last_updated: '2026-09-29'
 owner: Neil Lawrence
 priority: Medium
-related_cips: []
+related_cips:
+- '0001'
+- '0002'
 status: Proposed
 tags:
 - backlog
@@ -45,11 +47,16 @@ The MLAI project has comprehensive integration tests for tutorial workflows, but
 - Consider adding screenshots or example plots from successful test runs
 
 ## Related
-- CIP: 0002 (Comprehensive Test Framework)
+- CIP: 0001 (Documentation Improvements with Sphinx) — tutorials shared in Sphinx docs
+- CIP: 0002 (Comprehensive Test Framework) — documenting tutorial integration tests
 - Integration Tests: `tests/integration/test_tutorial_workflows.py`
 - Workflow Script Tests: `tests/integration/test_workflow_script.py`
+- Prior CIP-0001 tutorials: `2025-07-15_sphinx-tutorial-pages.md`
 
 ## Progress Updates
 
 ### 2025-07-16
 Task created with Proposed status.
+
+### 2026-09-29
+Linked to CIP-0001 and CIP-0002 via `related_cips` for VibeSafe traceability.
