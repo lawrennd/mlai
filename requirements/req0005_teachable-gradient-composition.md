@@ -47,3 +47,6 @@ CIP-0005 is one HOW (simple attention for transformer chain-rule notes). The req
 
 ### 2026-09-29
 Requirement extracted from CIP-0005, then generalized away from a single architecture.
+
+### 2026-09-29 (CIP-0005 Implemented)
+CIP-0005 accepted and marked Implemented: `AttentionLayer` / `MultiHeadAttentionLayer` / `PositionalEncodingLayer` ship with gradient tests and snippet usage. This requirement stays **Proposed** — the transformer attention work is one HOW instance; broader multi-architecture teachable gradient composition is still open.
