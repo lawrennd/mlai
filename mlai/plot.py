@@ -4890,6 +4890,9 @@ def lagrange_parallel_vectors(
     """
     os.makedirs(diagrams, exist_ok=True)
 
+    if abs(lam) < 1e-12:
+        raise ValueError('lam must be nonzero so that nabla g = -nabla f / lam is defined')
+
     if grad_f is None:
         grad_f = np.array([1.0, 1.0], dtype=float)
     else:
@@ -4897,19 +4900,20 @@ def lagrange_parallel_vectors(
     unit_f = grad_f / np.linalg.norm(grad_f)
     perp = np.array([-unit_f[1], unit_f[0]])
 
+    # Stationarity: ∇f + λ∇g = 0  ⇒  ∇g = -∇f / λ
     if grad_g_final is None:
-        grad_g_final = grad_f.copy()
+        grad_g_final = -grad_f / lam
     else:
         grad_g_final = np.asarray(grad_g_final, dtype=float)
 
     if grad_g_initial is None:
         angle = np.deg2rad(52.0)
-        length = 1.15
+        length = 0.85 * np.linalg.norm(grad_g_final)
         grad_g_initial = length * (np.cos(angle) * unit_f + np.sin(angle) * perp)
 
     if grad_g_parallel is None:
-        # Parallel to grad_f but wrong magnitude for stationarity at lam.
-        grad_g_parallel = 0.45 * grad_f
+        # Parallel to final ∇g (hence to ∇f) but wrong magnitude for stationarity.
+        grad_g_parallel = 0.45 * grad_g_final
 
     color_f = [0.0, 0.35, 0.7]
     color_g = [0.0, 0.55, 0.25]
@@ -4918,16 +4922,34 @@ def lagrange_parallel_vectors(
     head_width = 0.08
     head_length = 0.06
 
-    lim = 1.55
+    # Axis limits from all key vectors (including λ∇g and residuals)
+    candidates = [
+        grad_f,
+        grad_g_initial,
+        grad_g_parallel,
+        grad_g_final,
+        lam * grad_g_initial,
+        lam * grad_g_parallel,
+        lam * grad_g_final,
+        grad_f + lam * grad_g_initial,
+        grad_f + lam * grad_g_parallel,
+    ]
+    stacked = np.vstack(candidates)
+    pad = 0.35
+    xmin = float(min(stacked[:, 0].min(), -0.25) - pad)
+    xmax = float(max(stacked[:, 0].max(), 0.25) + pad)
+    ymin = float(min(stacked[:, 1].min(), -0.25) - pad)
+    ymax = float(max(stacked[:, 1].max(), 0.25) + pad)
+
     counter = 0
     file_stub = 'lagrange-parallel-vectors{counter:0>3}.svg'
 
-    def _draw_frame(grad_g, stage_label=None, show_zero=False):
+    def _draw_frame(grad_g, stage_label=None):
         nonlocal counter
         fig, ax = plt.subplots(figsize=big_figsize)
         ax.set_aspect('equal')
-        ax.set_xlim(-0.25, lim)
-        ax.set_ylim(-0.25, lim)
+        ax.set_xlim(xmin, xmax)
+        ax.set_ylim(ymin, ymax)
         ax.grid(True, alpha=0.25, linewidth=0.8)
         ax.axhline(0, color='0.85', linewidth=0.8, zorder=0)
         ax.axvline(0, color='0.85', linewidth=0.8, zorder=0)
@@ -4949,15 +4971,20 @@ def lagrange_parallel_vectors(
         arrow(lam_g, color_lam_g, lw=2.0, zorder=2, alpha=0.85)
 
         res_norm = np.linalg.norm(residual)
-        if show_zero or res_norm < 1e-6:
+        label_offset = 0.08
+        if res_norm < 1e-6:
             ax.plot(0.0, 0.0, 'o', color=color_residual, markersize=10, zorder=4)
             ax.text(
-                0.08, 0.08, r'$\nabla f + \lambda\nabla g = \mathbf{0}$',
+                label_offset, label_offset,
+                r'$\nabla f + \lambda\nabla g = \mathbf{0}$',
                 fontsize=fontsize, color=color_residual)
         else:
             arrow(residual, color_residual, lw=2.0, zorder=2, alpha=0.9)
+            ax.text(
+                residual[0] + label_offset, residual[1],
+                r'$\nabla f + \lambda\nabla g$',
+                fontsize=fontsize - 1, color=color_residual)
 
-        label_offset = 0.06
         ax.text(
             grad_f[0] + label_offset, grad_f[1] + label_offset,
             r'$\nabla f$', fontsize=fontsize, color=color_f)
@@ -4967,11 +4994,6 @@ def lagrange_parallel_vectors(
         ax.text(
             lam_g[0] - label_offset, lam_g[1] + label_offset,
             r'$\lambda\nabla g$', fontsize=fontsize, color=color_lam_g)
-        if not (show_zero or res_norm < 1e-6):
-            ax.text(
-                residual[0] + label_offset, residual[1],
-                r'$\nabla f + \lambda\nabla g$',
-                fontsize=fontsize - 1, color=color_residual)
 
         if stage_label:
             ax.set_title(stage_label, fontsize=fontsize)
@@ -4983,160 +5005,24 @@ def lagrange_parallel_vectors(
     for _ in range(n_hold):
         _draw_frame(grad_g_initial, stage_label='Stage 1: general gradients')
 
-    for t in np.linspace(0.0, 1.0, n_rotate, endpoint=False):
+    # Morph between holds; skip endpoints (holds already show them).
+    for t in np.linspace(0.0, 1.0, n_rotate + 2)[1:-1]:
         grad_g = (1.0 - t) * grad_g_initial + t * grad_g_parallel
         _draw_frame(grad_g)
 
     for _ in range(n_hold):
         _draw_frame(grad_g_parallel, stage_label='Stage 2: parallel, wrong scale')
 
-    for t in np.linspace(0.0, 1.0, n_scale, endpoint=False):
+    for t in np.linspace(0.0, 1.0, n_scale + 2)[1:-1]:
         grad_g = (1.0 - t) * grad_g_parallel + t * grad_g_final
         _draw_frame(grad_g)
 
     for _ in range(n_hold):
         _draw_frame(
             grad_g_final,
-            stage_label='Stage 3: $\\nabla f + \\lambda\\nabla g = 0$',
-            show_zero=True)
+            stage_label=r'Stage 3: $\nabla f + \lambda\nabla g = 0$')
 
     return counter
 
-
-def lagrange_parallel_vectors(
-        lam=-0.5,
-        diagrams='../diagrams/physics',
-        n_hold=1,
-        n_rotate=5,
-        n_scale=5,
-        grad_f=None,
-        grad_g_initial=None,
-        grad_g_parallel=None,
-        grad_g_final=None,
-        fontsize=16):
-    """
-    Animate the stationarity condition nabla f + lambda nabla g = 0 as aligned gradients.
-
-    Stage 1: general nabla f and nabla g with nonzero residual.
-    Stage 2: nabla g parallel to nabla f but wrong scale (residual still nonzero).
-    Stage 3: nabla g scaled so nabla f + lambda nabla g = 0.
-
-    :param lam: Lagrange multiplier (default: -0.5, worked example in lagrange snippet).
-    :param diagrams: Output directory for numbered SVG frames.
-    :param n_hold: Hold frames at each stage end (default: 1).
-    :param n_rotate: Interpolation frames rotating nabla g toward nabla f (default: 5).
-    :param n_scale: Interpolation frames scaling nabla g to the correct magnitude (default: 5).
-    :returns: Number of frames written.
-    """
-    os.makedirs(diagrams, exist_ok=True)
-
-    if grad_f is None:
-        grad_f = np.array([1.0, 1.0], dtype=float)
-    else:
-        grad_f = np.asarray(grad_f, dtype=float)
-    unit_f = grad_f / np.linalg.norm(grad_f)
-    perp = np.array([-unit_f[1], unit_f[0]])
-
-    if grad_g_final is None:
-        grad_g_final = grad_f.copy()
-    else:
-        grad_g_final = np.asarray(grad_g_final, dtype=float)
-
-    if grad_g_initial is None:
-        angle = np.deg2rad(52.0)
-        length = 1.15
-        grad_g_initial = length * (np.cos(angle) * unit_f + np.sin(angle) * perp)
-
-    if grad_g_parallel is None:
-        # Parallel to grad_f but wrong magnitude for stationarity at lam.
-        grad_g_parallel = 0.45 * grad_f
-
-    color_f = [0.0, 0.35, 0.7]
-    color_g = [0.0, 0.55, 0.25]
-    color_lam_g = [0.55, 0.75, 0.95]
-    color_residual = [0.85, 0.2, 0.15]
-    head_width = 0.08
-    head_length = 0.06
-
-    lim = 1.55
-    counter = 0
-    file_stub = 'lagrange-parallel-vectors{counter:0>3}.svg'
-
-    def _draw_frame(grad_g, stage_label=None, show_zero=False):
-        nonlocal counter
-        fig, ax = plt.subplots(figsize=big_figsize)
-        ax.set_aspect('equal')
-        ax.set_xlim(-0.25, lim)
-        ax.set_ylim(-0.25, lim)
-        ax.grid(True, alpha=0.25, linewidth=0.8)
-        ax.axhline(0, color='0.85', linewidth=0.8, zorder=0)
-        ax.axvline(0, color='0.85', linewidth=0.8, zorder=0)
-        ax.set_xlabel(r'$x$', fontsize=fontsize)
-        ax.set_ylabel(r'$y$', fontsize=fontsize)
-
-        lam_g = lam * grad_g
-        residual = grad_f + lam_g
-
-        def arrow(vec, color, lw=2.5, zorder=2, alpha=1.0):
-            ax.arrow(
-                0.0, 0.0, vec[0], vec[1],
-                head_width=head_width, head_length=head_length,
-                length_includes_head=True,
-                fc=color, ec=color, linewidth=lw, zorder=zorder, alpha=alpha)
-
-        arrow(grad_f, color_f, lw=3.0, zorder=3)
-        arrow(grad_g, color_g, lw=2.5, zorder=2)
-        arrow(lam_g, color_lam_g, lw=2.0, zorder=2, alpha=0.85)
-
-        res_norm = np.linalg.norm(residual)
-        if show_zero or res_norm < 1e-6:
-            ax.plot(0.0, 0.0, 'o', color=color_residual, markersize=10, zorder=4)
-            ax.text(
-                0.08, 0.08, r'$\nabla f + \lambda\nabla g = \mathbf{0}$',
-                fontsize=fontsize, color=color_residual)
-        else:
-            arrow(residual, color_residual, lw=2.0, zorder=2, alpha=0.9)
-
-        label_offset = 0.06
-        ax.text(
-            grad_f[0] + label_offset, grad_f[1] + label_offset,
-            r'$\nabla f$', fontsize=fontsize, color=color_f)
-        ax.text(
-            grad_g[0] + label_offset, grad_g[1] - label_offset,
-            r'$\nabla g$', fontsize=fontsize, color=color_g)
-        ax.text(
-            lam_g[0] - label_offset, lam_g[1] + label_offset,
-            r'$\lambda\nabla g$', fontsize=fontsize, color=color_lam_g)
-        if not (show_zero or res_norm < 1e-6):
-            ax.text(
-                residual[0] + label_offset, residual[1],
-                r'$\nabla f + \lambda\nabla g$',
-                fontsize=fontsize - 1, color=color_residual)
-
-        if stage_label:
-            ax.set_title(stage_label, fontsize=fontsize)
-
-        ma.write_figure(file_stub.format(counter=counter), directory=diagrams, transparent=True)
-        plt.close(fig)
-        counter += 1
-
-    for _ in range(n_hold):
-        _draw_frame(grad_g_initial, stage_label='Stage 1: general gradients')
-
-    for t in np.linspace(0.0, 1.0, n_rotate, endpoint=False):
-        grad_g = (1.0 - t) * grad_g_initial + t * grad_g_parallel
-        _draw_frame(grad_g)
-
-    for _ in range(n_hold):
-        _draw_frame(grad_g_parallel, stage_label='Stage 2: parallel, wrong scale')
-
-    for t in np.linspace(0.0, 1.0, n_scale, endpoint=False):
-        grad_g = (1.0 - t) * grad_g_parallel + t * grad_g_final
-        _draw_frame(grad_g)
-
-    for _ in range(n_hold):
-        _draw_frame(grad_g_final, stage_label='Stage 3: $\\nabla f + \\lambda\\nabla g = 0$', show_zero=True)
-
-    return counter
 
 
