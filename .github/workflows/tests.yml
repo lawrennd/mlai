@@ -43,7 +43,8 @@ jobs:
 
     - name: Run tests with coverage
       run: |
-        poetry run pytest --cov=mlai --cov-report=xml --cov-report=html --cov-report=term-missing
+        # Slow statistical HMC layers (pytest -m slow) stay off PR CI by default
+        poetry run pytest -m "not slow" --cov=mlai --cov-report=xml --cov-report=html --cov-report=term-missing
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v3

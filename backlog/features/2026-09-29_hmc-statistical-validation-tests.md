@@ -7,7 +7,7 @@ owner: Neil D. Lawrence
 priority: Medium
 related_cips:
 - '0008'
-status: Proposed
+status: Completed
 tags:
 - backlog
 - features
@@ -162,15 +162,15 @@ def test_hmc_correlated_gaussian_extended(...): ...
 
 ## Acceptance Criteria
 
-- [ ] Layer A: reversibility tests for isotropic and $\rho=0.95$ potentials
-- [ ] Layer B: tiny-$\varepsilon$ conservation retained; Creutz-style $\widehat{\mathbb{E}}[e^{-\Delta H}] \approx 1$ with documented tolerances
-- [ ] Layer C: default-CI correlated Gaussian mean / var / cov / accept-rate within tables
-- [ ] Layer C: `@pytest.mark.slow` extended-budget twin
-- [ ] Layer D: slow marginal QQ or KS-style check vs analytic $\mathcal{N}(0,1)$
-- [ ] Existing isotropic moment test retained
-- [ ] Layers E–F either implemented as optional slow tests or explicitly deferred in a progress note
-- [ ] CIP-0008 Testing Strategy updated with a short pointer to these layers / tolerances
-- [ ] Default CI runs non-slow layers only
+- [x] Layer A: reversibility tests for isotropic and $\rho=0.95$ potentials
+- [x] Layer B: tiny-$\varepsilon$ conservation retained; Creutz-style $\widehat{\mathbb{E}}[e^{-\Delta H}] \approx 1$ with documented tolerances
+- [x] Layer C: default-CI correlated Gaussian mean / var / cov / accept-rate within tables
+- [x] Layer C: `@pytest.mark.slow` extended-budget twin
+- [x] Layer D: slow marginal QQ or KS-style check vs analytic $\mathcal{N}(0,1)$
+- [x] Existing isotropic moment test retained
+- [x] Layers E–F either implemented as optional slow tests or explicitly deferred in a progress note
+- [x] CIP-0008 Testing Strategy updated with a short pointer to these layers / tolerances
+- [x] Default CI runs non-slow layers only
 
 ## Implementation Notes
 
@@ -193,3 +193,6 @@ Task created for correlated-Gaussian moments, tolerances, and CI vs slow policy.
 
 ### 2026-09-29
 Expanded to layered suite: reversibility (A), Creutz / $\Delta H$ sanity (B), correlated moments (C), slow marginal vs analytic (D), optional funnel (E) and ESS floor (F); multimodal / R-hat explicitly out of scope.
+
+### 2026-09-29
+Implemented in `tests/unit/test_hmc.py` (classes A–F). Correlated gate uses `step_size=0.3`, `n_steps=10`, `mass=1`. PR CI updated to `pytest -m "not slow"`. CIP-0008 Testing Strategy updated. Status → Completed.
