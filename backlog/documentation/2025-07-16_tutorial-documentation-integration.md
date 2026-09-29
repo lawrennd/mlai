@@ -1,16 +1,21 @@
 ---
-author: "Neil Lawrence"
-created: "2025-07-16"
-id: "2025-07-16_tutorial-documentation-integration"
-last_updated: "2025-07-16"
-status: proposed
+author: Neil Lawrence
+category: documentation
+created: '2025-07-16'
+id: 2025-07-16_tutorial-documentation-integration
+last_updated: '2025-07-16'
+owner: Neil Lawrence
+priority: Medium
+related_cips: []
+status: Proposed
 tags:
 - backlog
 - documentation
 - tutorials
 - testing
 - integration
-title: "Ensure Tutorials are Shared in Documentation and Integration with Tests is Documented"
+title: Ensure Tutorials are Shared in Documentation and Integration with Tests is
+  Documented
 ---
 
 # Task: Ensure Tutorials are Shared in Documentation and Integration with Tests is Documented
@@ -47,4 +52,4 @@ The MLAI project has comprehensive integration tests for tutorial workflows, but
 ## Progress Updates
 
 ### 2025-07-16
-Task created with Proposed status. 
+Task created with Proposed status.

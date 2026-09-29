@@ -1,11 +1,13 @@
 ---
-id: "2026-03-21_mountain-car-stale-mlai-import"
-title: "Fix stale mlai.mlai import in mountain_car.py"
-status: "Completed"
-priority: "High"
-created: "2026-03-21"
-last_updated: "2026-03-21"
-category: "bugs"
+category: bugs
+created: '2026-03-21'
+id: 2026-03-21_mountain-car-stale-mlai-import
+last_updated: '2026-03-21'
+owner: Neil D. Lawrence
+priority: High
+related_cips: []
+status: Completed
+title: Fix stale mlai.mlai import in mountain_car.py
 ---
 
 # Task: Fix stale mlai.mlai import in mountain_car.py

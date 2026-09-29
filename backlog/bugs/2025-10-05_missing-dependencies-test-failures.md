@@ -1,9 +1,12 @@
 ---
-owner: "Neil D. Lawrence"
-created: "2025-10-05"
-id: "2025-10-05_missing-dependencies-test-failures"
-last_updated: "2025-10-05"
-status: proposed
+category: bugs
+created: '2025-10-05'
+id: 2025-10-05_missing-dependencies-test-failures
+last_updated: '2025-10-05'
+owner: Neil D. Lawrence
+priority: Medium
+related_cips: []
+status: Proposed
 tags:
 - backlog
 - bugs
@@ -11,7 +14,7 @@ tags:
 - dependencies
 - gpy
 - daft
-title: "Fix test failures due to missing optional dependencies (GPy, Daft)"
+title: Fix test failures due to missing optional dependencies (GPy, Daft)
 ---
 
 # Task: Fix test failures due to missing optional dependencies

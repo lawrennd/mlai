@@ -1,16 +1,20 @@
 ---
-author: "Neil D. Lawrence"
-created: "2025-10-05"
-id: "2025-10-05_plotting-test-failures"
-last_updated: "2025-10-05"
-status: proposed
+author: Neil D. Lawrence
+category: bugs
+created: '2025-10-05'
+id: 2025-10-05_plotting-test-failures
+last_updated: '2025-10-05'
+owner: Neil D. Lawrence
+priority: Medium
+related_cips: []
+status: Proposed
 tags:
 - backlog
 - bugs
 - testing
 - plotting
 - matplotlib
-title: "Fix remaining plotting test failures"
+title: Fix remaining plotting test failures
 ---
 
 # Task: Fix remaining plotting test failures

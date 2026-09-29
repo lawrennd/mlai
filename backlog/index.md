@@ -78,7 +78,7 @@ This file provides an overview of all current backlog items organized by categor
 
 ## Recently Completed Tasks
 
-*No tasks recently completed.*
+- [Fix stale mlai.mlai import in mountain_car.py](bugs/2026-03-21_mountain-car-stale-mlai-import.md)
 
 
 ## Recently Abandoned Tasks

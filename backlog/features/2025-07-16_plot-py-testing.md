@@ -1,16 +1,20 @@
 ---
-author: "Neil Lawrence"
-created: "2025-07-16"
-id: "2025-07-16_plot-py-testing"
-last_updated: "2025-07-16"
-status: proposed
+author: Neil Lawrence
+category: features
+created: '2025-07-16'
+id: 2025-07-16_plot-py-testing
+last_updated: '2025-07-16'
+owner: Neil Lawrence
+priority: Medium
+related_cips: []
+status: Proposed
 tags:
 - backlog
 - features
 - testing
 - plot
 - coverage
-title: "Build Comprehensive Tests for plot.py"
+title: Build Comprehensive Tests for plot.py
 ---
 
 # Task: Build Comprehensive Tests for plot.py
@@ -71,4 +75,4 @@ Task created with Proposed status.
   - Maintained backward compatibility with ":" string parameter
 - *All 35 tests passing* (100% success rate)
 - *Status*: Still in progress - tested ~6-8 functions out of ~60+ total functions
-- *Remaining Work*: Need to test remaining ~50+ functions including covariance_capacity, prob_diagram, perceptron visualization, regression plotting, model evaluation functions, statistical plots, kernel visualization, and advanced visualization functions 
+- *Remaining Work*: Need to test remaining ~50+ functions including covariance_capacity, prob_diagram, perceptron visualization, regression plotting, model evaluation functions, statistical plots, kernel visualization, and advanced visualization functions

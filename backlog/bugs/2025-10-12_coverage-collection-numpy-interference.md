@@ -1,13 +1,14 @@
 ---
-id: "2025-10-12_coverage-collection-numpy-interference"
-title: "Fix Coverage Collection Interference with NumPy"
-status: "Proposed"
-priority: "Medium"
-created: "2025-10-12"
-last_updated: "2025-10-12"
-owner: "Neil D. Lawrence"
-github_issue: ""
-dependencies: ""
+category: bugs
+created: '2025-10-12'
+dependencies: ''
+github_issue: ''
+id: 2025-10-12_coverage-collection-numpy-interference
+last_updated: '2025-10-12'
+owner: Neil D. Lawrence
+priority: Medium
+related_cips: []
+status: Proposed
 tags:
 - backlog
 - bug
@@ -15,6 +16,7 @@ tags:
 - coverage
 - numpy
 - matplotlib
+title: Fix Coverage Collection Interference with NumPy
 ---
 
 # Task: Fix Coverage Collection Interference with NumPy

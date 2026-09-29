@@ -1,9 +1,12 @@
 ---
+id: vibesafe-mlai-tenets
 title: "MLAI Project Tenets"
 author: "Neil Lawrence"
 created: "2025-07-09"
 last_updated: "2025-07-09"
-status: draft
+last_reviewed: "2025-07-09"
+review_frequency: Annual
+status: Active
 tags:
   - tenets
   - teaching
