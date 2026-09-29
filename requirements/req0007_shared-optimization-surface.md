@@ -47,3 +47,6 @@ Extracted from CIP-0007. Choice of particular optimizers and exact property name
 
 ### 2026-09-29
 Requirement extracted from CIP-0007.
+
+### 2026-09-29 (CIP-0007 Accepted)
+CIP-0007 accepted and marked In Progress: `Optimiser` / `SGD` / `Adam` / `train_model` ship with LM and neural-net integration tests. This requirement stays **Proposed** until the GP shared surface (and any other teaching-critical families) land; optional extra algorithms are backlog, not blockers for the core outcome.
