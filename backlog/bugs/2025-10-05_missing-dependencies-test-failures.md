@@ -2,10 +2,11 @@
 category: bugs
 created: '2025-10-05'
 id: 2025-10-05_missing-dependencies-test-failures
-last_updated: '2025-10-05'
+last_updated: '2026-09-29'
 owner: Neil D. Lawrence
 priority: Medium
-related_cips: []
+related_cips:
+- '0002'
 status: Proposed
 tags:
 - backlog
@@ -48,6 +49,7 @@ Several tests are failing because optional dependencies (GPy, Daft) are not avai
 
 ## Related
 
+- CIP: 0002 (Comprehensive Test Framework)
 - Core mlai functionality should work without these dependencies
 - Transformer implementation is independent of these dependencies
 - Educational materials should not require these dependencies
@@ -71,3 +73,6 @@ with patch.dict('sys.modules', {'GPy': MagicMock()}):
 
 Remaining acceptance criteria still open: Daft dependency, CI/CD configuration, and coverage
 of other GPy-dependent modules (`gp_tutorial`).
+
+### 2026-09-29
+Linked to CIP-0002 via `related_cips` after CIP-0002 acceptance.

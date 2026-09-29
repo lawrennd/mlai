@@ -48,3 +48,6 @@ Extracted from CIP-0002. Some tests and CI already exist; the requirement captur
 
 ### 2026-09-29
 Requirement extracted from CIP-0002.
+
+### 2026-09-29
+CIP-0002 accepted and moved to In Progress. Requirement remains Proposed until residual acceptance criteria (optional-deps clarity, plot depth, documented single-command suite) are closer to done.

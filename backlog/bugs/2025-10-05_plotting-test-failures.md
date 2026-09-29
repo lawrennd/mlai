@@ -3,10 +3,11 @@ author: Neil D. Lawrence
 category: bugs
 created: '2025-10-05'
 id: 2025-10-05_plotting-test-failures
-last_updated: '2025-10-05'
+last_updated: '2026-09-29'
 owner: Neil D. Lawrence
 priority: Medium
-related_cips: []
+related_cips:
+- '0002'
 status: Proposed
 tags:
 - backlog
@@ -50,6 +51,7 @@ Several plotting tests are still failing after fixing the perceptron plotting is
 
 ## Related
 
+- CIP: 0002 (Comprehensive Test Framework)
 - Perceptron plotting tests were successfully fixed
 - Core mlai functionality is working
 - Transformer implementation is independent of plotting issues
@@ -58,3 +60,6 @@ Several plotting tests are still failing after fixing the perceptron plotting is
 
 ### 2025-10-05
 Task created to address remaining plotting test failures after fixing perceptron plotting issues.
+
+### 2026-09-29
+Linked to CIP-0002 via `related_cips` after CIP-0002 acceptance.

@@ -4,10 +4,12 @@ created: '2025-10-12'
 dependencies: ''
 github_issue: ''
 id: 2025-10-12_coverage-collection-numpy-interference
-last_updated: '2025-10-12'
+last_updated: '2026-09-29'
 owner: Neil D. Lawrence
 priority: Medium
-related_cips: []
+related_cips:
+- '0002'
+- '0006'
 status: Proposed
 tags:
 - backlog
@@ -91,6 +93,7 @@ The issue occurs when:
 
 ## Related
 
+- CIP: 0002 (Comprehensive Test Framework)
 - CIP: 0006 (Refactor mlai.py into Modular Structure)
 - Test Coverage: 82% coverage achieved before issue
 - Core Functionality: All ML algorithms work correctly (157/164 tests pass)
@@ -102,3 +105,6 @@ The issue occurs when:
 - Root cause analysis completed
 - Test skipping approach REJECTED as unacceptable
 - Ready for proper implementation (no workarounds)
+
+### 2026-09-29
+Linked to CIP-0002 (and CIP-0006) via `related_cips` after CIP-0002 acceptance.

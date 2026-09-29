@@ -3,10 +3,11 @@ author: Neil Lawrence
 category: features
 created: '2025-07-16'
 id: 2025-07-16_plot-py-testing
-last_updated: '2025-07-16'
+last_updated: '2026-09-29'
 owner: Neil Lawrence
 priority: Medium
-related_cips: []
+related_cips:
+- '0002'
 status: Proposed
 tags:
 - backlog
@@ -57,6 +58,9 @@ The `plot.py` module currently has very low test coverage (8%) and needs compreh
 
 ### 2025-07-16
 Task created with Proposed status.
+
+### 2026-09-29
+Confirmed `related_cips: ["0002"]` after CIP-0002 acceptance.
 
 ### 2025-07-16 (Updated)
 *Significant Progress Made:*
