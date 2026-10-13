@@ -290,4 +290,60 @@ def test_visualize_pinball_with_mocked_dependencies():
         # Test the function
         deepgp_tutorial.visualize_pinball(mock_self, ax=mock_ax, scale=1.0, offset=0.0)
         # Verify the function executed without errors
-        assert mock_plot.model_output.called 
+        assert mock_plot.model_output.called
+
+
+def _assert_pinball_fill_shapes(mock_ax):
+    """ax.fill must receive matching 1-D polygons (GPy discussion #1001)."""
+    assert mock_ax.fill.called
+    for call in mock_ax.fill.call_args_list:
+        x_err, y_err = call.args[0], call.args[1]
+        x_err = np.asarray(x_err)
+        y_err = np.asarray(y_err)
+        assert x_err.ndim == 1
+        assert y_err.ndim == 1
+        assert x_err.shape[0] == y_err.shape[0]
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "mean_shape,var_shape",
+    [
+        ((3, 1), (3, 1)),   # typical GPy column vectors
+        ((1, 3), (1, 3)),   # row vectors that previously broke ax.fill
+        ((3,), (3,)),       # already flat
+    ],
+)
+def test_visualize_pinball_squeezes_predict_shapes(mean_shape, var_shape):
+    """Regression: non-flat predict outputs must not break pinball ribbons."""
+    with patch.dict('sys.modules', {'GPy': MagicMock()}):
+        import mlai.deepgp_tutorial as deepgp_tutorial
+    with patch.object(deepgp_tutorial, 'plot') as mock_plot:
+        mock_self = MagicMock()
+        mock_self.X = np.array([[1.0], [2.0], [3.0]])
+        mock_self.Y = np.array([[1.0], [2.0], [3.0]])
+
+        mean = np.arange(1.0, 4.0).reshape(mean_shape)
+        var = np.full(3, 0.1).reshape(var_shape)
+        mock_layer1 = MagicMock()
+        mock_layer1.predict = MagicMock(return_value=(mean.copy(), var.copy()))
+        mock_layer2 = MagicMock()
+        mock_layer2.predict = MagicMock(
+            return_value=(mean.copy() + 1.0, var.copy() * 2))
+        mock_self.layers = [mock_layer1, mock_layer2]
+        mock_self.obslayer = mock_layer2
+
+        mock_plot.pred_range.return_value = np.array([[1.0], [2.0], [3.0]])
+        mock_plot.model_output = MagicMock()
+
+        mock_ax = MagicMock()
+        mock_ax.get_xlim.return_value = (0, 5)
+        mock_ax.get_xticks.return_value = np.array([0, 1, 2, 3, 4, 5])
+        mock_ax.get_xticklabels.return_value = ['0', '1', '2', '3', '4', '5']
+        mock_ax.get_ylim.return_value = (0, 5)
+        mock_ax.get_yticks.return_value = np.array([0, 1, 2, 3, 4, 5])
+        mock_ax.get_yticklabels.return_value = ['0', '1', '2', '3', '4', '5']
+
+        deepgp_tutorial.visualize_pinball(
+            mock_self, ax=mock_ax, scale=1.0, offset=0.0, points=3)
+        _assert_pinball_fill_shapes(mock_ax)
