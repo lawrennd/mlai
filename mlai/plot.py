@@ -2254,6 +2254,50 @@ def correlated_gaussians_sample(x=None, y=None, mu_x=0, var_x=1,
         count+=1
 
 
+def independent_height_weight(h=None, w=None, muh=1.7, varh=0.0225,
+                              muw=75, varw=36, num_samps=20,
+                              diagrams='../diagrams'):
+    """Plot independent height and weight samples.
+
+    Compatibility wrapper around :func:`independent_gaussians_sample` that
+    preserves the original teaching API used by unit tests and lecture notes.
+    """
+    return independent_gaussians_sample(
+        x=h,
+        y=w,
+        mu_x=muh,
+        var_x=varh,
+        mu_y=muw,
+        var_y=varw,
+        num_samps=num_samps,
+        xlabel='$h/m$',
+        ylabel='$w/kg$',
+        filestub='independent_height_weight',
+        diagrams=diagrams,
+    )
+
+
+def correlated_height_weight(h=None, w=None, muh=1.7, varh=0.0225,
+                             muw=75, varw=36, num_samps=20,
+                             diagrams='../diagrams'):
+    """Plot correlated height and weight samples.
+
+    Compatibility wrapper around :func:`correlated_gaussians_sample` that
+    preserves the original teaching API used by unit tests and lecture notes.
+    """
+    return correlated_gaussians_sample(
+        x=h,
+        y=w,
+        mu_x=muh,
+        var_x=varh,
+        mu_y=muw,
+        var_y=varw,
+        num_samps=num_samps,
+        xlabel='$h/m$',
+        ylabel='$w/kg$',
+        filestub='correlated_height_weight',
+        diagrams=diagrams,
+    )
 
 
 #################### Session 11 ####################

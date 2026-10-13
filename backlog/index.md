@@ -65,7 +65,7 @@ This file provides an overview of all current backlog items organized by categor
 
 ### Ready
 
-*No tasks currently ready.*
+- [Post reply on GPy discussion #1001 (pinball)](bugs/2026-10-13_gpy-discussion-1001-reply.md)
 
 
 ### In Progress
@@ -86,6 +86,8 @@ This file provides an overview of all current backlog items organized by categor
 
 ## Recently Completed Tasks
 
+- [Fix visualize_pinball ribbon shape mismatch for non-flat predict outputs](bugs/2026-10-13_deepgp-pinball-shape-mismatch.md)
+
 - [Add Sphinx tutorial pages aligned with tested workflows](documentation/2025-07-15_sphinx-tutorial-pages.md)
 
 - [Establish Sphinx documentation foundation for MLAI](documentation/2025-07-09_sphinx-documentation-foundation.md)
@@ -93,8 +95,6 @@ This file provides an overview of all current backlog items organized by categor
 - [Implement teachable attention layers for transformer chain-rule notes](features/2025-10-05_teachable-attention-layers.md)
 
 - [Implement gp_optimize_quadratic Python teaching animation](features/2025-09-17_gp-optimize-quadratic-python.md)
-
-- [Implement teachable Neal-style HMC core sampler](features/2026-09-29_hmc-core-sampler.md)
 
 
 ## Recently Abandoned Tasks

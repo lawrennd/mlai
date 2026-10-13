@@ -165,7 +165,14 @@ def visualize_pinball(self, ax=None, scale=1.0, offset=0.0, xlabel='input', ylab
         
         scaledx, xscale, xoffset = scale_data(x, portion=portion)
         scaledy, yscale, yoffset = scale_data(y, portion=portion)
-        y_std /= yscale
+        # GPy/PyDeepGP predict often returns (n, 1) or (1, n); ribbons need a
+        # scalar std per point (see SheffieldML/GPy discussion #1001).
+        y_std = np.asarray(y_std).squeeze() / yscale
+        y_std = np.atleast_1d(y_std).reshape(-1)
+        if y_std.shape[0] != scaledx.shape[0]:
+            raise ValueError(
+                "y_std length {} does not match number of points {}".format(
+                    y_std.shape[0], scaledx.shape[0]))
 
         # Check whether data is anti-correlated on output
         if np.dot((scaledx-0.5).T, (scaledy-0.5))<0:
@@ -195,7 +202,7 @@ def visualize_pinball(self, ax=None, scale=1.0, offset=0.0, xlabel='input', ylab
             return np.dot(cmap.T, weights).flatten()
 
 
-        for i in range(x.shape[0]):
+        for i in range(scaledx.shape[0]):
             if color_scale is not None:
                 color = color_value(color_scale[i])
             else:
@@ -212,7 +219,7 @@ def visualize_pinball(self, ax=None, scale=1.0, offset=0.0, xlabel='input', ylab
             # Plot error bars that increase as sqrt of distance from start.
             std_points = 50
             stdy = np.linspace(0, alpha,std_points)
-            stdx = np.sqrt(stdy)*y_std[i]
+            stdx = np.sqrt(stdy)*float(y_std[i])
             stdy += layer
             mean_vals = np.linspace(scaledx[i], scaledy[i], std_points)
             upper = mean_vals+stdx 
@@ -243,10 +250,14 @@ def visualize_pinball(self, ax=None, scale=1.0, offset=0.0, xlabel='input', ylab
         if layer==self.obslayer:
             yt_mean = yt_mean*scale + offset
             yt_var *= scale*scale
-        yt_sd = np.sqrt(yt_var)
-        flip = flip*pinball(xt,yt_mean,yt_sd,color_scale,portion=portion, 
+        # Flatten for pinball ribbons only; keep column vectors for the next
+        # layer.predict (GPy kernels require ndim == 2).
+        yt_mean_1d = np.asarray(yt_mean).squeeze()
+        yt_var_1d = np.asarray(yt_var).squeeze()
+        yt_sd = np.sqrt(yt_var_1d)
+        flip = flip*pinball(xt,yt_mean_1d,yt_sd,color_scale,portion=portion, 
                             layer=i, ax=ax, depth=depth,vertical=vertical)#yt_mean-2*yt_sd,yt_mean+2*yt_sd)
-        xt = yt_mean
+        xt = np.asarray(yt_mean).reshape(-1, 1)
     # Make room for axis labels
     if vertical:
         ax.set_ylim((2.1, -0.1))
