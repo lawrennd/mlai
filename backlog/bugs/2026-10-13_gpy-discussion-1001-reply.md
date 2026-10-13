@@ -6,7 +6,7 @@ last_updated: '2026-10-13'
 owner: Neil D. Lawrence
 priority: Medium
 related_cips: []
-status: Ready
+status: Completed
 title: Post reply on GPy discussion #1001 (pinball)
 ---
 
@@ -14,9 +14,10 @@ title: Post reply on GPy discussion #1001 (pinball)
 
 ## Description
 
-`gh` auth for `lawrennd` is currently invalid (`gh auth login` needed), so the
-reply below was not posted automatically. Paste it into
-[SheffieldML/GPy discussion #1001](https://github.com/SheffieldML/GPy/discussions/1001).
+Post a maintainer reply on
+[SheffieldML/GPy discussion #1001](https://github.com/SheffieldML/GPy/discussions/1001)
+pointing reporters at the `mlai` pinball fix (PR
+[#1](https://github.com/lawrennd/mlai/pull/1)).
 
 ## Draft reply
 
@@ -44,12 +45,18 @@ No GPy or PyDeepGP code change is required for this issue.
 
 ## Acceptance Criteria
 
-- [ ] Reply posted on discussion #1001
-- [ ] Link this backlog item from the discussion if useful
+- [x] Reply posted on discussion #1001
+- [x] Reply links the mlai fix PR (`lawrennd/mlai#1`)
 
 ## Progress Updates
 
 ### 2026-10-13
 
-Draft prepared. Automatic post blocked: `gh` reports invalid keyring token for
-`lawrennd` (`gh auth login -h github.com` required).
+Draft prepared. Automatic post initially blocked by Cursor seatbelt proxy
+403 (misreported as invalid `gh` token).
+
+### 2026-10-13 (later)
+
+Posted via unsandboxed `gh` GraphQL after bridle path validated:
+https://github.com/SheffieldML/GPy/discussions/1001#discussioncomment-18905521
+Marked Completed.
