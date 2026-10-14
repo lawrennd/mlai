@@ -22,6 +22,7 @@ __all__ = [
     
     # Kernel Functions
     'eq_cov',
+    'exponentiated_quadratic',
     'ou_cov', 
     'matern32_cov',
     'matern52_cov',
@@ -261,6 +262,9 @@ def eq_cov(x, x_prime, variance=1., lengthscale=1.):
     """
     diffx = x - x_prime
     return variance*np.exp(-0.5*np.dot(diffx, diffx)/lengthscale**2)
+
+# Historical alias used in older teaching material
+exponentiated_quadratic = eq_cov
 
 def ou_cov(x, x_prime, variance=1., lengthscale=1.):
     """

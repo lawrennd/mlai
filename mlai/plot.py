@@ -3784,7 +3784,7 @@ def non_linear_difficulty_plot_2(alpha=1.0,
     subx = x[0::10,:]
     b = ax[0].plot(subx, np.ones(subx.shape), 'b.')
     ax[0].set(ylim=[0.5, 1.5])
-    ax[0].set(Xlim=[-7, 7])
+    ax[0].set(xlim=[-7, 7])
     ax[0].set(aspect='equal')
     clear_axes(ax[0])
     a[0].set(linewidth=3)
@@ -4570,15 +4570,21 @@ def multiple_optima(ax=None, gene_number=937, resolution=80, model_restarts=10, 
 
         m = GPy.models.GPRegression(x, yhat, kernel=kern)
         m.likelihood.variance = noise
-        optim_point_x[0] = m.rbf.lengthscale
-        optim_point_y[0] = np.log10(m.rbf.variance) - np.log10(m.likelihood.variance);
+        optim_point_x[0] = float(np.asarray(m.rbf.lengthscale).ravel()[0])
+        optim_point_y[0] = (
+            np.log10(float(np.asarray(m.rbf.variance).ravel()[0]))
+            - np.log10(float(np.asarray(m.likelihood.variance).ravel()[0]))
+        )
 
         # optimize
         if optimize:
             _ = m.optimize()
 
-        optim_point_x[1] = m.rbf.lengthscale
-        optim_point_y[1] = np.log10(m.rbf.variance) - np.log10(m.likelihood.variance);
+        optim_point_x[1] = float(np.asarray(m.rbf.lengthscale).ravel()[0])
+        optim_point_y[1] = (
+            np.log10(float(np.asarray(m.rbf.variance).ravel()[0]))
+            - np.log10(float(np.asarray(m.likelihood.variance).ravel()[0]))
+        )
 
         from matplotlib.patches import Arrow
         ax.arrow(optim_point_x[0],
