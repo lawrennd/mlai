@@ -135,6 +135,12 @@ def write_figure(filename, figure=None, directory=None, frameon=None, **kwargs):
     savename = filename_join(filename, directory)
     if 'transparent' not in kwargs:
         kwargs['transparent'] = True
+    # Callers sometimes pass axes for context; savefig rejects them.
+    kwargs.pop('ax', None)
+    kwargs.pop('axes', None)
+    # frameon is accepted for API compatibility but is not a savefig kwarg.
+    if frameon is not None:
+        pass
     if figure is None:
         plt.savefig(savename, **kwargs)
     else:

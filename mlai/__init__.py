@@ -62,7 +62,7 @@ from .experimental import SimpleDropoutNeuralNetwork, NonparametricDropoutNeural
 # Import Gaussian Process functions to make them available at package level
 from .gaussian_processes import (
     GP, Kernel,
-    eq_cov, ou_cov, matern32_cov, matern52_cov, periodic_cov,
+    eq_cov, exponentiated_quadratic, ou_cov, matern32_cov, matern52_cov, periodic_cov,
     linear_cov, polynomial_cov, relu_cov, bias_cov, add_cov, prod_cov,
     mlp_cov, sinc_cov, brownian_cov, ratquad_cov, basis_cov,
     icm_cov, lmc_cov, slfm_cov,
