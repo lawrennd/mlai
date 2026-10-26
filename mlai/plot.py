@@ -30,7 +30,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import IPython
 from mpl_toolkits.mplot3d import Axes3D
-from scipy.stats import norm
+from scipy.stats import chi2, norm
 
 
 try:
@@ -1012,6 +1012,203 @@ def hmc_contour_trajectories(
 
     ax.set_xlabel(r'$q_1$', fontsize=fontsize)
     ax.set_ylabel(r'$q_2$', fontsize=fontsize)
+    return artists
+
+
+def hmc_level_refresh(
+    ax,
+    hamiltonians=(0.5, 1.0, 2.0),
+    fontsize=16,
+):
+    """
+    Phase portrait of a unit harmonic oscillator: ride a level of :math:`H`, then refresh :math:`p`.
+
+    Contours of :math:`H=(q^2+p^2)/2` are concentric circles. Hamiltonian
+    flow stays on one circle; a momentum refresh at fixed :math:`q` is a
+    vertical jump to another.
+
+    :param ax: Matplotlib axes.
+    :type ax: matplotlib.axes.Axes
+    :param hamiltonians: Three (or more) values of :math:`H` to draw.
+    :type hamiltonians: sequence of float
+    :param fontsize: Axis label font size (default: 16).
+    :type fontsize: int
+    :returns: Dict of artists (``circles``, ``flow``, ``refresh``).
+    :rtype: dict
+    """
+    levels = np.asarray(hamiltonians, dtype=float)
+    if levels.size < 2:
+        raise ValueError("hamiltonians must contain at least two levels")
+    radii = np.sqrt(2.0 * levels)
+    theta = np.linspace(0.0, 2.0 * np.pi, 300)
+    artists = {'circles': [], 'flow': [], 'refresh': []}
+
+    for r in radii:
+        line, = ax.plot(r * np.cos(theta), r * np.sin(theta), color='0.6', linewidth=1.0)
+        artists['circles'].append(line)
+
+    mid = radii[len(radii) // 2]
+    outer = radii[-1]
+    arc = np.linspace(0.0, 0.5 * np.pi, 80)
+    flow, = ax.plot(mid * np.cos(arc), mid * np.sin(arc), color='C0', linewidth=2.0, label='flow')
+    artists['flow'].append(flow)
+    arc2 = np.linspace(0.5 * np.pi, np.pi, 80)
+    flow2, = ax.plot(outer * np.cos(arc2), outer * np.sin(arc2), color='C0', linewidth=2.0)
+    artists['flow'].append(flow2)
+
+    q_jump = 0.0
+    p_from, p_to = mid, outer
+    refresh, = ax.plot(
+        [q_jump, q_jump], [p_from, p_to],
+        color='C1', linestyle='--', linewidth=1.5, label=r'refresh $p$',
+    )
+    artists['refresh'].append(refresh)
+    ax.annotate(
+        '',
+        xy=(q_jump, p_to),
+        xytext=(q_jump, p_from + 0.08 * (p_to - p_from)),
+        arrowprops=dict(arrowstyle='->', color='C1', lw=1.5),
+    )
+    ax.plot([mid], [0.0], 'o', color='C0', markersize=5)
+    ax.plot([q_jump], [p_from], 'o', color='C0', markersize=5)
+    ax.plot([q_jump], [p_to], 'o', color='C1', markersize=5)
+
+    ax.set_aspect('equal')
+    lim = 1.15 * float(np.max(radii))
+    ax.set_xlim(-lim, lim)
+    ax.set_ylim(-lim, lim)
+    ax.set_xlabel(r'$q$', fontsize=fontsize)
+    ax.set_ylabel(r'$p$', fontsize=fontsize)
+    ax.legend(frameon=False, loc='upper right', fontsize=max(fontsize // 2, 8))
+    return artists
+
+
+def hmc_hop_ride(
+    ax,
+    hamiltonians=(0.5, 1.0, 2.0),
+    step_size=0.25,
+    n_steps=12,
+    fontsize=16,
+):
+    """
+    Hop, ride, correct on the unit oscillator :math:`H=(q^2+p^2)/2`.
+
+    Circles are levels of :math:`H`. A vertical dashed segment is a momentum
+    refresh at fixed :math:`q` (hop). The polyline with markers is a leapfrog
+    trajectory from :func:`mlai.hmc.leapfrog` (ride). Large markers are
+    accepted endpoints (correct). Same oscillator as the Euler/leapfrog plot.
+
+    :param ax: Matplotlib axes.
+    :type ax: matplotlib.axes.Axes
+    :param hamiltonians: Levels of :math:`H`, inner to outer (at least two).
+    :type hamiltonians: sequence of float
+    :param step_size: Leapfrog step size :math:`\\varepsilon`.
+    :type step_size: float
+    :param n_steps: Leapfrog steps :math:`L` on each level.
+    :type n_steps: int
+    :param fontsize: Axis label font size (default: 16).
+    :type fontsize: int
+    :returns: Dict of artists (``circles``, ``flow``, ``refresh``, ``endpoints``).
+    :rtype: dict
+    """
+    from .hmc import leapfrog
+
+    levels = np.asarray(hamiltonians, dtype=float)
+    if levels.size < 2:
+        raise ValueError("hamiltonians must contain at least two levels")
+    if n_steps < 1:
+        raise ValueError("n_steps must be at least 1")
+    radii = np.sqrt(2.0 * levels)
+    theta = np.linspace(0.0, 2.0 * np.pi, 300)
+    artists = {'circles': [], 'flow': [], 'refresh': [], 'endpoints': []}
+    grad = lambda qq: np.asarray(qq, dtype=float)
+    mass = np.ones(1)
+
+    for r in radii:
+        line, = ax.plot(r * np.cos(theta), r * np.sin(theta), color='0.6', linewidth=1.0)
+        artists['circles'].append(line)
+
+    q = 0.0
+    p = float(radii[0])
+    start, = ax.plot([q], [p], 'o', color='C0', markersize=8)
+    artists['endpoints'].append(start)
+    hop_labelled = False
+    ride_labelled = False
+    for H in levels[1:]:
+        p_on = np.sign(p) * np.sqrt(max(2.0 * H - q * q, 0.0))
+        hop, = ax.plot(
+            [q, q], [p, p_on],
+            color='C1', linestyle='--', linewidth=1.5,
+            label=r'hop (refresh $p$)' if not hop_labelled else None,
+        )
+        artists['refresh'].append(hop)
+        hop_labelled = True
+        dy = p_on - p
+        ax.annotate(
+            '',
+            xy=(q, p_on),
+            xytext=(q, p + 0.08 * dy if dy != 0.0 else p),
+            arrowprops=dict(arrowstyle='->', color='C1', lw=1.5),
+        )
+        p = p_on
+        q_arr, p_arr = np.array([q]), np.array([p])
+        qs, ps = [q], [p]
+        for _ in range(n_steps):
+            q_arr, p_arr = leapfrog(q_arr, p_arr, grad, step_size, 1, mass)
+            qs.append(float(q_arr[0]))
+            ps.append(float(p_arr[0]))
+        ride, = ax.plot(
+            qs, ps, 'C0-o', markersize=3, linewidth=1.5,
+            label='ride (leapfrog)' if not ride_labelled else None,
+        )
+        artists['flow'].append(ride)
+        ride_labelled = True
+        end, = ax.plot([qs[-1]], [ps[-1]], 'o', color='C0', markersize=8)
+        artists['endpoints'].append(end)
+        q, p = qs[-1], ps[-1]
+
+    ax.set_aspect('equal')
+    lim = 1.15 * float(np.max(radii))
+    ax.set_xlim(-lim, lim)
+    ax.set_ylim(-lim, lim)
+    ax.set_xlabel(r'$q$', fontsize=fontsize)
+    ax.set_ylabel(r'$p$', fontsize=fontsize)
+    ax.legend(frameon=False, loc='upper right', fontsize=max(fontsize // 2, 8))
+    return artists
+
+
+def chi2_concentration(ax, dims=(2, 10, 50), fontsize=16):
+    """
+    Density of :math:`\\|q\\|^2/d` for :math:`q\\sim\\mathcal{N}(0,I_d)`.
+
+    Under a standard normal, :math:`\\|q\\|^2\\sim\\chi^2_d` has mean :math:`d`
+    and variance :math:`2d`. Plotting the scaled variable shows the mass
+    concentrating at :math:`1` as :math:`d` grows --- the typical set is a
+    shell, not the mode.
+
+    :param ax: Matplotlib axes.
+    :type ax: matplotlib.axes.Axes
+    :param dims: Degrees of freedom (dimensions) to overlay.
+    :type dims: sequence of int
+    :param fontsize: Axis label font size (default: 16).
+    :type fontsize: int
+    :returns: Dict of artists (``densities``, ``reference``).
+    :rtype: dict
+    """
+    y = np.linspace(0.02, 3.0, 400)
+    artists = {'densities': [], 'reference': None}
+    colors = ['C0', 'C1', 'C2', 'C3', 'C4']
+    for i, d in enumerate(dims):
+        d = int(d)
+        if d < 1:
+            raise ValueError("each dimension must be a positive integer")
+        density = d * chi2.pdf(d * y, d)
+        line, = ax.plot(y, density, color=colors[i % len(colors)], label=rf'$d={d}$')
+        artists['densities'].append(line)
+    artists['reference'] = ax.axvline(1.0, color='0.3', linestyle='--', linewidth=1.0)
+    ax.set_xlabel(r'$\|q\|^2/d$', fontsize=fontsize)
+    ax.set_ylabel('density', fontsize=fontsize)
+    ax.legend(frameon=False, loc='upper right', fontsize=max(fontsize // 2, 8))
     return artists
 
 
