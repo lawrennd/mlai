@@ -10,6 +10,7 @@ import unittest
 import numpy as np
 import tempfile
 import os
+import pytest
 from unittest.mock import patch, MagicMock
 
 # Import mlai modules
@@ -297,13 +298,11 @@ class TestUtilityFunctions:
                 expected_path = os.path.join(temp_dir, "test.png")
                 mock_savefig.assert_called_once_with(expected_path, dpi=300, transparent=False)
 
-    @patch('matplotlib.pyplot.savefig')
-    def test_write_figure_diagrams_alias(self, mock_savefig):
-        """Lecture notebooks pass diagrams= as an alias for directory=."""
+    def test_write_figure_rejects_diagrams_kwarg(self):
+        """diagrams= is not an alias for directory=; savefig must still reject it."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            utils.write_figure("test.png", diagrams=temp_dir)
-            expected_path = os.path.join(temp_dir, "test.png")
-            mock_savefig.assert_called_once_with(expected_path, transparent=True)
+            with pytest.raises(TypeError, match="diagrams"):
+                utils.write_figure("test.png", directory=temp_dir, diagrams=temp_dir)
 
 
 class TestUtilityFunctionEdgeCases:
