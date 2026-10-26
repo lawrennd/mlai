@@ -297,6 +297,14 @@ class TestUtilityFunctions:
                 expected_path = os.path.join(temp_dir, "test.png")
                 mock_savefig.assert_called_once_with(expected_path, dpi=300, transparent=False)
 
+    @patch('matplotlib.pyplot.savefig')
+    def test_write_figure_diagrams_alias(self, mock_savefig):
+        """Lecture notebooks pass diagrams= as an alias for directory=."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            utils.write_figure("test.png", diagrams=temp_dir)
+            expected_path = os.path.join(temp_dir, "test.png")
+            mock_savefig.assert_called_once_with(expected_path, transparent=True)
+
 
 class TestUtilityFunctionEdgeCases:
     """Test edge cases for utility functions."""

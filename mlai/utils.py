@@ -124,7 +124,8 @@ def write_figure(filename, figure=None, directory=None, frameon=None, **kwargs):
     :type directory: str, optional
     :param frameon: Whether to draw a frame around the figure. If None, uses matplotlib default.
     :type frameon: bool, optional
-    :param **kwargs: Additional arguments passed to plt.savefig() or figure.savefig()
+    :param **kwargs: Additional arguments passed to plt.savefig() or figure.savefig().
+        ``diagrams`` is accepted as an alias for ``directory`` (lecture notebooks).
     :type **kwargs: dict
     
     Examples:
@@ -132,6 +133,10 @@ def write_figure(filename, figure=None, directory=None, frameon=None, **kwargs):
         >>> write_figure("linear_plot.png", directory="figures")
         >>> write_figure("presentation_plot.png", transparent=False, dpi=300)
     """
+    if directory is None:
+        directory = kwargs.pop('diagrams', None)
+    else:
+        kwargs.pop('diagrams', None)
     savename = filename_join(filename, directory)
     if 'transparent' not in kwargs:
         kwargs['transparent'] = True
