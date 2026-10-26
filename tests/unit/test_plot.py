@@ -325,6 +325,45 @@ class TestHMCPlotHelpers:
         plt.close(fig)
 
 
+    def test_hmc_level_refresh_three_circles(self):
+        fig, ax = plt.subplots()
+        artists = plot.hmc_level_refresh(ax, hamiltonians=(0.5, 1.0, 2.0))
+        assert len(artists['circles']) == 3
+        assert len(artists['flow']) == 2
+        assert len(artists['refresh']) == 1
+        plt.close(fig)
+
+    def test_hmc_level_refresh_rejects_single_level(self):
+        fig, ax = plt.subplots()
+        with pytest.raises(ValueError, match="at least two"):
+            plot.hmc_level_refresh(ax, hamiltonians=(1.0,))
+        plt.close(fig)
+
+    def test_hmc_hop_ride_three_levels(self):
+        fig, ax = plt.subplots()
+        artists = plot.hmc_hop_ride(
+            ax, hamiltonians=(0.5, 1.0, 2.0), step_size=0.25, n_steps=12
+        )
+        assert len(artists['circles']) == 3
+        assert len(artists['flow']) == 2
+        assert len(artists['refresh']) == 2
+        assert len(artists['endpoints']) == 3
+        plt.close(fig)
+
+    def test_hmc_hop_ride_rejects_single_level(self):
+        fig, ax = plt.subplots()
+        with pytest.raises(ValueError, match="at least two"):
+            plot.hmc_hop_ride(ax, hamiltonians=(1.0,))
+        plt.close(fig)
+
+    def test_chi2_concentration_dims(self):
+        fig, ax = plt.subplots()
+        artists = plot.chi2_concentration(ax, dims=(2, 10, 50))
+        assert len(artists['densities']) == 3
+        assert artists['reference'] is not None
+        plt.close(fig)
+
+
 class TestFileOperations:
     """Test file and directory operations."""
     
