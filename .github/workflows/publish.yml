@@ -1,0 +1,66 @@
+name: Publish to PyPI
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: latest
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+
+    - name: Install dependencies
+      run: |
+        poetry install --with dev
+
+    - name: Run tests
+      run: |
+        poetry run pytest -m "not slow" --cov=mlai --cov-report=xml
+
+    - name: Check version matches release tag
+      run: |
+        RELEASE_VERSION=${GITHUB_REF#refs/tags/v}
+        POETRY_VERSION=$(poetry version -s)
+        if [ "$RELEASE_VERSION" != "$POETRY_VERSION" ]; then
+          echo "Error: Release version $RELEASE_VERSION doesn't match Poetry version $POETRY_VERSION"
+          exit 1
+        fi
+        echo "Version check passed: $RELEASE_VERSION"
+
+    - name: Build package
+      run: |
+        poetry build
+
+    - name: Verify package contents
+      run: |
+        poetry run pip install twine
+        poetry run twine check dist/*
+
+    - name: Publish to PyPI
+      env:
+        POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_API_TOKEN }}
+      run: |
+        poetry publish --no-interaction
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist
+        path: dist/
