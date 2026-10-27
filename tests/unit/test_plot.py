@@ -726,8 +726,9 @@ class TestAdditionalPlotFunctions:
         w = np.array([1, 2])
         b = 3
         with patch('matplotlib.pyplot.scatter'):
-            plot.init_perceptron_plot(mock_f, mock_ax, x_plus, x_minus, w, b)
+            plot.init_perceptron(mock_f, mock_ax, x_plus, x_minus, w, b)
             assert mock_ax[0].plot.called
+            assert plot.init_perceptron_plot is plot.init_perceptron
     
     def test_update_perceptron(self):
         """Test update_perceptron function with ax.plot patched."""
@@ -745,9 +746,10 @@ class TestAdditionalPlotFunctions:
         b = 3
         i = 0
         with patch('matplotlib.pyplot.scatter'):
-            plot.update_perceptron_plot(mock_h, mock_f, mock_ax, x_plus, x_minus, i, w, b)
+            plot.update_perceptron(mock_h, mock_f, mock_ax, x_plus, x_minus, i, w, b)
             assert mock_ax[0].arrow.called
             assert mock_ax[1].hist.called
+            assert plot.update_perceptron_plot is plot.update_perceptron
     
     def test_init_regression(self):
         """Test init_regression function with ax.plot patched."""
