@@ -18,4 +18,4 @@ Use `cip_template.md` to create new CIPs.
 | [0008](cip0008.md) | Teachable Hamiltonian Monte Carlo Component (Neal) | Implemented |
 | [0009](cip0009.md) | Contributor packaging via uv (succeed Poetry) | Implemented |
 | [000A](cip000A.md) | Replace flake8 with ruff for linting | Implemented |
-| [000B](cip000B.md) | Raise package test coverage for teaching-critical surfaces | In Progress |
+| [000B](cip000B.md) | Raise package test coverage for teaching-critical surfaces | Implemented |

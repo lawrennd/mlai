@@ -109,14 +109,11 @@ A second pass reports complexity and line length and does not fail the job.
 ## 🧪 Testing
 A comprehensive test framework has been implemented (see [CIP-0002](cip/cip0002.md)).
 
-- To run tests:
+- To run tests (CI-equivalent selection):
   ```bash
-  pytest
+  uv run pytest -m "not slow"
   ```
-- To run tests with coverage:
-  ```bash
-  pytest --cov=mlai --cov-report=html
-  ```
+- Coverage HTML lands in `htmlcov/`; open `htmlcov/index.html` after a run. Package line coverage must stay at or above **85%** (`.coveragerc` `fail_under`, CIP-000B Phase D).
 - Tests run automatically on GitHub Actions for all pull requests
 - Coverage reports are uploaded to [Codecov](https://codecov.io/gh/lawrennd/mlai)
 

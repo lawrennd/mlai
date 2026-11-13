@@ -4,7 +4,7 @@ created: "2026-11-13"
 id: "000B"
 last_updated: "2026-11-13"
 owner: Neil D. Lawrence
-status: In Progress
+status: Implemented
 compressed: false
 related_requirements:
 - "0002"
@@ -27,7 +27,7 @@ title: Raise package test coverage for teaching-critical surfaces
 - [x] Proposed - Initial idea documented
 - [x] Accepted - Approved, ready to start work
 - [x] In Progress - Actively being implemented
-- [ ] Implemented - Work complete, awaiting verification
+- [x] Implemented - Work complete, awaiting verification
 - [ ] Closed - Verified and complete
 - [ ] Rejected - Will not be implemented
 - [ ] Deferred - Postponed
@@ -148,8 +148,8 @@ Related HOW already in flight:
 - [x] Phase 0 baseline remasurement
 - [x] Phase A `plot.py` ≥80%
 - [x] Phase B mid modules (already met on baseline; see progress)
-- [ ] Phase C teaching scripts (`mountain_car` still below 80%)
-- [ ] Phase D coverage floor (optional)
+- [x] Phase C teaching scripts (`mountain_car` ≥80%)
+- [x] Phase D coverage floor (`fail_under = 85`)
 - [x] Package ≥85% verified in CI-equivalent run
 
 ## Progress Updates
@@ -162,6 +162,11 @@ Accepted and moved to In Progress after CIP-000A (PR #7) merged. Linked CIP-0002
 **First implementation pass** (same command after new tests): **85%** overall; `plot.py` **81%**; `gp_tutorial` **100%**; `mountain_car` 24%. Changes: always export `gp_tutorial` (no GPy gate); real `gp_tutorial` tests; mountain-car dynamics tests; unskip/rewrite plot helpers (`covariance_capacity`, `holdout_fit`/`loo_fit`/`cv_fit`, `basis`, `computing_covariance`, `kern_circular_sample`).
 
 Remaining for Phase C: `mountain_car` (GPy-heavy controllers/animation) toward ≥80%. Phase D coverage floor still deferred until that settles.
+
+### 2026-11-13 (Phases C–D)
+Phase C: expanded mountain-car unit tests (dynamics, linear control, emulation, fidelity branches, animation/save helpers) with a scoped GPy stub that does not leak into later tests. `v_simulation` now returns a float so contour assignment works under NumPy 2. Remeasure: **`mountain_car` ~99%**, package **~88%**, `plot.py` ~82%.
+
+Phase D: `.coveragerc` `fail_under = 85`; README testing notes point at `htmlcov/` and the floor. CIP → Implemented (await verification / close after PR review).
 
 ## References
 
