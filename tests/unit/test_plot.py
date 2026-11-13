@@ -888,20 +888,66 @@ class TestAdditionalPlotFunctions:
                 mock_lm.return_value = mock_model_instance
                 plot.rmse_fit(x, y, param_name, param_range, basis=mock_basis, xlim=(0, 10))
 
-    def test_holdout_fit(self):
-        """Test holdout_fit function."""
-        # Skip this test for now due to complex LM model internals
-        pytest.skip("Skipping due to complex LM model internals")
+    def _mock_linear_model(self):
+        """Minimal LM stand-in for holdout / LOO / CV fit helpers."""
+        model_instance = MagicMock()
 
-    def test_loo_fit(self):
-        """Test loo_fit function."""
-        # Skip this test for now due to complex LM model internals
-        pytest.skip("Skipping due to complex LM model internals")
+        def predict(x_val, *args, **kwargs):
+            return np.zeros_like(x_val, dtype=float), None
 
-    def test_cv_fit(self):
-        """Test cv_fit function."""
-        # Skip this test for now due to complex LM model internals
-        pytest.skip("Skipping due to complex LM model internals")
+        model_instance.predict.side_effect = predict
+        model_instance.objective.return_value = 1.0
+        model_instance.log_likelihood.return_value = -1.0
+
+        def model_factory(x_tr, y_tr, **kwargs):
+            return model_instance
+
+        return model_factory, model_instance
+
+    def test_holdout_fit(self, tmp_path):
+        """Exercise holdout_fit with a mocked model and plot_fit callback."""
+        x = np.linspace(0, 1, 8)[:, None]
+        y = x.copy()
+        model_factory, _ = self._mock_linear_model()
+        plot_fit = MagicMock()
+        plot.holdout_fit(
+            x, y, 'number', (1, 3),
+            model=model_factory,
+            val_start=5,
+            permute=False,
+            plot_fit=plot_fit,
+            diagrams=str(tmp_path),
+        )
+        assert plot_fit.called
+
+    def test_loo_fit(self, tmp_path):
+        """Exercise loo_fit with a tiny dataset and mocked model."""
+        x = np.linspace(0, 1, 3)[:, None]
+        y = x.copy()
+        model_factory, _ = self._mock_linear_model()
+        plot_fit = MagicMock()
+        plot.loo_fit(
+            x, y, 'number', (1, 2),
+            model=model_factory,
+            plot_fit=plot_fit,
+            diagrams=str(tmp_path),
+        )
+        assert plot_fit.called
+
+    def test_cv_fit(self, tmp_path):
+        """Exercise cv_fit with mocked model and few folds."""
+        x = np.linspace(0, 1, 6)[:, None]
+        y = x.copy()
+        model_factory, _ = self._mock_linear_model()
+        plot_fit = MagicMock()
+        plot.cv_fit(
+            x, y, 'number', (1, 2),
+            model=model_factory,
+            plot_fit=plot_fit,
+            num_parts=2,
+            diagrams=str(tmp_path),
+        )
+        assert plot_fit.called
 
     def test_under_determined_system(self):
         """Test under_determined_system function."""
@@ -968,81 +1014,50 @@ class TestAdditionalPlotFunctions:
             # If you want to enforce, uncomment the next line:
             # assert mock_ax.plot.called
     
-    def test_basis(self):
-        """Test basis function."""
-        # Skip this test when run as part of full suite due to test interference
-        # This test is flaky when run with other tests due to matplotlib state pollution
-        pytest.skip("Skipping flaky test due to matplotlib state interference")
-        
-        def test_function(x, **kwargs):
-            return x**2
-        x_min = 0
-        x_max = 10
-        mock_fig = MagicMock()
-        mock_ax = MagicMock()
-        mock_ax.plot.return_value = [MagicMock()]  # Mock plot to return a list
-        loc = [[0.1, 0.1], [0.8, 0.8], [0.5, 0.5]]  # List of lists - need 3 for 3 basis functions
-        text = ["Test", "Test2", "Test3"]  # Make text a list to match loc length
-        with patch('matplotlib.pyplot.plot'), \
-             patch('matplotlib.pyplot.savefig') as mock_savefig, \
-             patch('mlai.Basis') as mock_basis_class, \
-             patch('mlai.write_figure') as mock_write_figure, \
-             patch('numpy.random.normal') as mock_normal:
-            # Mock the Basis class to return expected Phi shape
-            mock_basis_instance = MagicMock()
-            mock_basis_instance.number = 3
-            mock_basis_instance.Phi.return_value = np.ones((100, 3))  # 100 samples, 3 basis functions
-            mock_basis_instance.function = test_function  # So __name__ is available
-            mock_basis_class.return_value = mock_basis_instance
-            # Mock numpy.random.normal to return proper shape
-            mock_normal.return_value = np.array([[0.1], [0.2], [0.3]], dtype=np.float64)
-            with patch('matplotlib.pyplot.sca'):
-                plot.basis(test_function, x_min, x_max, mock_fig, mock_ax, loc, text)
-                assert mock_write_figure.called
-    
-    def test_computing_covariance(self):
-        """Test computing_covariance function."""
-        mock_kernel = MagicMock()
-        x = np.array([[1], [2], [3]])
-        formula = "K(x,x')"
-        stub = "test"
-        with patch('matplotlib.pyplot.subplots') as mock_subplots:
-            mock_fig = MagicMock()
-            mock_ax = MagicMock()
-            mock_subplots.return_value = (mock_fig, mock_ax)
-            with patch('matplotlib.pyplot.text'), \
-                 patch('builtins.print'), \
-                 patch('matplotlib.pyplot.savefig'), \
-                 patch('mlai.plot.computing_covariance') as mock_func:  # Patch the entire function
-                mock_func.return_value = None
-                plot.computing_covariance(mock_kernel, x, formula, stub)
-                assert mock_func.called
-    
-    @pytest.mark.skip(reason="Complex mocking required for numpy.random.normal calls")
-    def test_kern_circular_sample(self):
-        """Test kern_circular_sample function."""
-        K = np.array([[1, 0.5], [0.5, 1]])
-        with patch('matplotlib.pyplot.subplots') as mock_subplots:
-            mock_fig = MagicMock()
-            mock_ax = MagicMock()
-            mock_ax.plot.return_value = [MagicMock()]
-            mock_subplots.return_value = (mock_fig, mock_ax)
-            with patch('matplotlib.pyplot.plot'), \
-                 patch('numpy.linspace') as mock_linspace, \
-                 patch('numpy.random.normal') as mock_normal:
-                mock_linspace.return_value = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-                # Fix the size to match expected shape - need proper dimensions for multiple=True
-                mock_normal.return_value = np.random.normal(size=(10, 1))  # n*num_samps, 1
-                with patch('numpy.linalg.cholesky') as mock_chol:
-                    mock_chol.return_value = np.array([[1, 0], [0.5, 0.866]])
-                    with patch('mlai.plot.output_augment_x') as mock_augment:
-                        mock_augment.return_value = np.random.rand(10, 5)  # Mock the augmented x
-                        with patch('numpy.random.normal') as mock_normal2:
-                            # Mock the second call to normal with proper shape
-                            mock_normal2.return_value = np.random.normal(size=(10, 1))
-                            plot.kern_circular_sample(K)
-                            assert mock_subplots.called
-    
+    def test_basis(self, tmp_path):
+        """Test basis plotting with a real polynomial basis and temp diagrams."""
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        from mlai import polynomial
+
+        fig, ax = plt.subplots()
+        loc = [[-0.5, 0.5], [0.0, 0.5], [0.5, 0.5]]
+        text = [r'$\phi_1$', r'$\phi_2$', r'$\phi_3$']
+        plot.basis(
+            polynomial, -1.0, 1.0, fig, ax, loc, text,
+            diagrams=str(tmp_path), num_basis=3, num_plots=1,
+        )
+        assert any(tmp_path.iterdir())
+        plt.close(fig)
+
+    def test_computing_covariance(self, tmp_path):
+        """Run computing_covariance against a real Kernel (covers the animation path)."""
+        from mlai import Kernel, eq_cov
+
+        kernel = Kernel(function=eq_cov, name='EQ', lengthscale=1.0, variance=1.0)
+        x = np.array([[0.0], [0.5], [1.0]])
+        plot.computing_covariance(
+            kernel, x, r'$k(x,x\prime)$', stub='eq_cov_test',
+            diagrams=str(tmp_path),
+        )
+        assert any(tmp_path.iterdir())
+
+    def test_kern_circular_sample(self, tmp_path):
+        """Sample a small PSD kernel on a circle (multiple=False needs explicit x)."""
+        x = np.linspace(-1, 1, 8)[:, None]
+        K = np.exp(-0.5 * (x - x.T) ** 2)
+        anim = plot.kern_circular_sample(
+            K, x=x, num_samps=2, num_theta=8, multiple=False,
+            diagrams=str(tmp_path),
+        )
+        assert anim is not None
+
+    def test_covariance_capacity(self, tmp_path):
+        """Largest previously uncovered plot helper — write frames to tmp."""
+        plot.covariance_capacity(diagrams=str(tmp_path))
+        assert any(tmp_path.iterdir())
+
     def test_animate_covariance_function(self):
         """Test animate_covariance_function function."""
         def test_kernel(x1, x2):

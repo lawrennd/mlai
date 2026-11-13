@@ -68,25 +68,20 @@ def test_package_has_expected_attributes():
 
 @pytest.mark.unit
 def test_gpy_dependent_modules_conditionally_available():
-    """Test that GPy-dependent modules are conditionally available based on GPY_AVAILABLE."""
-    # Import mlai fresh to avoid test isolation issues
-    import importlib
+    """GPy-gated modules stay optional; gp_tutorial is always exported."""
     import sys
-    
-    # Remove mlai from sys.modules to force a fresh import
+
     if 'mlai' in sys.modules:
         del sys.modules['mlai']
-    
-    # Import mlai fresh
+
     import mlai
-    
+
+    # Pure matplotlib helpers are always on the package surface.
+    assert hasattr(mlai, 'gp_tutorial'), "gp_tutorial should always be available"
+
     if mlai.GPY_AVAILABLE:
-        # If GPy is available, these modules should be imported
         assert hasattr(mlai, 'mountain_car'), "mountain_car should be available when GPy is available"
-        assert hasattr(mlai, 'gp_tutorial'), "gp_tutorial should be available when GPy is available"
         assert hasattr(mlai, 'deepgp_tutorial'), "deepgp_tutorial should be available when GPy is available"
     else:
-        # If GPy is not available, these modules should not be imported
         assert not hasattr(mlai, 'mountain_car'), "mountain_car should not be available when GPy is unavailable"
-        assert not hasattr(mlai, 'gp_tutorial'), "gp_tutorial should not be available when GPy is unavailable"
         assert not hasattr(mlai, 'deepgp_tutorial'), "deepgp_tutorial should not be available when GPy is unavailable" 

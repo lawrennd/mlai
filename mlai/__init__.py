@@ -186,10 +186,13 @@ __all__ = [
     "GPY_AVAILABLE",
 ]
 
+# gp_tutorial is pure matplotlib/numpy — always export it.
+from . import gp_tutorial  # noqa: E402
+__all__ += ["gp_tutorial"]
+
 # GPy-dependent modules stay out of the unconditional import list so
 # `import mlai` succeeds when GPy is absent.
 if GPY_AVAILABLE:
     from . import mountain_car  # noqa: E402
-    from . import gp_tutorial  # noqa: E402
     from . import deepgp_tutorial  # noqa: E402
-    __all__ += ["mountain_car", "gp_tutorial", "deepgp_tutorial"]
+    __all__ += ["mountain_car", "deepgp_tutorial"]
