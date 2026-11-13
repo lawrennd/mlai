@@ -4,7 +4,7 @@ created: "2026-11-13"
 id: "000A"
 last_updated: "2026-11-13"
 owner: Neil D. Lawrence
-status: Proposed
+status: Implemented
 compressed: false
 related_requirements:
 - "0002"
@@ -26,9 +26,9 @@ title: Replace flake8 with ruff for linting
 ## Status
 
 - [x] Proposed - Initial idea documented
-- [ ] Accepted - Approved, ready to start work
-- [ ] In Progress - Actively being implemented
-- [ ] Implemented - Work complete, awaiting verification
+- [x] Accepted - Approved, ready to start work
+- [x] In Progress - Actively being implemented
+- [x] Implemented - Work complete, awaiting verification
 - [ ] Closed - Verified and complete
 - [ ] Rejected - Will not be implemented
 - [ ] Deferred - Postponed
@@ -117,16 +117,18 @@ No effect on the published `mlai` wheel or on students using `pip install mlai`.
 ## Implementation Status
 
 - [x] Draft CIP-000A (Proposed)
-- [ ] Accept decisions reviewed
-- [ ] Backlog task created (after Accept)
-- [ ] `pyproject.toml` + `uv.lock` cut over
-- [ ] `lint.yml` cut over
-- [ ] Docs updated
+- [x] Accept decisions reviewed
+- [x] Backlog task created (after Accept)
+- [x] `pyproject.toml` + `uv.lock` cut over
+- [x] `lint.yml` cut over
+- [x] Docs updated
+- [x] Drop stale `__all__` names that ruff F822 reports and flake8 7 does not, so the hard-fail gate stays green
+- [x] Clear advisory findings that do not change teaching structure: whitespace, unused names, shadowed definitions, and the small syntax rules in the advisory select. Line length (E501) and McCabe complexity (C901) stay as advisory leftovers
 - [ ] CI Lint green on the cutover pull request
 
 ## References
 
-- Current lint job: `.github/workflows/lint.yml` (flake8 two-pass; post-0009: `uv run flake8`)
+- Current lint job: `.github/workflows/lint.yml` (`uv run ruff check` hard-fail, then the advisory select with `--exit-zero`)
 - Prerequisite: [CIP-0009](cip0009.md) / https://github.com/lawrennd/mlai/pull/6
 - Ruff: https://docs.astral.sh/ruff/
 - Ruff flake8 compatibility: https://docs.astral.sh/ruff/faq/#how-does-ruff-compare-to-flake8

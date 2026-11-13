@@ -29,24 +29,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import IPython
-from mpl_toolkits.mplot3d import Axes3D
+import mpl_toolkits.mplot3d  # noqa: F401  # registers the 3d projection
 from scipy.stats import chi2, norm
-
-
-try:
-    import daft
-except ImportError:
-    pass
 
 import mlai as ma
 from .linear_models import LM
 
-# Check for GPy availability
-GPY_AVAILABLE = True
 try:
     import GPy
 except ImportError:
-    GPY_AVAILABLE = False
+    GPy = None
+GPY_AVAILABLE = GPy is not None
 
 
 tau = 2*np.pi
@@ -90,7 +83,7 @@ def pred_range(x, portion=0.2, points=200, randomize=False):
 # def write_plots(filename=filename, filebase, directory=None, width=700, height=500, kwargs):
 #     """Display a series of plots controlled by sliders. The function relies on Python string format functionality to index through a series of plots."""
 #     args = collections.OrderedDict(kwargs)
-    
+
 #     def write_figure(filebase, directory, **kwargs):
 #         """Helper function to load in the relevant plot for display."""
 #         filename = filebase.format(**kwargs)
@@ -102,7 +95,7 @@ def pred_range(x, portion=0.2, points=200, randomize=False):
 #     for name, val in kwargs.items():
 #         if isinstance(val,list) or isinstance(
 #         out += '\\n\n' + write_figure(filebase=filebase, directory=directory, **kwargs) + '\\n\n'
-#         for 
+#         for
 #     interact(show_figure, filebase=fixed(filebase), directory=fixed(directory), **kwargs)
 
 
@@ -144,22 +137,22 @@ def matrix(A, ax=None,
     :param fontsize: Font size for text (default: 16).
     :returns: Matplotlib axis with the matrix plot.
     """
-    
+
     if ax is None:
         ax = plt.gca()
 
     if colormap is not None:
-        plt.set_cmap(colormap) 
+        plt.set_cmap(colormap)
 
     A = np.asarray(A)
-    
+
     nrows = A.shape[0]
     ncols = A.shape[1]
-    
-  
+
+
     x_lim = np.array([-0.75, ncols-0.25])
     y_lim = np.array([-0.75, nrows-0.25])
-  
+
     ax.cla()
     handle=[]
     if type == 'image':
@@ -177,8 +170,8 @@ def matrix(A, ax=None,
             for j in range(ncols):
                 if isinstance(A[i,j], str):
                     handle.append(ax.text(j, i, A[i, j], horizontalalignment='center', fontsize=fontsize))
-                    
-                else:  
+
+                else:
                     handle.append(ax.text(j, i, ' ', horizontalalignment='center', fontsize=fontsize))
     elif type == 'patch':
         for i in range(nrows):
@@ -198,18 +191,18 @@ def matrix(A, ax=None,
                     plt.Rectangle([i-0.5, j-0.5],
                                   width=1., height=1.,
                                   color=rgb)))
-                
-                
+
+
     if bracket_style == 'boxes':
         x_lim = np.array([-0.5, ncols-0.5])
         ax.set_xlim(x_lim)
         y_lim = np.array([-0.5, nrows-0.5])
         ax.set_ylim(y_lim)
 #        for i in range(nrows+1):
-#            ax.add_line(plt.axhline(y=i-.5, #xmin=-0.5, xmax=ncols-0.5, 
+#            ax.add_line(plt.axhline(y=i-.5, #xmin=-0.5, xmax=ncols-0.5,
 #                 color=bracket_color))
 #        for j in range(ncols+1):
-#            ax.add_line(plt.axvline(x=j-.5, #ymin=-0.5, ymax=nrows-0.5, 
+#            ax.add_line(plt.axvline(x=j-.5, #ymin=-0.5, ymax=nrows-0.5,
 #                 color=bracket_color))
     elif bracket_style == 'square':
         tick_length = 0.25
@@ -225,8 +218,8 @@ def matrix(A, ax=None,
                              [y_lim[0], y_lim[0], y_lim[1],
                               y_lim[1]],
                              linewidth=bracket_width, color=np.array(bracket_color))
-      
-    if highlight:       
+
+    if highlight:
         h_row = highlight_row if highlight_row is not None else ':'
         h_col = highlight_col if highlight_col is not None else ':'
         # Expand ':' to full range
@@ -255,8 +248,8 @@ def matrix(A, ax=None,
                               h_row[1]+0.5, h_row[0]-0.5,
                               h_row[0]-0.5], color=highlight_color,
                                linewidth=highlight_width))
-                    
-    if zoom:      
+
+    if zoom:
         z_row = zoom_row if zoom_row is not None else ':'
         z_col = zoom_col if zoom_col is not None else ':'
         # Expand ':' to full range
@@ -289,8 +282,8 @@ def matrix(A, ax=None,
     ax.set_yticks([])
     ax.invert_yaxis() #axis ij, axis equal, axis off
 
-             
-    return handle 
+
+    return handle
 
 
 def base_plot(K, ind=[0, 1], ax=None,
@@ -340,20 +333,20 @@ def base_plot(K, ind=[0, 1], ax=None,
                    fontsize=fontsize))
     thandle.append(ax.set_ylabel('$f_{' + str(ind[0]+1)+ '}$',
                    fontsize=fontsize))
-    
+
     ax.set_xticks([-1, 0, 1])
     ax.set_yticks([-1, 0, 1])
     x_lim = [-1.5, 1.5]
     y_lim = [-1.5, 1.5]
     ax.set_xlim(x_lim)
     ax.set_ylim(y_lim)
-    
+
     ax.add_line(plt.Line2D(x_lim, [0, 0], color=blackcolor))
     ax.add_line(plt.Line2D([0, 0], y_lim, color=blackcolor))
 
     ax.set_aspect('equal')
-    
-    return cont, thandle, cent 
+
+    return cont, thandle, cent
 
 def covariance_capacity(rotate_angle=np.pi/4,
                         lambda1=0.5,
@@ -397,43 +390,43 @@ def covariance_capacity(rotate_angle=np.pi/4,
     ax.set_xlim([-0.25, 0.6])
     ax.set_ylim([-0.25, 0.6])
     from matplotlib.patches import Polygon
-    pat_hand = ax.add_patch(Polygon(np.column_stack(([0, 0, lambda1, lambda1], 
-                        [0, lambda2, lambda2, 0])), 
-                        facecolor=fill_color, 
-                        edgecolor=black_color, 
+    pat_hand = ax.add_patch(Polygon(np.column_stack(([0, 0, lambda1, lambda1],
+                        [0, lambda2, lambda2, 0])),
+                        facecolor=fill_color,
+                        edgecolor=black_color,
                         visible=False))
     data = pat_hand.get_path().vertices
-    rotation_matrix = np.asarray([[np.cos(rotate_angle), -np.sin(rotate_angle)], 
+    rotation_matrix = np.asarray([[np.cos(rotate_angle), -np.sin(rotate_angle)],
                                   [np.sin(rotate_angle),  np.cos(rotate_angle)]])
     new = np.dot(rotation_matrix,data.T)
-    pat_hand = ax.add_patch(Polygon(np.column_stack(([0, 0, lambda1, lambda1], 
-                                                     [0, lambda2, lambda2, 0])), 
-                        facecolor=fill_color, 
-                        edgecolor=black_color, 
+    pat_hand = ax.add_patch(Polygon(np.column_stack(([0, 0, lambda1, lambda1],
+                                                     [0, lambda2, lambda2, 0])),
+                        facecolor=fill_color,
+                        edgecolor=black_color,
                         visible=False))
-    pat_hand_rot = ax.add_patch(Polygon(new.T, 
-                           facecolor=fill_color, 
+    pat_hand_rot = ax.add_patch(Polygon(new.T,
+                           facecolor=fill_color,
                            edgecolor=black_color))
     pat_hand_rot.set(visible=False)
 
     # 3D box
-    pat_hand3 = [ax.add_patch(Polygon(np.column_stack(([0, -0.2*lambda1, 0.8*lambda1, lambda1], 
-                                          [0, -0.2*lambda2, -0.2*lambda2, 0])), 
-                         facecolor=fill_color, 
+    pat_hand3 = [ax.add_patch(Polygon(np.column_stack(([0, -0.2*lambda1, 0.8*lambda1, lambda1],
+                                          [0, -0.2*lambda2, -0.2*lambda2, 0])),
+                         facecolor=fill_color,
                          edgecolor=black_color))]
 
-    pat_hand3.append(ax.add_patch(Polygon(np.column_stack(([0, -0.2*lambda1, -0.2*lambda1, 0], 
-                                              [0, -0.2*lambda2, 0.8*lambda2, lambda2])), 
-                             facecolor=fill_color, 
-                             edgecolor=black_color)))
-
-    pat_hand3.append(ax.add_patch(Polygon(np.column_stack(([-0.2*lambda1, 0, lambda1, 0.8*lambda1], 
-                                              [0.8*lambda2, lambda2, lambda2, 0.8*lambda2])), 
+    pat_hand3.append(ax.add_patch(Polygon(np.column_stack(([0, -0.2*lambda1, -0.2*lambda1, 0],
+                                              [0, -0.2*lambda2, 0.8*lambda2, lambda2])),
                              facecolor=fill_color,
                              edgecolor=black_color)))
-    pat_hand3.append(ax.add_patch(Polygon(np.column_stack(([lambda1, 0.8*lambda1, 0.8*lambda1, lambda1], 
-                                              [lambda2, 0.8*lambda2, -0.2*lambda2, 0])), 
-                             facecolor=fill_color, 
+
+    pat_hand3.append(ax.add_patch(Polygon(np.column_stack(([-0.2*lambda1, 0, lambda1, 0.8*lambda1],
+                                              [0.8*lambda2, lambda2, lambda2, 0.8*lambda2])),
+                             facecolor=fill_color,
+                             edgecolor=black_color)))
+    pat_hand3.append(ax.add_patch(Polygon(np.column_stack(([lambda1, 0.8*lambda1, 0.8*lambda1, lambda1],
+                                              [lambda2, 0.8*lambda2, -0.2*lambda2, 0])),
+                             facecolor=fill_color,
                              edgecolor=black_color)))
 
     for hand in pat_hand3:
@@ -448,31 +441,31 @@ def covariance_capacity(rotate_angle=np.pi/4,
     ar_one = ax.arrow(x=0, y=0, dx=lambda1, dy=0, head_width=0.03)
     ar_two = ax.arrow(x=0, y=0, dx=0, dy=lambda2, head_width=0.03)
     ar_three = ax.arrow(x=0, y=0, dx=-0.2*lambda1, dy=-0.2*lambda2, head_width=0.03)
-    ar_one_text = ax.text(0.5*lambda1, -0.05*yspan, 
-                          r'$\lambda_1$', 
+    ar_one_text = ax.text(0.5*lambda1, -0.05*yspan,
+                          r'$\lambda_1$',
                           horizontalalignment='center',
                          fontsize=14)
-    ar_two_text = ax.text(-0.05*xspan, 0.5*lambda2, 
-                          r'$\lambda_2$', 
+    ar_two_text = ax.text(-0.05*xspan, 0.5*lambda2,
+                          r'$\lambda_2$',
                           horizontalalignment='center',
                          fontsize=14)
-    ar_three_text = ax.text(-0.05*xspan-0.1*lambda1, -0.1*lambda2+0.05*yspan, 
-                            r'$\lambda_3$', 
+    ar_three_text = ax.text(-0.05*xspan-0.1*lambda1, -0.1*lambda2+0.05*yspan,
+                            r'$\lambda_3$',
                             horizontalalignment='center',
                            fontsize=14)
 
-    ar_one.set(linewidth=3, 
-               visible=False, 
+    ar_one.set(linewidth=3,
+               visible=False,
                color=blue_color)
     ar_one_text.set(visible=False)
 
-    ar_two.set(linewidth=3, 
-               visible=False, 
+    ar_two.set(linewidth=3,
+               visible=False,
                color=blue_color)
     ar_two_text.set(visible=False)
 
-    ar_three.set(linewidth=3, 
-                 visible=False, 
+    ar_three.set(linewidth=3,
+                 visible=False,
                  color=blue_color)
     ar_three_text.set(visible=False)
 
@@ -481,18 +474,18 @@ def covariance_capacity(rotate_angle=np.pi/4,
     matrix_ax.set_aspect('equal')
     matrix_ax.set_axis_off()
     eigenvals = [[r'$\lambda_1$', '$0$'],['$0$', r'$\lambda_2$']]
-    matrix(eigenvals, 
-           matrix_ax, 
-           bracket_style='square', 
-           type='entries', 
+    matrix(eigenvals,
+           matrix_ax,
+           bracket_style='square',
+           type='entries',
            bracket_color=black_color)
 
 
     # First arrow
     matrix_ax.cla()
-    matrix(eigenvals, 
-           matrix_ax, 
-           bracket_style='square', 
+    matrix(eigenvals,
+           matrix_ax,
+           bracket_style='square',
            type='entries',
            highlight=True,
            highlight_row=[0, 0],
@@ -509,10 +502,10 @@ def covariance_capacity(rotate_angle=np.pi/4,
 
     # Second arrow
     matrix_ax.cla()
-    matrix(eigenvals, 
-           matrix_ax, 
-           bracket_style='square', 
-           type='entries', 
+    matrix(eigenvals,
+           matrix_ax,
+           bracket_style='square',
+           type='entries',
            highlight=True,
            highlight_row=[1,1],
            highlight_col=':',
@@ -527,9 +520,9 @@ def covariance_capacity(rotate_angle=np.pi/4,
     counter += 1
 
     matrix_ax.cla()
-    matrix(eigenvals, matrix_ax, 
-           bracket_style='square', 
-           type='entries', 
+    matrix(eigenvals, matrix_ax,
+           bracket_style='square',
+           type='entries',
            bracket_color=black_color)
 
     file_name = 'gp-optimise-determinant{counter:0>3}.svg'.format(counter=counter)
@@ -542,7 +535,7 @@ def covariance_capacity(rotate_angle=np.pi/4,
     tax.set_xlim([0, 1])
     tax.set_ylim([0, 1])
     det_text = tax.text(0.5, 0.5,
-                    r'$\det{\Lambda} = \lambda_1 \lambda_2$', 
+                    r'$\det{\Lambda} = \lambda_1 \lambda_2$',
                     horizontalalignment='center',
                        fontsize=20)
     file_name = 'gp-optimise-determinant{counter:0>3}.svg'.format(counter=counter)
@@ -554,9 +547,9 @@ def covariance_capacity(rotate_angle=np.pi/4,
     ma.write_figure(file_name, directory=diagrams)
     counter += 1
 
-    det_text_plot = ax.text(0.5*lambda1, 
-                                  0.5*lambda2, 
-                                  r'$\det{\Lambda}$', 
+    det_text_plot = ax.text(0.5*lambda1,
+                                  0.5*lambda2,
+                                  r'$\det{\Lambda}$',
                                   horizontalalignment='center', fontsize=20)
 
     file_name = 'gp-optimise-determinant{counter:0>3}.svg'.format(counter=counter)
@@ -569,8 +562,8 @@ def covariance_capacity(rotate_angle=np.pi/4,
                   ['$0$', '$0$', r'$\lambda_3$']]
 
     matrix_ax.cla()
-    matrix(eigenvals2, matrix_ax, 
-           bracket_style='square', 
+    matrix(eigenvals2, matrix_ax,
+           bracket_style='square',
            type='entries',
            highlight=True,
            highlight_row=[2,2],
@@ -586,8 +579,8 @@ def covariance_capacity(rotate_angle=np.pi/4,
     ar_three_text.set(visible=True)
     for hand in pat_hand3:
         hand.set(visible=True)
-    det_text.set(text=r'$\det{\Lambda} = \lambda_1 \lambda_2 \lambda_3$', 
-                 fontsize=20, 
+    det_text.set(text=r'$\det{\Lambda} = \lambda_1 \lambda_2 \lambda_3$',
+                 fontsize=20,
                  horizontalalignment='center')
 
     file_name = 'gp-optimise-determinant{counter:0>3}.svg'.format(counter=counter)
@@ -595,10 +588,10 @@ def covariance_capacity(rotate_angle=np.pi/4,
     counter += 1
 
     matrix_ax.cla()
-    matrix(eigenvals, 
-           matrix_ax, 
-           bracket_style='square', 
-           type='entries', 
+    matrix(eigenvals,
+           matrix_ax,
+           bracket_style='square',
+           type='entries',
            bracket_color=black_color)
 
     ar_three.set(visible=False)
@@ -633,10 +626,10 @@ def covariance_capacity(rotate_angle=np.pi/4,
     pat_hand.set(visible=False)
 
     W = [['$w_{1, 1}$', '$w_{1, 2}$'],[ '$w_{2, 1}$', '$w_{2, 2}$']]
-    matrix(W, 
-           matrix_ax, 
-           bracket_style='square', 
-           type='entries', 
+    matrix(W,
+           matrix_ax,
+           bracket_style='square',
+           type='entries',
            bracket_color=black_color)
 
 
@@ -659,8 +652,8 @@ def prob_diagram(fontsize=20, diagrams='../diagrams'):
 
     fig, ax =plt.subplots(figsize=big_figsize)
 
-    # Basic plot set up.    
-    a = ax.plot(x, y, 'x', color = [1, 0, 0])
+    # Basic plot set up.
+    ax.plot(x, y, 'x', color = [1, 0, 0])
     plt.axis('off')
     ax.set_xlim([0-2*marg, 6+2*marg])
     ax.set_ylim([0-2*marg, 4+2*marg])
@@ -711,7 +704,7 @@ def bernoulli_urn(ax, diagrams='../diagrams'):
     ax.set_aspect('equal')
     ax.set_xlim([0, 1])
     ax.set_ylim([0, 1])
-    t = np.linspace(0, 2*np.pi, 24)
+
     rows = 4
     cols = round(1/ball_radius)
     last_row_cols = 3
@@ -722,12 +715,10 @@ def bernoulli_urn(ax, diagrams='../diagrams'):
         for col in range(cols):
             ball_x = col*2*ball_radius + ball_radius
             ball_y = row*2*ball_radius + ball_radius
-            x = ball_x*np.ones(t.shape) + ball_radius*np.sin(t)
-            y = ball_y*np.ones(t.shape) + ball_radius*np.cos(t)
 
             if np.random.rand()<black_prob:
                 ball_color = [0, 0, 0]
-            else: 
+            else:
                 ball_color = [1, 0, 0]
             plt.sca(ax)
             circle = plt.Circle((ball_x, ball_y), ball_radius, fill=True, color=ball_color)
@@ -738,11 +729,11 @@ def bernoulli_urn(ax, diagrams='../diagrams'):
 def bayes_billiard(ax, diagrams='../diagrams'):
     """
     Plot a series of figures representing Thomas Bayes' billiard table for the Bernoulli distribution representation.
-    
+
     :param ax: Matplotlib axis to draw the plot on.
     :param diagrams: Directory to save the diagrams (default: '../diagrams').
     """
-    black_prob = 0.3
+
     ball_radius = 0.1
 
     ax.plot([0, 0, 1, 1], [1, 0, 0, 1], linewidth=3, color=[0,0,0])
@@ -780,7 +771,7 @@ def bayes_billiard(ax, diagrams='../diagrams'):
                           transparent=True)
         circle.remove()
 
-            
+
 def hyperplane_coordinates(w, b, plot_limits):
     """
     Helper function for plotting the decision boundary of the perceptron.
@@ -823,7 +814,7 @@ def init_perceptron(f, ax, x_plus, x_minus, w, b, fontsize=18):
     plot_limits['x'] = np.asarray(ax[0].get_xlim())
     plot_limits['y'] = np.asarray(ax[0].get_ylim())
     x0, x1 = hyperplane_coordinates(w, b, plot_limits)
-    strt = -b/w[1]
+
 
     norm = w[0]*w[0] + w[1]*w[1]
     offset0 = -w[0]/norm*b
@@ -836,7 +827,7 @@ def init_perceptron(f, ax, x_plus, x_minus, w, b, fontsize=18):
     ax[0].set_xlabel('$x_0$', fontsize=fontsize)
     ax[0].set_ylabel('$x_1$', fontsize=fontsize)
     h['iter'] = ax[0].set_title('Update 0')
-    
+
     bins = 15
     f_minus = np.dot(x_minus, w)
     f_plus = np.dot(x_plus, w)
@@ -860,7 +851,7 @@ def update_perceptron(h, f, ax, x_plus, x_minus, i, w, b):
     :param w: Updated weight vector.
     :param b: Updated bias parameter.
     """
-    # Re-plot the hyper plane 
+    # Re-plot the hyper plane
     plot_limits = {}
     plot_limits['x'] = np.asarray(ax[0].get_xlim())
     plot_limits['y'] = np.asarray(ax[0].get_ylim())
@@ -874,7 +865,7 @@ def update_perceptron(h, f, ax, x_plus, x_minus, i, w, b):
     offset1 = -w[1]/norm*b
     h['arrow'] = ax[0].arrow(offset0, offset1, offset0+w[0],
                              offset1+w[1], head_width=0.2)
-    
+
     h['plane'].set_xdata(x0)
     h['plane'].set_ydata(x1)
 
@@ -906,16 +897,16 @@ def contour_error(x, y, m_center, c_center, samps=100, width=6.):
     :returns: Tuple of (m_vals, c_vals, E_grid) for contour plotting.
     """
     # create an array of linearly separated values around m_true
-    m_vals = np.linspace(m_center-width/2., m_center+width/2., samps) 
+    m_vals = np.linspace(m_center-width/2., m_center+width/2., samps)
     # create an array of linearly separated values ae
-    c_vals = np.linspace(c_center-width/2., c_center+width/2., samps) 
+    c_vals = np.linspace(c_center-width/2., c_center+width/2., samps)
     m_grid, c_grid = np.meshgrid(m_vals, c_vals)
     E_grid = np.zeros((samps, samps))
     for i in range(samps):
         for j in range(samps):
             E_grid[i, j] = ((y - m_grid[i, j]*x - c_grid[i, j])**2).sum()
     return m_vals, c_vals, E_grid
-    
+
 def regression_contour(f, ax, m_vals, c_vals, E_grid, fontsize=30):
     """
     Plot regression error contours.
@@ -927,7 +918,7 @@ def regression_contour(f, ax, m_vals, c_vals, E_grid, fontsize=30):
     :param E_grid: Error values grid.
     :param fontsize: Font size for labels (default: 30).
     """
-    hcont = ax.contour(m_vals, c_vals, E_grid, levels=[0, 0.5, 1, 2, 4, 8, 16, 32, 64]) # this makes the contour plot 
+    hcont = ax.contour(m_vals, c_vals, E_grid, levels=[0, 0.5, 1, 2, 4, 8, 16, 32, 64]) # this makes the contour plot
     plt.clabel(hcont, inline=1, fontsize=fontsize/2) # this labels the contours.
 
     ax.set_xlabel('$m$', fontsize=fontsize)
@@ -1125,7 +1116,8 @@ def hmc_hop_ride(
     radii = np.sqrt(2.0 * levels)
     theta = np.linspace(0.0, 2.0 * np.pi, 300)
     artists = {'circles': [], 'flow': [], 'refresh': [], 'endpoints': []}
-    grad = lambda qq: np.asarray(qq, dtype=float)
+    def grad(qq):
+        return np.asarray(qq, dtype=float)
     mass = np.ones(1)
 
     for r in radii:
@@ -1317,7 +1309,7 @@ def init_regression(f, ax, x, y, m_vals, c_vals, E_grid, m_star, c_star, fontsiz
     x_plot = np.asarray(ax[1].get_xlim()) # get the x limits of the plot for plotting the current best line fit.
     y_plot = m_star*x_plot + c_star
     h['fit'], = ax[1].plot(x_plot, y_plot, 'b-', linewidth=3)
-    
+
     # Set y-axis limits appropriately based on data and fit line
     y_min = min(np.min(y), np.min(y_plot))
     y_max = max(np.max(y), np.max(y_plot))
@@ -1339,7 +1331,7 @@ def update_regression(h, f, ax, m_star, c_star, iteration):
     ax[0].plot(m_star, c_star, 'g*')
     x_plot = np.asarray(ax[1].get_xlim()) # get the x limits of the plot for plo
     y_plot = m_star*x_plot + c_star
-    
+
     # show the current status on the plot of the data
     h['fit'].set_ydata(y_plot)
     h['msg'].set_text('Iteration '+str(iteration))
@@ -1360,7 +1352,7 @@ def update_regression_path(h, f, ax, m_star, c_star, iteration_text):
     """
     x_plot = np.asarray(ax[1].get_xlim()) # get the x limits of the plot for plotting the current best line fit.
     y_plot = m_star*x_plot + c_star
-    
+
     # show the current status on the plot of the data
     h['fit'].set_ydata(y_plot)
     h['msg'].set_text(iteration_text)
@@ -1400,11 +1392,11 @@ def regression_contour_fit(x, y, learn_rate=0.01, m_center=1.4, c_center=-3.1, m
         m_star = m_star - learn_rate*m_grad
         c_star = c_star - learn_rate*c_grad
         # update the location of our current best guess on the contour plot
-        if i<10 or ((i<100 and not i % 10) or (i<1000 and not i % 100)): 
+        if i<10 or ((i<100 and not i % 10) or (i<1000 and not i % 100)):
             handle = update_regression(handle, f, ax, m_star, c_star, i)
             count+=1
             ma.write_figure('regression_contour_fit{count:0>3}.svg'.format(count=count),
-                              directory=diagrams)        
+                              directory=diagrams)
     return count
 
 def regression_contour_sgd(x, y, learn_rate=0.01, m_center=1.4, c_center=-3.1, m_star = 0.0, c_star = -5.0, max_iters=4000, diagrams='../diagrams'):
@@ -1438,7 +1430,7 @@ def regression_contour_sgd(x, y, learn_rate=0.01, m_center=1.4, c_center=-3.1, m
         # update c
         c_star = c_star + 2*learn_rate*(y[index]-m_star*x[index] - c_star)
 
-        if i<10 or ((i<100 and not i % 10) or (not i % 100)): 
+        if i<10 or ((i<100 and not i % 10) or (not i % 100)):
             handle = update_regression(handle, f, ax, m_star, c_star, i)
             count+=1
             ma.write_figure('regression_sgd_contour_fit{count:0>3}.svg'.format(count=count),
@@ -1466,40 +1458,40 @@ def regression_contour_coordinate_descent(x, y, m_center=1.4, c_center=-3.1, m_s
     count=0
     ma.write_figure('regression_coordinate_descent_contour_fit{count:0>3}.svg'.format(count=count),
                       directory=diagrams)
-    
+
     # Store path for staircase visualization
     path_points = [(m_star, c_star)]
-    
+
     for i in range(max_iters): # do max_iters iterations (parameter updates)
         # Store previous values for path drawing
-        prev_m, prev_c = m_star, c_star
-        
+
+
         # Update m: m = ((y - c)*x).sum()/(x*x).sum()
         m_star = ((y - c_star) * x).sum() / (x * x).sum()
-        
+
         # Plot after m update (horizontal step)
         path_points.append((m_star, c_star))
         if len(path_points) > 1:
             path_x, path_y = zip(*path_points)
             ax[0].plot(path_x, path_y, 'g-', linewidth=2, alpha=0.7)
         ax[0].plot(m_star, c_star, 'g*', markersize=8)
-        
+
         # Update the fit line and save frame
         handle = update_regression_path(handle, f, ax, m_star, c_star, f"m update, iter {i}")
         count+=1
         ma.write_figure('regression_coordinate_descent_contour_fit{count:0>3}.svg'.format(count=count),
                           directory=diagrams)
-        
+
         # Update c: c = (y-m*x).sum()/y.shape[0]
         c_star = (y - m_star * x).sum() / y.shape[0]
-        
+
         # Plot after c update (vertical step)
         path_points.append((m_star, c_star))
         if len(path_points) > 1:
             path_x, path_y = zip(*path_points)
             ax[0].plot(path_x, path_y, 'g-', linewidth=2, alpha=0.7)
         ax[0].plot(m_star, c_star, 'g*', markersize=8)
-        
+
         # Update the fit line and save frame
         handle = update_regression_path(handle, f, ax, m_star, c_star, f"c update, iter {i}")
         count+=1
@@ -1550,7 +1542,7 @@ def over_determined_system(diagrams='../diagrams'):
     mtext = ax.text(xl.mean(), np.min(yl)-0.2, '$m$',  horizontalalignment='center', verticalalignment='bottom',fontsize=20)
     ma.write_figure('over_determined_system002.svg', directory=diagrams, transparent=True)
 
-    a2 = ax.plot(x, y, '.', markersize=20, linewidth=3, color=[1, 0, 0])
+    ax.plot(x, y, '.', markersize=20, linewidth=3, color=[1, 0, 0])
     ma.write_figure('over_determined_system003.svg', directory=diagrams, transparent=True)
 
     xs = 2
@@ -1583,7 +1575,7 @@ def over_determined_system(diagrams='../diagrams'):
 
     for i in a3:
         i.set_visible(False)
-    a4 = ax.plot(xvals, yvals, '-', linewidth=2, color=[0, 0, 1])
+    ax.plot(xvals, yvals, '-', linewidth=2, color=[0, 0, 1])
     for i in ast:
         i.set_color([1, 0, 0])
     ma.write_figure('over_determined_system006.svg', directory=diagrams, transparent=True)
@@ -1617,20 +1609,20 @@ def gaussian_of_height(diagrams='../diagrams'):
 def gaussian_volume_1D(r_yolk=0.95, r_iron_sulfide=1.05, directory='../diagrams'):
     """
     Plot Gaussian volumes in 1D with shaded regions representing different probability areas.
-    
+
     This function creates a visualization of a 1D Gaussian distribution with three distinct
     shaded regions representing different probability masses:
-    
+
     - Yolk (65.8%): Central region from -0.95 to 0.95 standard deviations
     - Iron Sulfide (4.8%): Intermediate regions from 0.95 to 1.05 and -1.05 to -0.95 std devs
     - White (29.4%): Outer regions beyond ±1.05 standard deviations
-    
+
     The visualization is inspired by the composition of an egg, where different regions
     represent different probability masses of the Gaussian distribution.
-    
+
     Returns:
         None: Saves the plot as 'gaussian-volume-1D-shaded.svg' in the specified directory
-        
+
     Note:
         The function uses scipy.stats.norm for the Gaussian probability density function.
         The plot includes grid lines and proper axis labels for clarity.
@@ -1638,7 +1630,7 @@ def gaussian_volume_1D(r_yolk=0.95, r_iron_sulfide=1.05, directory='../diagrams'
     fig, ax = plt.subplots(figsize=one_figsize)
 
     # 1D Gaussian
-    x1 = np.linspace(-3, 3, 500) 
+    x1 = np.linspace(-3, 3, 500)
     y1 = norm.pdf(x1, 0, 1)
     ax.plot(x1, y1, 'k-', linewidth=1) # Reduced linewidth for better visibility of shading
 
@@ -1678,17 +1670,17 @@ def gaussian_volume_1D(r_yolk=0.95, r_iron_sulfide=1.05, directory='../diagrams'
 def gaussian_volume_2D(r_yolk=0.95, r_iron_sulfide=1.05, r_outer=3.0, directory='../diagrams'):
     """
     Plot Gaussian volumes in 2D viewed from above using egg-shaped ellipses.
-    
+
     This function creates a visualization of a 2D Gaussian distribution viewed from above with three distinct
     elliptical regions representing different probability masses:
-    
+
     - Yellow: Central elliptical region with radius r_yolk standard deviations
-    - Green: Intermediate elliptical ring from radius r_yolk to r_iron_sulfide standard deviations  
+    - Green: Intermediate elliptical ring from radius r_yolk to r_iron_sulfide standard deviations
     - White: Outer elliptical region beyond radius r_iron_sulfide of 3 standard deviations
-    
+
     The visualization is inspired by the composition of an egg viewed from above, where different regions
     represent different probability masses of the 2D Gaussian distribution. The ellipses are slightly eccentric to give them a more egg-like appearance.
-    
+
     Returns:
         None: Saves the plot as 'gaussian-volume-2D.svg' in the specified directory
     """
@@ -1705,34 +1697,26 @@ def gaussian_volume_2D(r_yolk=0.95, r_iron_sulfide=1.05, r_outer=3.0, directory=
     ax.set_ylabel('$x_2$')
     ax.set_aspect('equal')
     ax.grid(True, alpha=0.3)
-    
+
     # Set axis limits to show the full visualization
     ax.set_xlim(-r_outer*1.2*width_factor, r_outer*1.2*width_factor)
     ax.set_ylim(-r_outer*1.2*height_factor, r_outer*1.2*height_factor)
-    
-    # Add legend
-    from matplotlib.patches import Patch
-    legend_elements = [
-        Patch(facecolor='yellow', alpha=0.8, label='Yolk'),
-        Patch(facecolor=[0, 0.7, 0.5], alpha=0.8, label='Iron Sulfide'),
-        Patch(facecolor='white', alpha=0.8, label='White')
-    ]
-    
+
     ma.write_figure(filename='gaussian-volume-2D.svg', directory=directory, transparent=True)
 
 
-def _draw_egg_ellipses(ax, r_yolk=0.95, r_iron_sulfide=1.05, r_outer=0.99, 
+def _draw_egg_ellipses(ax, r_yolk=0.95, r_iron_sulfide=1.05, r_outer=0.99,
                       width_factor=1.1, height_factor=1.0, add_boundary=True):
     """
     Helper function to draw the egg-shaped ellipses for both 2D and 3D visualizations.
-    
+
     Parameters:
     -----------
     ax : matplotlib axes
         The axes to draw on
     r_yolk : float
         Radius of the yolk (yellow) region
-    r_iron_sulfide : float  
+    r_iron_sulfide : float
         Radius of the iron sulfide (green) region
     r_outer : float
         Radius of the outer (white) region
@@ -1744,25 +1728,25 @@ def _draw_egg_ellipses(ax, r_yolk=0.95, r_iron_sulfide=1.05, r_outer=0.99,
         Whether to add black boundary line
     """
     from matplotlib.patches import Ellipse
-    
+
     # Draw the outer white ellipse (background)
-    outer_ellipse = Ellipse((0, 0), r_outer*2*width_factor, r_outer*2*height_factor, 
+    outer_ellipse = Ellipse((0, 0), r_outer*2*width_factor, r_outer*2*height_factor,
                            color='white', alpha=0.8, zorder=1)
     ax.add_patch(outer_ellipse)
-    
+
     # Draw the iron sulfide (green) ellipse
-    iron_ellipse = Ellipse((0, 0), r_iron_sulfide*2*width_factor, r_iron_sulfide*2*height_factor, 
+    iron_ellipse = Ellipse((0, 0), r_iron_sulfide*2*width_factor, r_iron_sulfide*2*height_factor,
                           color=[0, 0.7, 0.5], alpha=1.0, zorder=2)
     ax.add_patch(iron_ellipse)
-    
+
     # Draw the yolk (yellow) ellipse
-    yolk_ellipse = Ellipse((0, 0), r_yolk*2*width_factor, r_yolk*2*height_factor, 
+    yolk_ellipse = Ellipse((0, 0), r_yolk*2*width_factor, r_yolk*2*height_factor,
                           color='yellow', alpha=1.0, zorder=3)
     ax.add_patch(yolk_ellipse)
-    
+
     if add_boundary:
         # Add boundary ellipse only for the outer white region
-        ellipse_outer = Ellipse((0, 0), r_outer*2*width_factor, r_outer*2*height_factor, 
+        ellipse_outer = Ellipse((0, 0), r_outer*2*width_factor, r_outer*2*height_factor,
                                fill=False, color='black', linewidth=2, linestyle='-', zorder=4)
         ax.add_patch(ellipse_outer)
 
@@ -1771,25 +1755,25 @@ def gaussian_volume_3D(r_yolk=0.95, r_iron_sulfide=1.05, r_outer=3.0, directory=
     """
     Plot Gaussian volumes in 3D viewed from above using egg-shaped ellipses with a semi-transparent
     white overlay to give a 3D depth effect.
-    
+
     This function creates a visualization of a 3D Gaussian distribution viewed from above with three distinct
     elliptical regions representing different probability masses, plus a semi-transparent white overlay
     to simulate looking through the white of the egg:
-    
+
     - Yellow: Central elliptical region with radius r_yolk standard deviations
-    - Green: Intermediate elliptical ring from radius r_yolk to r_iron_sulfide standard deviations  
-    - White: Outer elliptical region beyond radius r_iron_sulfide of 3 standard deviations 
+    - Green: Intermediate elliptical ring from radius r_yolk to r_iron_sulfide standard deviations
+    - White: Outer elliptical region beyond radius r_iron_sulfide of 3 standard deviations
     - Semi-transparent white overlay: Gives the 3D depth effect
-    
+
     The visualization is inspired by the composition of an egg viewed from above, where different regions
     represent different probability masses of the 3D Gaussian distribution. The ellipses are slightly
     eccentric to give them a more egg-like appearance.
-    
+
     Returns:
         None: Saves the plot as 'gaussian-volume-3D.svg' in the specified directory
     """
     from matplotlib.patches import Ellipse
-    
+
     fig, ax = plt.subplots(figsize=one_figsize)
 
     # Egg-like eccentricity: slightly wider than tall
@@ -1798,15 +1782,15 @@ def gaussian_volume_3D(r_yolk=0.95, r_iron_sulfide=1.05, r_outer=3.0, directory=
 
     # Draw the egg ellipses (without boundaries for cleaner 3D look)
     _draw_egg_ellipses(ax, r_yolk, r_iron_sulfide, r_outer, width_factor, height_factor, add_boundary=True)
-    
+
     # Add semi-transparent white overlay for 3D effect
-    overlay_ellipse = Ellipse((0, 0), r_outer*2*width_factor, r_outer*2*height_factor, 
+    overlay_ellipse = Ellipse((0, 0), r_outer*2*width_factor, r_outer*2*height_factor,
                              color='white', alpha=0.7, zorder=5)
     ax.add_patch(overlay_ellipse)
-    
+
     # Add white border after overlay to ensure it's visible
     from matplotlib.patches import Ellipse
-    white_border = Ellipse((0, 0), r_outer*2*width_factor, r_outer*2*height_factor, 
+    white_border = Ellipse((0, 0), r_outer*2*width_factor, r_outer*2*height_factor,
                           fill=False, color='black', linewidth=2, linestyle='-', zorder=6)
     ax.add_patch(white_border)
 
@@ -1814,19 +1798,11 @@ def gaussian_volume_3D(r_yolk=0.95, r_iron_sulfide=1.05, r_outer=3.0, directory=
     ax.set_ylabel('$x_2$')
     ax.set_aspect('equal')
     ax.grid(True, alpha=0.3)
-    
+
     # Set axis limits to show the full visualization
     ax.set_xlim(-r_outer*1.2*width_factor, r_outer*1.2*width_factor)
     ax.set_ylim(-r_outer*1.2*height_factor, r_outer*1.2*height_factor)
-    
-    # Add legend
-    from matplotlib.patches import Patch
-    legend_elements = [
-        Patch(facecolor='yellow', alpha=0.8, label='Yolk'),
-        Patch(facecolor=[0, 0.7, 0.5], alpha=0.8, label='Iron Sulfide'),
-        Patch(facecolor='white', alpha=0.8, label='White')
-    ]
-    
+
     ma.write_figure(filename='gaussian-volume-3D.svg', directory=directory, transparent=True)
 
 
@@ -1857,17 +1833,17 @@ def marathon_fit(model, value, param_name, param_range,
     """
     if title is None:
         title = model.objective_name
-        
+
     ax[0].cla()
     ax[0].plot(model.X, model.y, 'o', color=[1, 0, 0], markersize=6, linewidth=3)
     if x_val is not None and y_val is not None:
         ax[0].plot(x_val, y_val, 'o', color=[0, 1, 0], markersize=6, linewidth=3)
-        
+
     ylim = ax[0].get_ylim()
 
     x_pred = np.linspace(xlim[0], xlim[1], samps)[:, np.newaxis]
     y_pred, y_var = model.predict(x_pred)
-    
+
     if y_var is None:
         if GPY_AVAILABLE:
             import mlai.gp_tutorial as gpt
@@ -1882,7 +1858,7 @@ def marathon_fit(model, value, param_name, param_range,
         else:
             ax[0].plot(x_pred, y_pred, 'b-', linewidth=2)
             ax[0].fill_between(x_pred.flatten(), (y_pred - y_err).flatten(), (y_pred + y_err).flatten(), alpha=0.3)
-        
+
     #ax[0].set_xlabel('year', fontsize=fontsize)
     ax[0].set_ylim(ylim)
     plt.sca(ax[0])
@@ -1939,8 +1915,8 @@ def rmse_fit(x, y, param_name, param_range,
     :param **kwargs: Additional keyword arguments passed to plot_fit.
     """
     f, ax = plt.subplots(1, 2, figsize=two_figsize)
-    num_data = x.shape[0]
-    
+
+
     params = range(*param_range)
 
     count = 0
@@ -1949,10 +1925,10 @@ def rmse_fit(x, y, param_name, param_range,
         m = model(x, y, **kwargs)
         m.set_param(param_name, param)
         m.fit()
-        # compute appropriate objective. 
+        # compute appropriate objective.
         #for name, plot_objective in plot_objectives.items():
         obj=m.rmse()#[name][count] = plot_objective(m)
-            
+
         plot_fit(model=m, value=param, xlim=xlim,
                  param_name=param_name, param_range=param_range,
                  objective=obj, objective_ylim=objective_ylim,
@@ -1994,20 +1970,20 @@ def holdout_fit(x, y, param_name, param_range, model=LM, val_start=20,
         x_val = x[val_start:, :]
         y_tr = y[:val_start, :]
         y_val = y[val_start:, :]
-    num_val_data = x_val.shape[0]
+
 
     params = range(*param_range)
     ll = np.array([np.nan]*len(params))
     ss = np.array([np.nan]*len(params))
     ss_val = np.array([np.nan]*len(params))
     count = 0
-    for param in params:    
+    for param in params:
         m = model(x_tr, y_tr, **kwargs)
         m.set_param(param_name, param)
         m.fit()
         f_val, _ = m.predict(x_val)
         ss[count] = m.objective()
-        ss_val[count] = ((y_val-f_val)**2).mean() 
+        ss_val[count] = ((y_val-f_val)**2).mean()
         ll[count] = m.log_likelihood()
         plot_fit(model=m, value=param, xlim=xlim,
                  param_name=param_name, param_range=param_range,
@@ -2018,7 +1994,7 @@ def holdout_fit(x, y, param_name, param_range, model=LM, val_start=20,
         count+=1
 
 def loo_fit(x, y, param_name, param_range,
-            model=LM, objective_ylim=None, 
+            model=LM, objective_ylim=None,
             xlim=None, plot_fit=marathon_fit,
             prefix='olympic_loo', diagrams='../diagrams',
             **kwargs):
@@ -2049,7 +2025,7 @@ def loo_fit(x, y, param_name, param_range,
         val_ind = [part]
         partitions.append((train_ind, val_ind))
 
-        params = range(*param_range)        
+        params = range(*param_range)
         ll = np.array([np.nan]*len(params))
         ss = np.array([np.nan]*len(params))
         ss_val = np.array([np.nan]*len(params))
@@ -2063,14 +2039,14 @@ def loo_fit(x, y, param_name, param_range,
                 x_val = x[val_ind, :]
                 y_tr = y[train_ind, :]
                 y_val = y[val_ind, :]
-                num_val_data = x_val.shape[0]
+
                 m = model(x_tr, y_tr, **kwargs)
                 m.set_param(param_name, param)
                 m.fit()
                 ss_temp = m.objective()
                 ll_temp = m.log_likelihood()
                 f_val, _ = m.predict(x_val)
-                ss_val_temp += ((y_val-f_val)**2).mean() 
+                ss_val_temp += ((y_val-f_val)**2).mean()
                 plot_fit(model=m, value=param, xlim=xlim, param_name=param_name, param_range=param_range,
                          objective=np.nan, objective_ylim=objective_ylim,
                          fig=f, ax=ax, prefix='olympic_loo{part:0>3}'.format(part=part),
@@ -2086,7 +2062,7 @@ def loo_fit(x, y, param_name, param_range,
             count+=1
 
 
-def cv_fit(x, y, param_name, param_range, model=LM, objective_ylim=None, 
+def cv_fit(x, y, param_name, param_range, model=LM, objective_ylim=None,
                xlim=None, plot_fit=marathon_fit, num_parts=5, diagrams='../diagrams', **kwargs):
     """
     Fit a model and show cross validation error.
@@ -2126,30 +2102,30 @@ def cv_fit(x, y, param_name, param_range, model=LM, objective_ylim=None,
             x_val = x[val_ind, :]
             y_tr = y[train_ind, :]
             y_val = y[val_ind, :]
-            num_val_data = x_val.shape[0]
+
             m = model(x_tr, y_tr, **kwargs)
             m.set_param(param_name, param)
             m.fit()
             ss_temp += m.objective()
             ll_temp += m.log_likelihood()
             f_val, _ = m.predict(x_val)
-            ss_val_temp += ((y_val-f_val)**2).mean() 
+            ss_val_temp += ((y_val-f_val)**2).mean()
             plot_fit(model=m, value=param, xlim=xlim, param_name=param_name, param_range=param_range,
                      objective=np.nan, objective_ylim=objective_ylim,
                      fig=f, ax=ax, prefix='olympic_{num_parts}cv{part:0>2}'.format(num_parts=num_parts, part=part),
                      title='{num_parts}-fold Cross Validation'.format(num_parts=num_parts),
                      x_val=x_val, y_val=y_val, diagrams=diagrams)
         ss_val = ss_val_temp/(num_parts)
-        ss = ss_temp/(num_parts)
-        ll = ll_temp/(num_parts)
+
+
         plot_fit(model=m, value=param, xlim=xlim, param_name=param_name, param_range=param_range,
                  objective=np.sqrt(ss_val), objective_ylim=objective_ylim,
                  fig=f, ax=ax,
                  prefix='olympic_{num_parts}cv{num_partitions:0>2}'.format(num_parts=num_parts, num_partitions=num_parts),
                  title='{num_parts}-fold Cross Validation'.format(num_parts=num_parts),
                  x_val=x_val, y_val=y_val, diagrams=diagrams)
-            
-#################### Session 6 ####################    
+
+#################### Session 6 ####################
 
 def under_determined_system(diagrams='../diagrams'):
     """
@@ -2207,14 +2183,14 @@ def bayes_update(diagrams='../diagrams'):
     ln_prior_curve = -0.5*(np.log(2*np.pi*prior_var) + (f-prior_mean)*(f-prior_mean)/prior_var)
     ln_likelihood_curve = np.zeros(ln_prior_curve.shape)
     for i in range(num_points):
-        ln_likelihood_curve[i] = noise.log_likelihood(f[i][np.newaxis, :], 
-                                                      np.array([[np.finfo(float).eps]]), 
+        ln_likelihood_curve[i] = noise.log_likelihood(f[i][np.newaxis, :],
+                                                      np.array([[np.finfo(float).eps]]),
                                                       y)
     ln_marginal_likelihood = noise.log_likelihood(prior_mean, prior_var, y)
 
-    prior_curve = np.exp(ln_prior_curve) 
+    prior_curve = np.exp(ln_prior_curve)
     likelihood_curve = np.exp(ln_likelihood_curve)
-    marginal_curve = np.exp(ln_marginal_likelihood)
+
 
     ln_posterior_curve = ln_likelihood_curve + ln_prior_curve - ln_marginal_likelihood
     posterior_curve = np.exp(ln_posterior_curve)
@@ -2230,8 +2206,8 @@ def bayes_update(diagrams='../diagrams'):
 
     approx_curve = np.exp(ln_approx_curve)
     noise
-    xlim = [x_min, x_max] 
-    ylim = [0, np.max(np.vstack([approx_curve, likelihood_curve, 
+    xlim = [x_min, x_max]
+    ylim = [0, np.max(np.vstack([approx_curve, likelihood_curve,
                           posterior_curve, prior_curve]).flatten())*1.1]
 
     fig, ax = plt.subplots(figsize=two_figsize)
@@ -2240,19 +2216,19 @@ def bayes_update(diagrams='../diagrams'):
     ax.set_yticks([0, 1, 2, 3, 4, 5])
     ax.set_ylim(ylim)
 
-    ax.vlines(xlim[0], ylim[0], ylim[1], color=[0., 0., 0.]) 
-    ax.hlines(ylim[0], xlim[0], xlim[1], color=[0., 0., 0.]) 
+    ax.vlines(xlim[0], ylim[0], ylim[1], color=[0., 0., 0.])
+    ax.hlines(ylim[0], xlim[0], xlim[1], color=[0., 0., 0.])
 
     ax.plot(f, prior_curve, color=[1, 0., 0.], linewidth=3)
-    ax.text(3.5, 2, r'$p(c) = \mathscr{N}(c|0, \alpha_1)$', horizontalalignment='center', fontsize=20) 
+    ax.text(3.5, 2, r'$p(c) = \mathscr{N}(c|0, \alpha_1)$', horizontalalignment='center', fontsize=20)
     ma.write_figure('dem_gaussian001.svg', directory=diagrams, transparent=True)
 
     ax.plot(f, likelihood_curve, color=[0, 0, 1], linewidth=3)
-    ax.text(3.5, 1.5,r'$p(y|m, c, x, \sigma^2)=\mathscr{N}(y|mx+c,\sigma^2)$', horizontalalignment='center', fontsize=20) 
+    ax.text(3.5, 1.5,r'$p(y|m, c, x, \sigma^2)=\mathscr{N}(y|mx+c,\sigma^2)$', horizontalalignment='center', fontsize=20)
     ma.write_figure('dem_gaussian002.svg', directory=diagrams, transparent=True)
 
     ax.plot(f, posterior_curve, color=[1, 0, 1], linewidth=3)
-    ax.text(3.5, 1, r'$p(c|y, m, x, \sigma^2)=$', horizontalalignment='center', fontsize=20) 
+    ax.text(3.5, 1, r'$p(c|y, m, x, \sigma^2)=$', horizontalalignment='center', fontsize=20)
     plt.text(3.5, 0.65, r'$\mathscr{N}\left(c|\frac{y-mx}{1+\sigma^2\alpha_1},(\sigma^{-2}+\alpha_1^{-1})^{-1}\right)$', horizontalalignment='center', fontsize=20)
     ma.write_figure('dem_gaussian003.svg', directory=diagrams, transparent=True)
 
@@ -2315,7 +2291,7 @@ def independent_gaussians_sample(x=None, y=None, mu_x=0, var_x=1,
 
     p_x = 1/np.sqrt(tau*var_x)*np.exp(-1/(2*var_x)*(x - mu_x)**2)
     p_y = 1/np.sqrt(tau*var_y)*np.exp(-1/(2*var_y)*(y - mu_y)**2)
-    
+
     fig, axs = plt.subplots(2, 4, figsize=two_figsize)
     for a in axs.flatten():
         a.set_axis_off()
@@ -2366,7 +2342,7 @@ def independent_gaussians_sample(x=None, y=None, mu_x=0, var_x=1,
         a0[0].set(color=[0.,0.,0.])
         a1[0].set(color=[0.,0.,0.])
         a2[0].set(color=[0.,0.,0.])
-        
+
 
 def correlated_gaussians_sample(x=None, y=None, mu_x=0, var_x=1,
                                 mu_y=0, var_y=1, num_samps=20,
@@ -2437,7 +2413,7 @@ def correlated_gaussians_sample(x=None, y=None, mu_x=0, var_x=1,
     ax[2].set_xticks([mu_y-3*sd_y, mu_y, mu_y+3*sd_y])
     ax[2].set_xlabel(ylabel, fontsize=20)
     ax[2].set_ylabel('$p$', fontsize=20)
-    
+
     count = 0
     for i in range(num_samps):
         vec_s = np.random.multivariate_normal(np.array([mu_x, mu_y]), covMat)
@@ -2532,7 +2508,7 @@ def two_point_pred(K, f, x, ax=None, ind=[0, 1],
     """
     if not os.path.exists(diagrams):
         os.mkdir(diagrams)
-    
+
     subK = K[ind][:, ind]
     f = f[ind]
     x = x[ind]
@@ -2560,12 +2536,12 @@ def two_point_pred(K, f, x, ax=None, ind=[0, 1],
     ax.add_line(pdf)
     if stub is not None:
         ma.write_figure('{stub}{start:0>3}.svg'.format(stub=stub, start=start+2), directory=diagrams, transparent=True)
-    
+
     obs = plt.Line2D([f[1]], [f[0]], linewidth=10, markersize=10, color=fixed_linecolor, marker='o')
     ax.add_line(obs)
     if stub is not None:
         ma.write_figure('{stub}{start:0>3}.svg'.format(stub=stub, start=start+3), directory=diagrams, transparent=True)
-    
+
 
 def output_augment_x(x, num_outputs):
     """
@@ -2616,9 +2592,9 @@ def basis(function, x_min, x_max, fig, ax, loc, text, diagrams='./diagrams', fon
     colors.append([1, 0, 1])
 
     # Set ylim according to max standard deviation of basis
-    ylim = 2*np.asarray([-1, 1])*np.sqrt(diag.max())    
+    ylim = 2*np.asarray([-1, 1])*np.sqrt(diag.max())
     plt.sca(ax)
-    ax.set_xlim((x_min, x_max))    
+    ax.set_xlim((x_min, x_max))
     ax.set_ylim(ylim)
 
     ax.set_xlabel('$x$', fontsize=fontsize)
@@ -2632,7 +2608,7 @@ def basis(function, x_min, x_max, fig, ax, loc, text, diagrams='./diagrams', fon
     plt.sca(ax)
     ax.cla()
     ylim = 3*np.asarray([-1, 1])*np.sqrt(diag.max())
-    ax.set_xlabel('$x$', fontsize=fontsize) 
+    ax.set_xlabel('$x$', fontsize=fontsize)
     ax.set_ylabel('$f(x)$', fontsize=fontsize)
 
     ax.set_xlim((x_min, x_max))
@@ -2642,7 +2618,7 @@ def basis(function, x_min, x_max, fig, ax, loc, text, diagrams='./diagrams', fon
     a, = ax.plot(x, f, color=[0, 0, 0], linewidth=3)
 
     for i in range(basis.number):
-        ax.plot(x.flatten(), Phi[:, i], color=colors[i], linewidth=1) 
+        ax.plot(x.flatten(), Phi[:, i], color=colors[i], linewidth=1)
 
     t = []
     for i in range(basis.number):
@@ -2660,8 +2636,8 @@ def basis(function, x_min, x_max, fig, ax, loc, text, diagrams='./diagrams', fon
 
         ma.write_figure(basis.function.__name__ + '_function{plot_num:0>3}.svg'.format(plot_num=j), directory=diagrams,  transparent=True)
 
-def computing_covariance(kernel, 
-                         x, 
+def computing_covariance(kernel,
+                         x,
                          formula,
                          stub,
                          prec='1.2',
@@ -2680,8 +2656,6 @@ def computing_covariance(kernel,
         os.mkdir(diagrams)
     counter=0
     fig, ax = plt.subplots(1, 2, figsize=one_figsize)
-    if len(x)>3:
-        nsf=2
     base_text = ''
     data_text = ''
     for i, val in enumerate(x.flatten()):
@@ -2693,15 +2667,15 @@ def computing_covariance(kernel,
     param_text = ''
     for i, param in enumerate(kernel.parameters):
         if param in notation_map:
-            param_text += '$' + notation_map[param] 
+            param_text += '$' + notation_map[param]
         else:
-            param_text += r'$\text{' + param + '}' 
+            param_text += r'$\text{' + param + '}'
         param_text += '={param:{prec}}$'.format(param=kernel.parameters[param],prec=prec)
         if i<len(kernel.parameters)-2:
             param_text += ', '
         elif i<len(kernel.parameters)-1:
             param_text += ' and '
-            
+
     base_text += data_text
     if len(kernel.parameters)>0:
         base_text += ' with ' + param_text
@@ -2709,7 +2683,7 @@ def computing_covariance(kernel,
     ax[0].set(ylim=[0.0, 1.0])
     ax[0].set(xlim=[0.0, 1.0])
     clear_axes(ax[0])
-    
+
     ax[0].text(0.5, 0.9, formula, ha='center', fontsize=20)
     ax[0].text(0.5, 0.2, base_text, ha='center', fontsize=12)
     ax[1].set_position([0.5, 0.3, 0.5, 0.5])
@@ -2727,33 +2701,33 @@ def computing_covariance(kernel,
         for i in range(j+1):
             text = '$x_{i}={val_i:{prec}}$, $x_{j}={val_j:{prec}}$'.format(i=i, j=j, val_i=x[i,0], val_j=x[j, 0], prec=prec)
             a.set_text(text)
-            #a.append(ax[0].text(0.25, 0.4, 
+            #a.append(ax[0].text(0.25, 0.4,
             #                    [r'$\kernelScalar_{' num2str(i) ', ' num2str(j) '} = ' numsf2str(variance, nsf) ' \times \exp \left(-\frac{(' numsf2str(t(i), nsf) '-' numsf2str(t(j), nsf) ')^2}{2\times ' numsf2str(lengthScale, nsf) '^2}\right)$'], 'horizontalalignment', 'center')])
             file_name = base_file_name+'{counter:0>3}.svg'.format(counter=counter)
             ma.write_figure(file_name, directory=diagrams, transparent=True)
             counter += 1
             Kplot[i, j] = KplotFull[i, j]
 
-            matrix(Kplot, 
-                   ax=ax[1], 
-                   bracket_style='square', 
+            matrix(Kplot,
+                   ax=ax[1],
+                   bracket_style='square',
                    type='entries',
                    highlight=True,
                    highlight_row = [i, i],
                    highlight_col = [j, j],
                    highlight_color=[1, 0, 1])
-            
+
             file_name = base_file_name+'{counter:0>3}.svg'.format(counter=counter)
-            ma.write_figure(file_name, directory=diagrams, 
+            ma.write_figure(file_name, directory=diagrams,
                               transparent=True)
             counter +=1
 
             if i != j:
                 Kplot[j, i] = KplotFull[j, i]
 
-                matrix(Kplot, 
-                       ax=ax[1], 
-                       bracket_style='square', 
+                matrix(Kplot,
+                       ax=ax[1],
+                       bracket_style='square',
                        type='entries',
                        highlight=True,
                        highlight_row = [j, j],
@@ -2764,9 +2738,9 @@ def computing_covariance(kernel,
                                   transparent=True)
                 counter += 1
 
-    matrix(Kplot, 
-           ax=ax[1], 
-           bracket_style='square', 
+    matrix(Kplot,
+           ax=ax[1],
+           bracket_style='square',
            type='entries')
 
     file_name = base_file_name+'{counter:0>3}.svg'.format(counter=counter)
@@ -2774,15 +2748,15 @@ def computing_covariance(kernel,
                       transparent=True)
     counter += 1
 
-    matrix(K, 
-           ax=ax[1], 
+    matrix(K,
+           ax=ax[1],
            bracket_style='square',
            type='image')
     file_name = base_file_name+'{counter:0>3}.svg'.format(counter=counter)
-    ma.write_figure(file_name, directory=diagrams, 
+    ma.write_figure(file_name, directory=diagrams,
                       transparent=True)
     counter += 1
-            
+
 def kern_circular_sample(K, mu=None, x=None,
                          filename=None, fig=None, num_samps=5,
                          num_theta=48, multiple=True,
@@ -2809,21 +2783,21 @@ def kern_circular_sample(K, mu=None, x=None,
         if multiple:
             n=K.shape[0]/num_samps
         x = np.linspace(-1, 1, n)[:, np.newaxis]
-        
+
         if multiple:
             x = output_augment_x(x, num_samps)
 
     else:
         n=x.shape[0]
 
-    
+
     if multiple:
         R1 = np.random.normal(size=(n*num_samps,1))
         R2 = np.random.normal(size=(n*num_samps,1))
     else:
         R1 = np.random.normal(size=(n, num_samps))
         R2 = np.random.normal(size=(n, num_samps))
-        
+
     U1 = np.dot(R1,np.diag(1/np.sqrt(np.sum(R1*R1, axis=0))))
     R2 = R2 - np.dot(U1,np.diag(np.sum(R2*U1, axis=0)))
     R2 = np.dot(R2,np.diag(np.sqrt(np.sum(R1*R1, axis=0))/np.sqrt(np.sum(R2*R2, axis=0))))
@@ -2831,17 +2805,17 @@ def kern_circular_sample(K, mu=None, x=None,
 
     LR1 = np.dot(L,R1)
     LR2 = np.dot(L,R2)
-    
+
 
     from matplotlib import animation
     if multiple:
         x_lim = (np.min(x[:, 1]), np.max(x[:, 1]))
     else:
         x_lim = (np.min(x.flatten()), np.max(x.flatten()))
-    
+
     y_lim = np.sqrt(2)*np.array([np.min(np.array([np.min(LR1.flatten()), np.min(LR2.flatten())])),
                         np.max(np.array([np.max(LR1.flatten()), np.max(LR2.flatten())]))])
-    
+
     if fig is None:
         fig, _ = plt.subplots(figsize=one_figsize)
     rect = 0, 0, 1., 1.
@@ -2851,9 +2825,9 @@ def kern_circular_sample(K, mu=None, x=None,
 
     line = []
     for i in range(num_samps):
-        l, = ax.plot([], [], lw=2)
-        line.append(l)
-        
+        sample_line, = ax.plot([], [], lw=2)
+        line.append(sample_line)
+
     # initialization function: plot the background of each frame
     def init():
         for i in range(num_samps):
@@ -2866,7 +2840,7 @@ def kern_circular_sample(K, mu=None, x=None,
         xc = np.cos(theta)
         yc = np.sin(theta)
         # generate 2d basis in t-d space
-        coord = xc*R1 + yc*R2
+
         y = xc*LR1 + yc*LR2
         if mu is not None:
             y = y + mu
@@ -2903,60 +2877,60 @@ def animate_covariance_function(kernel_function,
     if x is None:
         n=200
         x = np.linspace(-1, 1, n)[:, np.newaxis]
-    
+
     if multiple:
         x = output_augment_x(x, num_samps)
-    
+
     K = kernel_function(x, x)
     return K, kern_circular_sample(K, x=x,
                                    fig=fig, num_samps=num_samps,
                                    multiple=multiple)
-    
+
 def _multi_output_covariance_heatmap(kernel, x=None, num_outputs=2,
                                     shortname=None, longname=None, comment=None,
                                     diagrams='../diagrams'):
     """
     Plot multi-output covariance function showing cross-covariances.
-    
+
     :param kernel: Multi-output kernel function (e.g., icm_cov, lmc_cov)
     :param x: Input data (optional)
     :param num_outputs: Number of outputs to visualize
     :param shortname: Short name for the kernel (optional)
-    :param longname: Long name for the kernel (optional) 
+    :param longname: Long name for the kernel (optional)
     :param comment: Comment to display (optional)
     :param diagrams: Directory to save the plot (default: '../diagrams')
     """
     if not os.path.exists(diagrams):
         os.mkdir(diagrams)
-    
+
     if x is None:
         n = 200
         x = np.linspace(-1, 1, n)[:, np.newaxis]
-        
+
     # Create multi-output input data
     # For each output i, create inputs [i, x1, x2, ...]
     x_multi = []
     for i in range(num_outputs):
-        for x_val in x: 
+        for x_val in x:
             if x_val.ndim == 1:
                 x_multi.append([i] + x_val.tolist())
             else:
                 x_multi.append([i] + x_val.flatten().tolist())
     x_multi = np.array(x_multi)
-    
+
     K2 = kernel.K(x_multi[::10, :])
     fig, ax = plt.subplots(figsize=one_figsize)
-    hcolor = [1., 0., 1.]
-    obj = matrix(K2, ax=ax, type='image',
+
+    matrix(K2, ax=ax, type='image',
                  bracket_style='boxes', colormap='gray')
     return fig, ax
-    
+
     ma.write_figure(shortname + '_covariance.svg', directory=diagrams, transparent=True)
 def _multi_output_sample_plot(kernel, x=None, num_outputs=2, num_samps=3,
                              shortname=None, diagrams='../diagrams'):
     """
     Plot samples from multi-output kernel showing different outputs.
-    
+
     :param kernel: Multi-output kernel function (e.g., icm_cov, lmc_cov)
     :param x: Input data (optional)
     :param num_outputs: Number of outputs to visualize
@@ -2966,11 +2940,11 @@ def _multi_output_sample_plot(kernel, x=None, num_outputs=2, num_samps=3,
     """
     if not os.path.exists(diagrams):
         os.mkdir(diagrams)
-    
+
     if x is None:
         n = 200
         x = np.linspace(-1, 1, n)[:, np.newaxis]
-    
+
     # Create multi-output input data
     x_multi = []
     for i in range(num_outputs):
@@ -2980,36 +2954,36 @@ def _multi_output_sample_plot(kernel, x=None, num_outputs=2, num_samps=3,
             else:
                 x_multi.append([i] + x_val.flatten().tolist())
     x_multi = np.array(x_multi)
-    
+
     # Compute full covariance matrix
     K = kernel.K(x_multi, x_multi)
-    
+
     # Sample from the GP
     y = np.random.multivariate_normal(np.zeros(len(x_multi)), K)[:, np.newaxis]
-    
+
     # Create visualisation
     fig, ax = plt.subplots(figsize=one_figsize)
-    
+
     colors = plt.cm.Set1(np.linspace(0, 1, num_outputs))
-    
+
     for output_idx in range(num_outputs):
         # Extract samples for this output
         start_idx = output_idx * len(x)
         end_idx = (output_idx + 1) * len(x)
-        ax.plot(x.flatten(), y[start_idx:end_idx, :].flatten(), 
-                color=colors[output_idx], 
+        ax.plot(x.flatten(), y[start_idx:end_idx, :].flatten(),
+                color=colors[output_idx],
                 alpha=0.7, linewidth=2)
-        
+
         ax.grid(True, alpha=0.3)
-        
+
     plt.tight_layout()
-    
+
     # Save plot
     if shortname is not None:
         filename = shortname + '_samples'
     else:
         filename = 'multi_output_samples'
-    
+
     ma.write_figure(filename + '.svg', directory=diagrams, transparent=True)
 
     return fig, ax
@@ -3018,7 +2992,7 @@ def _multi_output_animate_covariance_function(kernel, x=None, num_outputs=2, num
                                              diagrams='../diagrams'):
     """
     Create animation of multi-output covariance function samples using great circle tour.
-    
+
     :param kernel: Multi-output kernel function (e.g., icm_cov, lmc_cov)
     :param x: Input data (optional)
     :param num_outputs: Number of outputs to visualize
@@ -3029,7 +3003,7 @@ def _multi_output_animate_covariance_function(kernel, x=None, num_outputs=2, num
     if x is None:
         n = 200
         x = np.linspace(-1, 1, n)[:, np.newaxis]
-    
+
     # Create multi-output input data
     x_multi = []
     for i in range(num_outputs):
@@ -3039,52 +3013,52 @@ def _multi_output_animate_covariance_function(kernel, x=None, num_outputs=2, num
             else:
                 x_multi.append([i] + x_val.flatten().tolist())
     x_multi = np.array(x_multi)
-    
+
     # Compute full covariance matrix
     K = kernel.K(x_multi, x_multi)
-    
+
     # Create figure with subplots for each output
    # Create visualisation
     fig, ax = plt.subplots(figsize=one_figsize)
     colors = plt.cm.Set1(np.linspace(0, 1, num_outputs))
-    
+
     ax.set_xlim(x.min(), x.max())
     ax.set_ylim(-3, 3)  # Will be adjusted based on samples
     ax.grid(True, alpha=0.3)
-        
+
     # Initialize empty line objects for animation
     output_lines = []
     for output_idx in range(num_outputs):
         # Create empty lines for each sample
         line, = ax.plot([], [], alpha=0.7, linewidth=2, color=colors[output_idx])
         output_lines.append(line)
-    
+
     # Set up great circle tour (similar to kern_circular_sample)
     num_theta = 48
     tau = 2 * np.pi
-    
+
     # Generate two random vectors for the great circle tour
     R1 = np.random.normal(size=(len(x_multi), 1))
     R2 = np.random.normal(size=(len(x_multi), 1))
-    
+
     # Orthogonalize R2 with respect to R1
     U1 = R1 / np.sqrt(np.sum(R1 * R1, axis=0))
     R2 = R2 - U1 * np.sum(R2 * U1, axis=0)
     R2 = R2 * np.sqrt(np.sum(R1 * R1, axis=0)) / np.sqrt(np.sum(R2 * R2, axis=0))
-    
+
     # Cholesky decomposition for sampling
     L = np.linalg.cholesky(K + np.diag(np.ones(K.shape[0])) * 1e-6)
-    
+
     # Transform the random vectors
     LR1 = np.dot(L, R1)
     LR2 = np.dot(L, R2)
-    
+
     # Calculate proper y-limits for the great circle tour
     # During the animation, we compute y = xc * LR1 + yc * LR2
     # where xc and yc are cosine and sine values between -1 and 1
     # The maximum possible value is sqrt(LR1^2 + LR2^2) when xc and yc are aligned
     # Let's compute the actual range by sampling a few points in the great circle
-    
+
     # Sample a few points to get the actual range
     test_thetas = np.linspace(0, 2*np.pi, 100)
     all_values = []
@@ -3093,38 +3067,38 @@ def _multi_output_animate_covariance_function(kernel, x=None, num_outputs=2, num
         yc = np.sin(theta)
         y_test = xc * LR1 + yc * LR2
         all_values.extend(y_test.flatten())
-    
+
     y_min, y_max = np.min(all_values), np.max(all_values)
     y_margin = 0.1 * (y_max - y_min)
     y_lim = np.array([y_min - y_margin, y_max + y_margin])
-    
+
     ax.set_ylim(y_lim)
-    
+
     def animate(frame):
         # Great circle tour: interpolate between R1 and R2 using trigonometric functions
         theta = float(frame) / num_theta * tau
         xc = np.cos(theta)
         yc = np.sin(theta)
-        
+
         # Generate samples using the great circle tour
         y = xc * LR1 + yc * LR2
-        
+
         # Update each output's samples
         for output_idx in range(num_outputs):
             start_idx = output_idx * len(x)
             end_idx = (output_idx + 1) * len(x)
-            
+
             xc = np.cos(theta)
             yc = np.sin(theta)
             y = xc * LR1[start_idx:end_idx, 0] + yc * LR2[start_idx:end_idx, 0]
-                
+
             output_lines[output_idx].set_data(x.flatten(), y)
-        
+
         return output_lines
-    
+
     # Create animation
     anim = animation.FuncAnimation(fig, animate, frames=num_theta, interval=50, blit=True)
-    
+
     return K, anim
 
 def multi_output_covariance_func(kernel, x=None, num_outputs=2,
@@ -3132,39 +3106,39 @@ def multi_output_covariance_func(kernel, x=None, num_outputs=2,
                                 num_samps=5, diagrams='../diagrams'):
     """
     Complete multi-output covariance function visualization with both static plots and animation.
-    
+
     :param kernel: Multi-output kernel function (e.g., icm_cov, lmc_cov)
     :param x: Input data (optional)
     :param num_outputs: Number of outputs to visualize
     :param shortname: Short name for the kernel (optional)
-    :param longname: Long name for the kernel (optional) 
+    :param longname: Long name for the kernel (optional)
     :param comment: Comment to display (optional)
     :param num_samps: Number of samples for animation (default: 5)
     :param diagrams: Directory to save the plot (default: '../diagrams')
     """
     if not os.path.exists(diagrams):
         os.mkdir(diagrams)
-    
+
     if shortname is None:
         shortname = 'multi_output'
-    
+
     # Create static covariance heatmap (save as {shortname}_covariance)
     fig1, axes1 = _multi_output_covariance_heatmap(kernel, x, num_outputs, shortname, longname, comment, diagrams)
-    
-    # Create static sample plot (save as {shortname}_samples)  
+
+    # Create static sample plot (save as {shortname}_samples)
     fig2, axes2 = _multi_output_sample_plot(kernel, x, num_outputs, num_samps, shortname, diagrams)
-    
+
     # Create animation
     K, anim = _multi_output_animate_covariance_function(kernel, x, num_outputs, num_samps, diagrams)
-    
+
     # Save animation as {shortname}_covariance.gif (expected by includecovariance macro)
     ma.utils.write_animation(anim,
                       shortname + '_covariance.gif',
                       directory=diagrams,
                       writer='imagemagick',
                       fps=30)
-    
-    
+
+
     # Create HTML output similar to covariance_func
     if kernel.name is not None:
         out = '<h2>' + kernel.name + ' Multi-Output Covariance</h2>'
@@ -3172,18 +3146,18 @@ def multi_output_covariance_func(kernel, x=None, num_outputs=2,
     else:
         out = '<h2>Multi-Output Covariance</h2>'
         out += '\\n\n'
-    
+
     if kernel.formula is not None:
         out += '<p><center>' + kernel.formula + '</center></p>'
-    
+
     out += '<table>\\n'
     out += '  <tr><td><img src="' + ma.filename_join(shortname + '_covariance', diagrams) + '.svg"></td><td><img src="' + ma.filename_join(shortname + '_covariance', diagrams) + '.gif"></td></tr>\\n'
     out += '  <tr><td><img src="' + ma.filename_join(shortname + '_samples', diagrams) + '.png"></td></tr>\\n'
     out += '</table>'
-    
+
     if comment is not None:
         out += '<p><center>' + comment + '</center></p>'
-    
+
     fhand = open(ma.filename_join(shortname + '_covariance.html', diagrams), 'w')
     fhand.write(out)
     fhand.close()
@@ -3222,7 +3196,7 @@ def covariance_func(kernel, x=None,
     if x is None:
         n=200
         x = np.linspace(-1, 1, n)[:, np.newaxis]
-        
+
     K, anim=animate_covariance_function(kernel.K, x, num_samps,
                                         multiple)
 
@@ -3240,8 +3214,8 @@ def covariance_func(kernel, x=None,
 
     K2 = kernel.K(x[::10, :])
     fig, ax = plt.subplots(figsize=one_figsize)
-    hcolor = [1., 0., 1.]
-    obj = matrix(K2, ax=ax, type='image',
+
+    matrix(K2, ax=ax, type='image',
                  bracket_style='boxes', colormap='gray')
 
     ma.write_figure(filename + '.svg', directory=diagrams, transparent=True)
@@ -3259,7 +3233,7 @@ def covariance_func(kernel, x=None,
     fhand = open(ma.filename_join(filename + '.html', diagrams), 'w')
     fhand.write(out)
 
-    
+
 def rejection_samples(kernel, x=None, num_few=20, num_many=1000,  diagrams='../diagrams', **kwargs):
     """
     Generate rejection samples from a kernel.
@@ -3297,8 +3271,8 @@ def rejection_samples(kernel, x=None, num_few=20, num_many=1000,  diagrams='../d
     K_data = K[ind][:, ind]
     x_data = x[ind, :]
     y_data = np.random.multivariate_normal(np.zeros(len(ind)), K_data, size=1).T
-    
-    h_data=ax.plot(x_data, y_data, 'o', markersize=25, linewidth=3, color=[0., 0., 0.])
+
+    ax.plot(x_data, y_data, 'o', markersize=25, linewidth=3, color=[0., 0., 0.])
     ma.write_figure('gp_rejection_sample003.png', directory=diagrams, transparent=True)
     delta = y_data - f[ind, :]
     dist = (delta*delta).sum(0)
@@ -3309,7 +3283,7 @@ def rejection_samples(kernel, x=None, num_few=20, num_many=1000,  diagrams='../d
 
     # This is not the numerically stable way to do this!
     Kinv = np.linalg.inv(K_data)
-    Kinvy = np.dot(Kinv, y_data)
+
     K_star = kernel.K(x_data, x, **kwargs)
     A = np.dot(Kinv, K_star)
     mu_f = np.dot(A.T, y_data)
@@ -3319,14 +3293,14 @@ def rejection_samples(kernel, x=None, num_few=20, num_many=1000,  diagrams='../d
         _ = gpt.gpplot(x,
                            mu_f,
                            mu_f-2*np.sqrt(c_f),
-                           mu_f+2*np.sqrt(c_f), 
+                           mu_f+2*np.sqrt(c_f),
                            ax=ax)
     else:
         ax.plot(x, mu_f, 'b-', linewidth=2)
         ax.fill_between(x.flatten(), (mu_f-2*np.sqrt(c_f)).flatten(), (mu_f+2*np.sqrt(c_f)).flatten(), alpha=0.3)
     ma.write_figure('gp_rejection_sample005.png', directory=diagrams, transparent=True)
-    
-    
+
+
 def two_point_sample(kernel_function, diagrams='../diagrams'):
     """
     Sample from a two-point kernel function.
@@ -3334,11 +3308,11 @@ def two_point_sample(kernel_function, diagrams='../diagrams'):
     :param kernel_function: Kernel function to sample from.
     :param diagrams: Directory to save the plot (default: '../diagrams').
     """
-    ind = [0, 1]    
+    ind = [0, 1]
     fig, ax = plt.subplots(nrows=1, ncols=2, figsize=two_figsize)
     x = np.linspace(-1, 1, 25)[:, np.newaxis]
     K = kernel_function(x, x)
-    obj = matrix(K, ax=ax[1], type='image', colormap='gray')
+    matrix(K, ax=ax[1], type='image', colormap='gray')
     ax[1].set_xlabel('$i$',fontsize=16)
     ax[1].set_ylabel(r'$i^\prime$',fontsize=16)
     #fig.colorbar(mappable=obj, ax=ax[1])
@@ -3360,20 +3334,20 @@ def two_point_sample(kernel_function, diagrams='../diagrams'):
     ax[0].plot(np.array(ind)+1, [f[0,ind[0]], f[0,ind[1]]], 'o', markersize=10, linewidth=5, color=hcolor)
     ma.write_figure('two_point_sample002.svg', directory=diagrams, transparent=True)
 
-    obj = matrix(K, ax=ax[1], type='image', 
-                 highlight=True, 
-                 highlight_row=[0, 1], 
-                 highlight_col=[0,1], 
+    matrix(K, ax=ax[1], type='image',
+                 highlight=True,
+                 highlight_row=[0, 1],
+                 highlight_col=[0,1],
                  highlight_color=hcolor,
                  colormap='gray')
     ax[1].set_xlabel('$i$',fontsize=16)
     ax[1].set_ylabel(r'$i^\prime$',fontsize=16)
     ma.write_figure('two_point_sample003.svg', directory=diagrams, transparent=True)
 
-    obj = matrix(K, ax=ax[1], type='image', 
-                 highlight=True, 
-                 highlight_row=[0, 1], 
-                 highlight_col=[0,1], 
+    matrix(K, ax=ax[1], type='image',
+                 highlight=True,
+                 highlight_row=[0, 1],
+                 highlight_col=[0,1],
                  highlight_color=hcolor,
                  highlight_width=5,
                  zoom=True,
@@ -3384,10 +3358,10 @@ def two_point_sample(kernel_function, diagrams='../diagrams'):
     ax[1].set_ylabel(r'$i^\prime$',fontsize=16)
     ma.write_figure('two_point_sample004.svg', directory=diagrams, transparent=True)
 
-    obj = matrix(K, ax=ax[1], type='image', 
-                 highlight=True, 
-                 highlight_row=[0, 1], 
-                 highlight_col=[0,1], 
+    matrix(K, ax=ax[1], type='image',
+                 highlight=True,
+                 highlight_row=[0, 1],
+                 highlight_col=[0,1],
                  highlight_color=hcolor,
                  highlight_width=6,
                  zoom=True,
@@ -3398,10 +3372,10 @@ def two_point_sample(kernel_function, diagrams='../diagrams'):
     ax[1].set_ylabel(r'$i^\prime$',fontsize=16)
     ma.write_figure('two_point_sample005.svg', directory=diagrams, transparent=True)
 
-    obj = matrix(K, ax=ax[1], type='image', 
-                 highlight=True, 
-                 highlight_row=[0, 1], 
-                 highlight_col=[0,1], 
+    matrix(K, ax=ax[1], type='image',
+                 highlight=True,
+                 highlight_row=[0, 1],
+                 highlight_col=[0,1],
                  highlight_color=hcolor,
                  highlight_width=7,
                  zoom=True,
@@ -3412,10 +3386,10 @@ def two_point_sample(kernel_function, diagrams='../diagrams'):
     ax[1].set_ylabel(r'$i^\prime$',fontsize=16)
     ma.write_figure('two_point_sample006.svg', directory=diagrams, transparent=True)
 
-    obj = matrix(K, ax=ax[1], type='image', 
-                 highlight=True, 
-                 highlight_row=[0, 1], 
-                 highlight_col=[0,1], 
+    matrix(K, ax=ax[1], type='image',
+                 highlight=True,
+                 highlight_row=[0, 1],
+                 highlight_col=[0,1],
                  highlight_color=hcolor,
                  highlight_width=8,
                  zoom=True,
@@ -3426,7 +3400,7 @@ def two_point_sample(kernel_function, diagrams='../diagrams'):
     ax[1].set_ylabel(r'$i^\prime$',fontsize=16)
     ma.write_figure('two_point_sample007.svg', directory=diagrams, transparent=True)
 
-    obj = matrix(K[ind][:, ind], ax=ax[1], type='values')
+    matrix(K[ind][:, ind], ax=ax[1], type='values')
     ax[1].set_xlabel('$i$',fontsize=16)
     ax[1].set_ylabel(r'$i^\prime$',fontsize=16)
     ma.write_figure('two_point_sample008.svg', directory=diagrams, transparent=True)
@@ -3444,9 +3418,9 @@ def two_point_sample(kernel_function, diagrams='../diagrams'):
     ax[0].set_xlim(xlim)
     ax[0].set_xlabel('$i$', fontsize=20)
     ax[0].set_ylabel('$f$', fontsize=20)
-    
+
     ax[0].plot(np.array(ind)+1, [f[0,ind[0]], f[0,ind[1]]], 'o', markersize=10, linewidth=5, color=hcolor)
-    obj = matrix(K[ind][:, ind], ax=ax[1], type='values')
+    matrix(K[ind][:, ind], ax=ax[1], type='values')
     ax[1].set_xlabel('$i$',fontsize=16)
     ax[1].set_ylabel(r'$i^\prime$',fontsize=16)
     ma.write_figure('two_point_sample013.svg', directory=diagrams, transparent=True)
@@ -3486,7 +3460,7 @@ def logistic(diagrams='../diagrams'):
     fig, ax = plt.subplots(figsize=two_figsize)
     f = np.linspace(-8, 8, 100)
     g = 1/(1+np.exp(-f))
-    
+
     ax.plot(f, g, 'r-', lw=3)
     ax.set_title('Logistic Function', fontsize=20)
     ax.set_xlabel('$f_i$', fontsize=20)
@@ -3502,8 +3476,6 @@ def height(ax, h, ph):
     ax.set_xlabel('$h/m$', fontsize=20)
     ax.set_ylabel('$p(h)$', fontsize=20)
 
-    ylim = ax.get_ylim()
-    xlim = ax.get_xlim()
     #ax.vlines(xlim[0], ylim[0], ylim[1], color='k')
     #ax.hlines(ylim[0], xlim[0], xlim[1], color='k')
 
@@ -3521,8 +3493,6 @@ def weight(ax, w, pw):
     ax.set_xlabel('$w/kg$', fontsize=20)
     ax.set_ylabel('$p(w)$', fontsize=20)
 
-    ylim = ax.get_ylim()
-    xlim = ax.get_xlim()
     #ax.vlines(xlim[0], ylim[0], ylim[1], color='k')
     #ax.hlines(ylim[0], xlim[0], xlim[1], color='k')
 
@@ -3538,19 +3508,19 @@ def low_rank_approximation(fontsize=25, diagrams='../diagrams'):
     k1 = 10
     k2 = 12
     blank_canvas(ax[3])
-    ax[3].text(0.145, 0.55, r'$\times$', 
+    ax[3].text(0.145, 0.55, r'$\times$',
                horizontalalignment='center',
                fontsize=fontsize)
-    ax[3].text(0.47, 0.55, r'$=$', 
+    ax[3].text(0.47, 0.55, r'$=$',
                horizontalalignment='center',
                fontsize=fontsize)
-    ax[3].text(0.075, 0.55, r'$\mathbf{U}$', 
+    ax[3].text(0.075, 0.55, r'$\mathbf{U}$',
                horizontalalignment='center',
                fontsize=fontsize, color=[1, 1, 1])
-    ax[3].text(0.3, 0.55, r'$\mathbf{V}^\top$', 
+    ax[3].text(0.3, 0.55, r'$\mathbf{V}^\top$',
                horizontalalignment='center',
                fontsize=fontsize, color=[1, 1, 1])
-    ax[3].text(0.65, 0.55, r'$\mathbf{W}$', 
+    ax[3].text(0.65, 0.55, r'$\mathbf{W}$',
                horizontalalignment='center',
                fontsize=fontsize, color=[1, 1, 1])
     U = np.random.randn(k1, q)
@@ -3566,46 +3536,7 @@ def low_rank_approximation(fontsize=25, diagrams='../diagrams'):
     ax[3].set_frame_on(True)
     ax[3].axes.get_yaxis().set_visible(True)
     ma.write_figure('wisuvt.svg', directory=diagrams, transparent=True)
-    
-def kronecker_illustrate(fontsize=25, diagrams='../diagrams'):
-    """
-    Illustrate Kronecker product concept.
 
-    :param fontsize: Font size for labels (default: 25).
-    :param diagrams: Directory to save the plot (default: '../diagrams').
-    """
-    fig, ax = plt.subplots(1, 4, figsize=two_figsize)
-    A = [['$a$', '$b$'],
-         [ '$c$', '$d$']]
-    B = [[r'$\mathbf{K}$']]
-
-    AkroneckerB = [[r'$a\mathbf{K}$', r'$b\mathbf{K}$'],
-                    [r'$c\mathbf{K}$', r'$d\mathbf{K}$']]
-    ax[0].set_position([0, 0, 1, 1])
-    ax[0].set_xlim([0, 1])
-    ax[0].set_ylim([0, 1])
-    ax[0].text(0.4, 0.5, r' $\otimes$', horizontalalignment='center',
-                  fontsize=fontsize)
-    ax[0].text(0.55, 0.5, ' $=$', horizontalalignment='center',
-                  fontsize=fontsize)
-
-    ax[1].set_position([0.15, 0.4, 0.2, 0.2])
-    objA = matrix(A, ax=ax[1], bracket_style='square', type='entries',
-                  fontsize=fontsize)
-
-
-    ax[2].set_position([0.45, 0.45, 0.05, 0.1])
-    objB = matrix(B, ax=ax[2], bracket_style='none', type='entries',
-                  fontsize=fontsize)
-    
-    ax[3].set_position([0.57, 0.35, 0.35, 0.3])
-    objAkB = matrix(AkroneckerB, ax=ax[3],
-                    bracket_style='square',
-                    type='entries',
-                  fontsize=fontsize)
-    ax[0].set_axis_off()
-        
-    ma.write_figure('kronecker_product.svg', directory=diagrams, transparent=True)
 def blank_canvas(ax):
     """
     Create a blank canvas for plotting.
@@ -3621,7 +3552,13 @@ def blank_canvas(ax):
     ax.axes.get_yaxis().set_visible(False)
 
 def kronecker_illustrate(fontsize=25, figsize=two_figsize, diagrams='../diagrams'):
-    """Illustrate a Kronecker product"""
+    """
+    Illustrate a Kronecker product.
+
+    :param fontsize: Font size for labels (default: 25).
+    :param figsize: Figure size (default: ``two_figsize``).
+    :param diagrams: Directory to save the plot (default: '../diagrams').
+    """
     fig, ax = plt.subplots(1, 4, figsize=figsize)
     A = [['$a$', '$b$'],
          [ '$c$', '$d$']]
@@ -3639,33 +3576,29 @@ def kronecker_illustrate(fontsize=25, figsize=two_figsize, diagrams='../diagrams
                fontsize=fontsize)
 
     ax[1].set_position([0.15, 0.4, 0.2, 0.2])
-    objA = matrix(A, ax=ax[1], bracket_style='square', type='entries',
+    matrix(A, ax=ax[1], bracket_style='square', type='entries',
                   fontsize=fontsize)
 
 
     ax[2].set_position([0.45, 0.45, 0.05, 0.1])
-    objB = matrix(B, ax=ax[2], bracket_style='none', type='entries',
+    matrix(B, ax=ax[2], bracket_style='none', type='entries',
                   fontsize=fontsize)
-    
+
     ax[3].set_position([0.57, 0.35, 0.35, 0.3])
-    objAkB = matrix(AkroneckerB, ax=ax[3], bracket_style='square', type='entries',
+    matrix(AkroneckerB, ax=ax[3], bracket_style='square', type='entries',
                   fontsize=fontsize)
-        
+
     ma.write_figure('kronecker_illustrate.svg', directory=diagrams, transparent=True)
 
 def kronecker_IK(fontsize=25, figsize=two_figsize, reverse=False, diagrams='../diagrams'):
     """Illustrate a Kronecker product"""
     fig, ax = plt.subplots(1, 4, figsize=figsize)
-    my_rgb = [[1., 1., 1.],[1., 0., 0.],[ 0., 1., 0.],[ 0., 0., 1.]]
-
-    from matplotlib.colors import ListedColormap
-    colormap = ListedColormap(my_rgb, name='primary+black')
     dim_I = 3
     dim_K = 3
-    I = np.eye(dim_I)
+    eye = np.eye(dim_I)
     L = np.tril(np.ones(dim_K))
     K = np.dot(L, L.T)
-        
+
     blank_canvas(ax[0])
     ax[0].text(0.3, 0.5, r' $\otimes$',
                horizontalalignment='center',
@@ -3675,22 +3608,22 @@ def kronecker_IK(fontsize=25, figsize=two_figsize, reverse=False, diagrams='../d
                fontsize=fontsize)
 
     ax[1].set_position([0.05, 0.05, 0.2, 0.9])
-    objI = matrix(np.stack([1-I]*3, 2), ax=ax[1],
+    matrix(np.stack([1-eye]*3, 2), ax=ax[1],
                   bracket_style='boxes', type='colorpatch',
                   fontsize=fontsize)
 
 
     ax[2].set_position([0.35, 0.05, 0.2, 0.9])
-    objK = matrix(np.stack((K==1, K==2, K==3), 2),
+    matrix(np.stack((K==1, K==2, K==3), 2),
                   ax=ax[2],
                   bracket_style='boxes', type='colorpatch',
                   fontsize=fontsize)
     if reverse:
-        kron_IK = np.kron(K, I)    
+        kron_IK = np.kron(K, eye)
     else:
-        kron_IK = np.kron(I, K)    
+        kron_IK = np.kron(eye, K)
     ax[3].set_position([0.675, 0.1, 0.3, 0.85])
-    objAkB = matrix(np.stack((np.logical_or(kron_IK==1, kron_IK==0),
+    matrix(np.stack((np.logical_or(kron_IK==1, kron_IK==0),
                               np.logical_or(kron_IK==2, kron_IK==0),
                               np.logical_or(kron_IK==3, kron_IK==0)), 2),
                     ax=ax[3],
@@ -3704,50 +3637,47 @@ def kronecker_IK(fontsize=25, figsize=two_figsize, reverse=False, diagrams='../d
 def kronecker_IK_highlight(fontsize=25, figsize=two_figsize, reverse=False, diagrams='../diagrams'):
     """Illustrate a Kronecker product"""
     fig, ax = plt.subplots(1, 1, figsize=figsize)
-    my_rgb = [[1., 1., 1.],[1., 0., 0.],[ 0., 1., 0.],[ 0., 0., 1.]]
-    from matplotlib.colors import ListedColormap
-    colormap = ListedColormap(my_rgb, name='primary+black')
     dim_I = 3
     dim_K = 3
-    I = np.eye(dim_I)
+    eye = np.eye(dim_I)
     L = np.tril(np.ones(dim_K))
     K = np.dot(L, L.T)
     if reverse:
-        kron_IK = np.kron(K, I)
+        kron_IK = np.kron(K, eye)
         stem = 'KI'
     else:
-        kron_IK = np.kron(I, K)
+        kron_IK = np.kron(eye, K)
         stem = 'IK'
-        
+
     IK_stack = np.stack((np.logical_or(kron_IK==1, kron_IK==0),
                          np.logical_or(kron_IK==2, kron_IK==0),
-                         np.logical_or(kron_IK==3, kron_IK==0)), 2)        
+                         np.logical_or(kron_IK==3, kron_IK==0)), 2)
     ax.set_position([0, 0, 1, 1])
-    objAkB = matrix(IK_stack,
+    matrix(IK_stack,
                     ax=ax,
                     bracket_style='boxes', type='colorpatch',
                     fontsize=fontsize)
-        
+
     ma.write_figure('kronecker_{stem}_highlighted001.svg'.format(stem=stem), directory=diagrams)
-    objAkB = matrix(IK_stack,
+    matrix(IK_stack,
                     ax=ax,
                     bracket_style='boxes', type='colorpatch',
                     fontsize=fontsize,
-                    highlight=True, 
-                    highlight_row=[0, 2], 
-                    highlight_col=[0, 2], 
+                    highlight=True,
+                    highlight_row=[0, 2],
+                    highlight_col=[0, 2],
                     highlight_color=hcolor,
                     highlight_width=8)
     ma.write_figure('kronecker_{stem}_highlighted002.svg'.format(stem=stem), directory=diagrams)
     count = 2
     for zoom in [6, 3, 2]:
-        objAkB = matrix(IK_stack,
+        matrix(IK_stack,
                         ax=ax,
                         bracket_style='boxes', type='colorpatch',
                         fontsize=fontsize,
-                        highlight=True, 
-                        highlight_row=[0, 2], 
-                        highlight_col=[0, 2], 
+                        highlight=True,
+                        highlight_row=[0, 2],
+                        highlight_col=[0, 2],
                         highlight_color=hcolor,
                         highlight_width=8,
                         zoom=True,
@@ -3772,21 +3702,21 @@ def kronecker_WX(fontsize=25, figsize=two_figsize, diagrams='../diagrams'):
                fontsize=fontsize)
 
     ax[1].set_position([0.05, 0.35, 0.3, 0.3])
-    objA = matrix(A, ax=ax[1], bracket_style='square',
+    matrix(A, ax=ax[1], bracket_style='square',
                   type='entries',
                   fontsize=fontsize)
 
 
     ax[2].set_position([0.4, 0.35, 0.25, 0.3])
-    objB = matrix(B, ax=ax[2], bracket_style='none',
+    matrix(B, ax=ax[2], bracket_style='none',
                   type='entries',
                   fontsize=fontsize)
-    
+
     ax[3].set_position([0.6, 0.35, 0.35, 0.3])
-    objAkB = matrix(AkroneckerB, ax=ax[3], bracket_style='square',
+    matrix(AkroneckerB, ax=ax[3], bracket_style='square',
                     type='entries',
                     fontsize=fontsize)
-        
+
     ma.write_figure('kronecker_WX.svg', directory=diagrams,
                       transparent=True)
 
@@ -3797,7 +3727,7 @@ def perceptron(x_plus, x_minus, learn_rate=0.1, max_iters=10000,
     updates = 0
     count = 0
     iterations = 0
-    setup=True
+
     f2, ax2 = plt.subplots(1, 2, figsize=two_figsize)
     handle = init_perceptron(f2, ax2, x_plus, x_minus, w, b)
     handle['plane'].set_visible(False)
@@ -3820,8 +3750,8 @@ def perceptron(x_plus, x_minus, learn_rate=0.1, max_iters=10000,
             updates += 1
             count+=1
             handle['circle'].center = x_select[0], x_select[1]
-            ma.write_figure(figure=f2, filename='perceptron{samp:0>3}.svg'.format(samp=count), directory=diagrams, transparent=True)     
-            ma.write_figure(figure=f2, filename='perceptron{samp:0>3}.png'.format(samp=count), bbox_inches=extent, directory=diagrams, transparent=True)        
+            ma.write_figure(figure=f2, filename='perceptron{samp:0>3}.svg'.format(samp=count), directory=diagrams, transparent=True)
+            ma.write_figure(figure=f2, filename='perceptron{samp:0>3}.png'.format(samp=count), bbox_inches=extent, directory=diagrams, transparent=True)
             count+=1
             handle = update_perceptron(handle, f2, ax2, x_plus, x_minus, updates, w, b)
             ma.write_figure(filename='perceptron{samp:0>3}.svg'.format(samp=count),
@@ -3829,13 +3759,12 @@ def perceptron(x_plus, x_minus, learn_rate=0.1, max_iters=10000,
                               directory=diagrams,
                               transparent=True)
             ma.write_figure(filename='perceptron{samp:0>3}.png'.format(samp=count),
-                              figure=f2, 
+                              figure=f2,
                               directory=diagrams,
                               bbox_inches=extent,
                               transparent=True)
     print('Data passes:', iterations)
     return count
-
 
 
 def dist2(X, Y):
@@ -3844,10 +3773,10 @@ def dist2(X, Y):
 
 def clear_axes(ax):
     """Clear the axes lines and ticks"""
-    ax.tick_params(axis='both',          
-                   which='both', 
+    ax.tick_params(axis='both',
+                   which='both',
                    bottom=False, top=False, labelbottom=False,
-                   right=False, left=False, labelleft=False) 
+                   right=False, left=False, labelleft=False)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     ax.spines["bottom"].set_visible(False)
@@ -3866,14 +3795,16 @@ def non_linear_difficulty_plot_3(alpha=1.0,
     W = np.random.randn(num_samples, num_basis_func)*np.sqrt(alpha)
 
     x1 = np.linspace(-1, 1, number_across)
-    x2 = x1; mu1 = mu; mu2 = mu
+    x2 = x1
+    mu1 = mu
+    mu2 = mu
     MU1, MU2 = np.meshgrid(mu1, mu2)
     X1, X2 = np.meshgrid(x1, x2)
     X = np.column_stack([X1.flatten(), X2.flatten()])
 
     MU = np.column_stack([MU1.flatten(), MU2.flatten()])
     num_basis_func = MU.shape[0]
-    number = X.shape[0]
+
     Phi = np.exp(-dist2(X, MU)/(2*rbf_width*rbf_width))
     num_samples = 3
     np.random.seed(13)
@@ -3887,7 +3818,7 @@ def non_linear_difficulty_plot_3(alpha=1.0,
     start_val = 0
     for i in range(number_across):
           end_val = number_across*(i+1)
-          a = ax[0].plot(X[start_val:end_val, 0], X[start_val:end_val, 1], 'r-')
+          ax[0].plot(X[start_val:end_val, 0], X[start_val:end_val, 1], 'r-')
           start_val = end_val
 
     # Reshape X to plot lines in opposite directions
@@ -3897,12 +3828,12 @@ def non_linear_difficulty_plot_3(alpha=1.0,
     start_val = 0
     for i in range(number_across):
           end_val = number_across*(i+1)
-          a = ax[0].plot(X[start_val:end_val, 0], X[start_val:end_val, 1], 'r-')
+          ax[0].plot(X[start_val:end_val, 0], X[start_val:end_val, 1], 'r-')
           start_val = end_val
 
-    ax[0].tick_params(axis='both',          
+    ax[0].tick_params(axis='both',
         which='both', bottom=False, top=False, labelbottom=False,
-                      right=False, left=False, labelleft=False) 
+                      right=False, left=False, labelleft=False)
     ax[0].set(aspect='equal')
     clear_axes(ax[0])
     ax[0].set_xlabel('$x_1$', ha='center', fontsize=fontsize)
@@ -3911,9 +3842,9 @@ def non_linear_difficulty_plot_3(alpha=1.0,
     start_val = 0
     for i in range(number_across):
           end_val = number_across*(i+1)
-          a = ax[2].plot(F[start_val:end_val, 0], 
-                            F[start_val:end_val, 1], 
-                            F[start_val:end_val, 2], 
+          ax[2].plot(F[start_val:end_val, 0],
+                            F[start_val:end_val, 1],
+                            F[start_val:end_val, 2],
                             'r-')
           start_val = end_val
 
@@ -3927,8 +3858,8 @@ def non_linear_difficulty_plot_3(alpha=1.0,
     for i in range(number_across):
           end_val = number_across*(i+1)
           if True:
-                a = ax[2].plot(F[start_val:end_val, 0], 
-                            F[start_val:end_val, 1], 
+                ax[2].plot(F[start_val:end_val, 0],
+                            F[start_val:end_val, 1],
                             F[start_val:end_val, 2],
                             'r-')
           start_val = end_val
@@ -3938,7 +3869,7 @@ def non_linear_difficulty_plot_3(alpha=1.0,
     ax[1] = fig.add_subplot(132)
     pos = ax[2].get_position()
     scale=2.5
-    npos = [0, 0,  pos.width*scale, pos.height*scale] 
+    npos = [0, 0,  pos.width*scale, pos.height*scale]
     npos[0] = pos.x0 - 0.5*(npos[2] - pos.width)
     npos[1] = pos.y0 - 0.5*(npos[3] - pos.height)
     ax[2].set_position(npos)
@@ -3949,10 +3880,10 @@ def non_linear_difficulty_plot_3(alpha=1.0,
     ax[1].set(xlim=[0, 1])
     ax[1].set(ylim=[0, 1])
     ax[1].set_axis_off()
-    ax[1].text(0.5, 0.55, r'$y_j = f_j(\mathbf{x})$', 
+    ax[1].text(0.5, 0.55, r'$y_j = f_j(\mathbf{x})$',
                ha='center',
               fontsize=fontsize)
-    ax[1].text(0.5, 0.45, r'$\longrightarrow$', 
+    ax[1].text(0.5, 0.45, r'$\longrightarrow$',
                ha='center',
                fontsize=4*fontsize/3)
     ma.write_figure("nonlinear-mapping-3d-plot.svg",
@@ -3976,9 +3907,9 @@ def non_linear_difficulty_plot_2(alpha=1.0,
 
     x = np.linspace(-6, 6, number_across)[:, np.newaxis]
     mu = np.linspace(-4, 4, num_basis_func)[np.newaxis, :]
-    number = x.shape[0]
+
     Phi = np.exp(-dist2(x, mu.T)/(2*rbf_width*rbf_width))
-    
+
     F = np.dot(Phi,W.T)
 
     a = ax[0].plot(x, np.ones(x.shape), 'r-')
@@ -3992,8 +3923,6 @@ def non_linear_difficulty_plot_2(alpha=1.0,
     b[0].set(markersize=20)
 
     ax[0].set_xlabel('$x$', ha='center', fontsize=fontsize)
-
-
 
     a = ax[2].plot(F[:, 0], F[:, 1], 'r-')
     b = ax[2].plot(F[0::10][:,0], F[0::10][:,1], 'b.')
@@ -4059,7 +3988,7 @@ def non_linear_difficulty_plot_1(alpha=1.0,
     ax[2].set(ylim=[0, 0.5])
     ax[2].set(xlim=[-6, 6])
     ax[2].set_xlabel('$p(y)$', ha='center', fontsize=20)
-    
+
     # Axis for writing text on plot
     ax[1].set_position([0, 0, 1, 1])
     ax[1].set(xlim=[0, 1])
@@ -4107,25 +4036,25 @@ class network():
             import daft
         except ImportError:
             raise ImportError("daft module is required for this function. Please install it with: pip install daft")
-        
+
         shape = [self.depth, self.width]
         xpadding = 2
         ypadding = 0
         pgm = daft.PGM(shape=[shape[0]+xpadding, shape[1]+ypadding],
-                       origin=origin, 
-                       grid_unit=grid_unit, 
-                       node_unit=node_unit, 
+                       origin=origin,
+                       grid_unit=grid_unit,
+                       node_unit=node_unit,
                        observed_style=observed_style,
                        line_width=line_width)
-        
+
         yoffset = 0.5
         for i, layer in enumerate(self.layers):
-            posy = yoffset + i*(shape[1])/(self.depth)        
+            posy = yoffset + i*(shape[1])/(self.depth)
             for j in range(layer.width):
                 xoffset = (shape[0])*(self.width-layer.width)/(2*(self.width))+0.5
                 posx = xoffset + j*(shape[0])/(self.width)
                 pgm.add_node(daft.Node(layer.label.format(index=j+1),
-                                       ('$' + layer.label + '$').format(index=j+1), 
+                                       ('$' + layer.label + '$').format(index=j+1),
                                        posx, posy,
                                        observed=layer.observed,
                                        fixed=layer.fixed))
@@ -4133,7 +4062,7 @@ class network():
                 if i > 0:
                     parent = self.layers[i-1]
                     for k in range(parent.width):
-                            pgm.add_edge(parent.label.format(index=k+1), 
+                            pgm.add_edge(parent.label.format(index=k+1),
                                          layer.label.format(index=j+1))
 
         ctx = pgm.render()
@@ -4141,14 +4070,13 @@ class network():
         ax = plt.gca()
         for i, layer in enumerate(self.layers):
             posy = yoffset + i*(shape[1]-ypadding)/(self.depth)
-            posx = shape[0] + xpadding/2 
+            posx = shape[0] + xpadding/2
             x, y = pgm._ctx.convert(posx, posy)
             a = []
             a.append(ax.text(x, y, layer.text,
                              ha="center", va="center",
                              fontsize=20))
         return fig, ax
-
 
 
 class layer():
@@ -4179,7 +4107,7 @@ def neural_network(directory='../diagrams'):
 
 
 
-        
+
 def deep_nn(directory='../diagrams'):
     """Draw a deep neural network."""
     model = network()
@@ -4210,7 +4138,7 @@ def deep_nn(directory='../diagrams'):
                       transparent=True)
 
 
-    
+
 def deep_nn_bottleneck(directory='../diagrams'):
     """Draw a deep neural network with bottleneck layers."""
     model = network()
@@ -4239,8 +4167,8 @@ def deep_nn_bottleneck(directory='../diagrams'):
                       figure=fig,
                       transparent=True)
 
-    new_text = ['input layer', 'latent layer 1', 'hidden layer 1', 
-                'latent layer 2', 'hidden layer 2', 'latent layer 3', 
+    new_text = ['input layer', 'latent layer 1', 'hidden layer 1',
+                'latent layer 2', 'hidden layer 2', 'latent layer 3',
                 'hidden layer 3', 'output layer']
     fig, ax = model.draw()
     ma.write_figure('deep-nn-bottleneck1.svg',
@@ -4253,15 +4181,15 @@ def deep_nn_bottleneck(directory='../diagrams'):
 
 def box(lim_val=0.5, side_length=25):
     """Plot a box for use in deep GP samples."""
-    t = np.hstack((lim_val*np.ones((side_length, 1)), 
+    t = np.hstack((lim_val*np.ones((side_length, 1)),
                    np.linspace(-lim_val, lim_val, side_length)[:, np.newaxis]))
-    tnew = np.hstack((np.linspace(lim_val, -lim_val, side_length)[:, np.newaxis], 
+    tnew = np.hstack((np.linspace(lim_val, -lim_val, side_length)[:, np.newaxis],
                       lim_val*np.ones((side_length, 1))))
     t = np.vstack((t, tnew))
-    tnew = np.hstack((-lim_val*np.ones((side_length, 1)), 
+    tnew = np.hstack((-lim_val*np.ones((side_length, 1)),
                       np.linspace(lim_val, -lim_val, side_length)[:, np.newaxis]))
     t = np.vstack((t, tnew))
-    tnew = np.hstack((np.linspace(-lim_val, lim_val, side_length)[:, np.newaxis], 
+    tnew = np.hstack((np.linspace(-lim_val, lim_val, side_length)[:, np.newaxis],
                    -lim_val*np.ones((side_length, 1))))
     t = np.vstack((t, tnew))
     return t
@@ -4279,8 +4207,8 @@ def stack_gp_sample(kernel=None,
             print('GPy unavailable, see https://github.com/SheffieldML/GPy pip install GPy')
             return
         kernel=GPy.kern.RBF
-    
-    
+
+
     depth=len(latent_dims)
     num_time = side_length*4
     t = box(lim_val=lim_val, side_length=side_length)
@@ -4294,18 +4222,18 @@ def stack_gp_sample(kernel=None,
         for j in range(depth):
             kern.append(kernel(X[j].shape[1]))
             K.append(kern[j].K(X[j]))
-            X.append(np.random.multivariate_normal(mean=np.zeros((num_time)), 
+            X.append(np.random.multivariate_normal(mean=np.zeros((num_time)),
                                                      cov=K[j], size=latent_dims[j]).T)
 
 
         for j in range(depth):
             #pos = ax[j].get_position()
-            #ax[j].set_position((pos.x0, pos.y0, 
+            #ax[j].set_position((pos.x0, pos.y0,
             #                    pos.width/2, pos.height))
             if j == 0:
                 ax[j].set(xlim=1.25*np.array([-lim_val, lim_val]))
                 ax[j].set(ylim=1.25*np.array([-lim_val, lim_val]))
-            else: 
+            else:
                 ax[j].set(xlim=1.25*np.array([-1, 1]))
                 ax[j].set(ylim=1.25*np.array([-1, 1]))
             ax[j].cla()
@@ -4326,15 +4254,15 @@ def stack_gp_sample(kernel=None,
                 if j == 0:
                     ax[j].set(xlim=1.25*np.array([-lim_val, lim_val]))
                     ax[j].set(ylim=1.25*np.array([-lim_val, lim_val]))
-                else: 
+                else:
                     ax[j].set(xlim=1.25*np.array([-1, 1]))
                     ax[j].set(ylim=1.25*np.array([-1, 1]))
                 if j == 1:
-                    plt.plot(X[0][:, 0], X[0][:, 1], 
+                    plt.plot(X[0][:, 0], X[0][:, 1],
                              color='b', linewidth=2)
                 else:
-                    plt.plot(X[-1][:, 0], 
-                             X[-1][:, 1], 
+                    plt.plot(X[-1][:, 0],
+                             X[-1][:, 1],
                              color='b', linewidth=2)
                 ax[j].set_axis_off()
             file_name = 'stack-gp-sample-squash-' + str(i) + '.svg'
@@ -4349,15 +4277,15 @@ def vertical_chain(depth=5, grid_unit=1.5, node_unit=1, line_width=1.5, shape=No
         import daft
     except ImportError:
         raise ImportError("daft module is required for this function. Please install it with: pip install daft")
-    
+
     if shape is None:
         shape = [node_unit, 2*node_unit+depth]
-    direction = [0, -node_unit]
+
 
     pgm = daft.PGM(shape=shape,
-                   origin=[0, 0], 
-                   grid_unit=grid_unit, 
-                   node_unit=node_unit, 
+                   origin=[0, 0],
+                   grid_unit=grid_unit,
+                   node_unit=node_unit,
                    observed_style='shaded',
                   line_width=line_width)
 
@@ -4372,7 +4300,7 @@ def vertical_chain(depth=5, grid_unit=1.5, node_unit=1, line_width=1.5, shape=No
 
     last = node
     node = target
-    pgm.add_node(daft.Node(node, r"$\mathbf{y}$", 
+    pgm.add_node(daft.Node(node, r"$\mathbf{y}$",
                            0.5, 0.5, observed=True))
     pgm.add_edge(last, node)
     return pgm
@@ -4389,16 +4317,14 @@ def horizontal_chain(depth=5,
         import daft
     except ImportError:
         raise ImportError("daft module is required for this function. Please install it with: pip install daft")
-    
+
     if shape is None:
         shape = [2*node_unit+depth, node_unit]
-    
-    direction = [-node_unit, 0]
-    
+
     pgm = daft.PGM(shape=[7, 1],
-                   origin=origin, 
-                   grid_unit=grid_unit, 
-                   node_unit=node_unit, 
+                   origin=origin,
+                   grid_unit=grid_unit,
+                   node_unit=node_unit,
                    observed_style='shaded',
                   line_width=line_width)
 
@@ -4407,7 +4333,7 @@ def horizontal_chain(depth=5,
     for i in range(depth):
         last=node
         node = "f_{index}".format(index=i+1)
-        pgm.add_node(daft.Node(node, r"$\mathbf{{f}}_{index}$".format(index=i+1), 
+        pgm.add_node(daft.Node(node, r"$\mathbf{{f}}_{index}$".format(index=i+1),
                                i+1.5, 0.5))
         pgm.add_edge(last, node)
     last = node
@@ -4422,11 +4348,11 @@ def shared_gplvm():
         import daft
     except ImportError:
         raise ImportError("daft module is required for this function. Please install it with: pip install daft")
-    
+
     pgm = daft.PGM(shape=[4, 3],
-                   origin=[0, 0], 
-                   grid_unit=5, 
-                   node_unit=1.9, 
+                   origin=[0, 0],
+                   grid_unit=5,
+                   node_unit=1.9,
                    observed_style='shaded',
                   line_width=3)
 
@@ -4446,115 +4372,115 @@ def shared_gplvm():
 def ppca_graphical_model(directory='../diagrams'):
     """
     Plot graphical model of Probabilistic Principal Component Analysis (PPCA).
-    
+
     The model shows:
     - Y: Observed data (grayed/shaded)
     - X: Latent variables (white)
     - W: Weight matrix parameter (black dot)
     - σ²: Noise variance parameter (black dot)
-    
+
     Layout:
     - Y is at the center
     - X is above Y at -30° angle
-    - W is above Y at +30° angle  
+    - W is above Y at +30° angle
     - σ² is to the right of Y
     """
     try:
         import daft
     except ImportError:
         raise ImportError("daft module is required for this function. Please install it with: pip install daft")
-    
+
     # Create the graphical model
     pgm = daft.PGM(shape=[2, 2.5],
-                   origin=[0, 0], 
-                   grid_unit=4, 
-                   node_unit=1.0, 
+                   origin=[0, 0],
+                   grid_unit=4,
+                   node_unit=1.0,
                    observed_style='shaded',
                    line_width=2)
 
     # Central observed node Y
     pgm.add_node(daft.Node("Y", r"$\mathbf{Y}$", 1, 1.5, observed=True))
-    
+
     # Latent node X above at -30° angle
     # Position: slightly left and above Y
     pgm.add_node(daft.Node("X", r"$\mathbf{X}$", 0.7, 2))
-    
-    # Weight parameter W above at +30° angle  
+
+    # Weight parameter W above at +30° angle
     # Position: slightly right and above Y
     pgm.add_node(daft.Node("W", r"$\mathbf{W}$", 1.3, 2, fixed=True))
-    
+
     # Noise variance parameter σ² to the right
     pgm.add_node(daft.Node("sigma2", r"$\sigma^2$", 1.5, 1.5, fixed=True))
-    
+
     # Add edges
     pgm.add_edge("X", "Y")  # X influences Y
-    pgm.add_edge("W", "Y")  # W influences Y  
+    pgm.add_edge("W", "Y")  # W influences Y
     pgm.add_edge("sigma2", "Y")  # σ² influences Y
-    
+
     # Render and save
     ax = pgm.render()
-    ma.write_figure('ppca-graphical-model.svg', 
-                    directory=directory, 
-                    figure=ax.figure, 
+    ma.write_figure('ppca-graphical-model.svg',
+                    directory=directory,
+                    figure=ax.figure,
                     transparent=True)
-    
+
     return pgm
 
 def dppca_graphical_model(directory='../diagrams'):
     """
     Plot graphical model of Dual Probabilistic Principal Component Analysis (DPPCA).
-    
+
     The model shows:
     - Y: Observed data (grayed/shaded)
     - X: Latent variables (white)
     - W: Weight matrix parameter (black dot)
     - σ²: Noise variance parameter (black dot)
-    
+
     Layout:
     - Y is at the center
     - X is above Y at -30° angle
-    - W is above Y at +30° angle  
+    - W is above Y at +30° angle
     - σ² is to the right of Y
     """
     try:
         import daft
     except ImportError:
         raise ImportError("daft module is required for this function. Please install it with: pip install daft")
-    
+
     # Create the graphical model
     pgm = daft.PGM(shape=[2, 2.5],
-                   origin=[0, 0], 
-                   grid_unit=4, 
-                   node_unit=1.0, 
+                   origin=[0, 0],
+                   grid_unit=4,
+                   node_unit=1.0,
                    observed_style='shaded',
                    line_width=2)
 
     # Central observed node Y
     pgm.add_node(daft.Node("Y", r"$\mathbf{Y}$", 1, 1.5, observed=True))
-    
+
     # Latent node X above at -30° angle
     # Position: slightly left and above Y
     pgm.add_node(daft.Node("X", r"$\mathbf{X}$", 0.7, 2, fixed=True))
-    
-    # Weight parameter W above at +30° angle  
+
+    # Weight parameter W above at +30° angle
     # Position: slightly right and above Y
     pgm.add_node(daft.Node("W", r"$\mathbf{W}$", 1.3, 2))
-    
+
     # Noise variance parameter σ² to the right
     pgm.add_node(daft.Node("sigma2", r"$\sigma^2$", 1.5, 1.5, fixed=True))
-    
+
     # Add edges
     pgm.add_edge("X", "Y")  # X influences Y
-    pgm.add_edge("W", "Y")  # W influences Y  
+    pgm.add_edge("W", "Y")  # W influences Y
     pgm.add_edge("sigma2", "Y")  # σ² influences Y
-    
+
     # Render and save
     ax = pgm.render()
-    ma.write_figure('dppca-graphical-model.svg', 
-                    directory=directory, 
-                    figure=ax.figure, 
+    ma.write_figure('dppca-graphical-model.svg',
+                    directory=directory,
+                    figure=ax.figure,
                     transparent=True)
-    
+
     return pgm
 
 def three_pillars_innovation(directory='./diagrams'):
@@ -4563,11 +4489,11 @@ def three_pillars_innovation(directory='./diagrams'):
         import daft
     except ImportError:
         raise ImportError("daft module is required for this function. Please install it with: pip install daft")
-    
+
     pgm = daft.PGM(shape=[4, 2.5],
-                   origin=[0, 0], 
-                   grid_unit=5, 
-                   node_unit=4.2, 
+                   origin=[0, 0],
+                   grid_unit=5,
+                   node_unit=4.2,
                    observed_style='shaded',
                    line_width=6)
     import matplotlib
@@ -4635,13 +4561,13 @@ def model_output(model, output_dim=0, scale=1.0, offset=0.0, ax=None, xlabel='$x
         _ = gpt.gpplot(xt.flatten(),
                            yt_mean[:, output_dim],
                            yt_mean[:, output_dim]-2*yt_sd.flatten(),
-                           yt_mean[:, output_dim]+2*yt_sd.flatten(), 
+                           yt_mean[:, output_dim]+2*yt_sd.flatten(),
                            ax=ax)
     else:
         ax.plot(xt.flatten(), yt_mean[:, output_dim], 'b-', linewidth=2)
-        ax.fill_between(xt.flatten(), 
-                       (yt_mean[:, output_dim]-2*yt_sd.flatten()).flatten(), 
-                       (yt_mean[:, output_dim]+2*yt_sd.flatten()).flatten(), 
+        ax.fill_between(xt.flatten(),
+                       (yt_mean[:, output_dim]-2*yt_sd.flatten()).flatten(),
+                       (yt_mean[:, output_dim]+2*yt_sd.flatten()).flatten(),
                        alpha=0.3)
 
 
@@ -4649,7 +4575,7 @@ def model_output(model, output_dim=0, scale=1.0, offset=0.0, ax=None, xlabel='$x
         ylim=ax.get_ylim()
     else:
         ax.set_ylim(ylim)
-    
+
     if hasattr(model, 'Z'):
         z = model.Z.flatten()
         ax.plot(z, np.full_like(z, ylim[0]), 'k^', markersize='20')
@@ -4658,16 +4584,16 @@ def model_output(model, output_dim=0, scale=1.0, offset=0.0, ax=None, xlabel='$x
     return ax
 
 def model_sample(model, output_dim=0, scale=1.0, offset=0.0,
-                 samps=10, ax=None, xlabel='$x$', ylabel='$y$', 
+                 samps=10, ax=None, xlabel='$x$', ylabel='$y$',
                  fontsize=20, portion=0.2,
                  xlim=None, ylim=None):
     """Plot model output with samples."""
-    
+
     if ax is None:
         fig, ax = plt.subplots(figsize=big_figsize)
     ax.set_xlabel(xlabel, fontsize=fontsize)
     ax.set_ylabel(ylabel, fontsize=fontsize)
-    
+
     xt = pred_range(model.X, portion=portion)
     yt_mean, yt_var = model.predict(xt)
     yt_mean = yt_mean*scale + offset
@@ -4675,19 +4601,19 @@ def model_sample(model, output_dim=0, scale=1.0, offset=0.0,
     yt_sd=np.sqrt(yt_var)
     if yt_sd.shape[1]>1:
         yt_sd = yt_sd[:, output_dim]
-        
+
     if GPY_AVAILABLE:
         import mlai.gp_tutorial as gpt
         _ = gpt.gpplot(xt.flatten(),
                    yt_mean[:, output_dim],
                    yt_mean[:, output_dim]-2*yt_sd.flatten(),
-                   yt_mean[:, output_dim]+2*yt_sd.flatten(), 
+                   yt_mean[:, output_dim]+2*yt_sd.flatten(),
                    ax=ax)
     else:
         ax.plot(xt.flatten(), yt_mean[:, output_dim], 'b-', linewidth=2)
-        ax.fill_between(xt.flatten(), 
-                       (yt_mean[:, output_dim]-2*yt_sd.flatten()).flatten(), 
-                       (yt_mean[:, output_dim]+2*yt_sd.flatten()).flatten(), 
+        ax.fill_between(xt.flatten(),
+                       (yt_mean[:, output_dim]-2*yt_sd.flatten()).flatten(),
+                       (yt_mean[:, output_dim]+2*yt_sd.flatten()).flatten(),
                        alpha=0.3)
     for i in range(samps):
         xt = pred_range(model.X, portion=portion, randomize=True)
@@ -4699,9 +4625,9 @@ def model_sample(model, output_dim=0, scale=1.0, offset=0.0,
         ax.set_xlim(xlim)
     else:
         ax.set_xlim([np.min(xt.flatten()), np.max(xt.flatten())])
-    if ylim is not None: 
+    if ylim is not None:
         ax.set_ylim(ylim)
-               
+
     if hasattr(model, 'Z'):
         ylim = ax.get_ylim()
         ax.plot(model.Z, np.ones(model.Z.shape)*ax.get_ylim()[0], marker='^', linestyle=None, markersize=20)
@@ -4756,7 +4682,7 @@ def multiple_optima(ax=None, gene_number=937, resolution=80, model_restarts=10, 
                       directory=directory,
                       figure=ax.figure,
                       transparent=True)
-    
+
 
     # Now run a few optimizations
     models = []
@@ -4765,7 +4691,7 @@ def multiple_optima(ax=None, gene_number=937, resolution=80, model_restarts=10, 
 
     np.random.seed(seed=seed)
     noises = [1., 1., 0.001]
-    lengthscales = [50., 2000., 20] 
+    lengthscales = [50., 2000., 20]
     for noise, lengthscale in zip(noises, lengthscales):
         kern = GPy.kern.RBF(1, lengthscale=lengthscale)
 
@@ -4787,7 +4713,6 @@ def multiple_optima(ax=None, gene_number=937, resolution=80, model_restarts=10, 
             - np.log10(float(np.asarray(m.likelihood.variance).ravel()[0]))
         )
 
-        from matplotlib.patches import Arrow
         ax.arrow(optim_point_x[0],
                  optim_point_y[0],
                  optim_point_x[1] - optim_point_x[0],
@@ -4803,8 +4728,8 @@ def multiple_optima(ax=None, gene_number=937, resolution=80, model_restarts=10, 
                       directory=directory,
                       figure=ax.figure,
                       transparent=True)
-    
-    return m, lls 
+
+    return m, lls
 
 
 # def rotate_object(rotation_matrix, handles):
@@ -4824,7 +4749,6 @@ def multiple_optima(ax=None, gene_number=937, resolution=80, model_restarts=10, 
 def google_trends(terms, initials, directory='./diagrams'):
     """Plot google trends data for a number of different terms."""
     import pods
-    import matplotlib.dates as mdates
     data = pods.datasets.google_trends(terms)
     data['data frame'].set_index('Date', inplace=True)
     fig, ax = plt.subplots(figsize=wide_figsize)
@@ -4844,18 +4768,18 @@ def google_trends(terms, initials, directory='./diagrams'):
     return ax
 
 
-def gp_optimize_quadratic(lambda1=3, lambda2=1, 
-                         directory='../diagrams', 
+def gp_optimize_quadratic(lambda1=3, lambda2=1,
+                         directory='../diagrams',
                          fontsize=20,
                          plot_width=0.6,
                          generate_frames=True):
-    """
+    r"""
     Create animated visualization of GP optimization quadratic data fit term.
-    
+
     This function replaces the MATLAB code that generates animated LaTeX diagrams
     showing the quadratic data fit term $\frac{\mathbf{y}^\top\mathbf{K}^{-1}\mathbf{y}}{2}$
     with elliptical contours and eigenvalue visualization.
-    
+
     :param lambda1: First eigenvalue of covariance matrix (default: 3).
     :param lambda2: Second eigenvalue of covariance matrix (default: 1).
     :param directory: Directory to save the plots (default: '../diagrams').
@@ -4865,83 +4789,83 @@ def gp_optimize_quadratic(lambda1=3, lambda2=1,
     """
     if not os.path.exists(directory):
         os.mkdir(directory)
-    
+
     # Color definitions
     black_color = [0., 0., 0.]
     red_color = [1., 0., 0.]
-    
+
     # Create figure
     fig, ax = plt.subplots(figsize=(8, 8))
-    
+
     # Generate elliptical contours
     t = np.linspace(-np.pi, np.pi, 200)
-    
+
     # Create rotation matrix (45 degrees)
-    rotation_angle = np.pi/4
-    R = np.array([[np.sqrt(2)/2, -np.sqrt(2)/2], 
+
+    R = np.array([[np.sqrt(2)/2, -np.sqrt(2)/2],
                   [np.sqrt(2)/2, np.sqrt(2)/2]])
-    
+
     # Set up plot limits
     lim_val = max(lambda1, lambda2) * 2.2
     lim = [-lim_val, lim_val]
     ax.set_xlim(lim)
     ax.set_ylim(lim)
     ax.set_aspect('equal')
-    
+
     # Generate elliptical contours
     xy = np.array([lambda1 * np.sin(t), lambda2 * np.cos(t)])
     xy_outer = 2 * xy  # Outer contour
-    
+
     # Frame 0: Initial contours with eigenvalue axes
     ax.cla()
     ax.set_xlim(lim)
     ax.set_ylim(lim)
     ax.set_aspect('equal')
-    
+
     # Plot contours
     contour_handles = []
     contour_handles.append(ax.plot(xy[0, :], xy[1, :], color=black_color, linewidth=2)[0])
     contour_handles.append(ax.plot(xy_outer[0, :], xy_outer[1, :], color=red_color, linewidth=2)[0])
-    
+
     # Add eigenvalue arrows
     arrow_handles = []
-    arrow_handles.append(ax.arrow(0, 0, lambda1, 0, head_width=0.1, head_length=0.1, 
+    arrow_handles.append(ax.arrow(0, 0, lambda1, 0, head_width=0.1, head_length=0.1,
                                  fc=black_color, ec=black_color, linewidth=3))
-    arrow_handles.append(ax.arrow(0, 0, 0, lambda2, head_width=0.1, head_length=0.1, 
+    arrow_handles.append(ax.arrow(0, 0, 0, lambda2, head_width=0.1, head_length=0.1,
                                  fc=black_color, ec=black_color, linewidth=3))
-    
+
     # Add eigenvalue labels
     xlim = ax.get_xlim()
     ylim = ax.get_ylim()
     xspan = xlim[1] - xlim[0]
     yspan = ylim[1] - ylim[0]
-    
+
     eig_labels = []
-    eig_labels.append(ax.text(lambda1*0.5, -yspan*0.05, r'$\lambda_1$', 
+    eig_labels.append(ax.text(lambda1*0.5, -yspan*0.05, r'$\lambda_1$',
                              horizontalalignment='center', fontsize=fontsize))
-    eig_labels.append(ax.text(-0.05*xspan, lambda2*0.5, r'$\lambda_2$', 
+    eig_labels.append(ax.text(-0.05*xspan, lambda2*0.5, r'$\lambda_2$',
                              horizontalalignment='center', fontsize=fontsize))
-    
+
     # Add axis labels
     ax.set_xlabel(r'$y_1$', fontsize=fontsize)
     ax.set_ylabel(r'$y_2$', fontsize=fontsize)
-    
+
     # Remove box and add border lines
     ax.set_frame_on(False)
     ax.plot([xlim[0], xlim[0]], ylim, color=black_color, linewidth=1)
     ax.plot(xlim, [ylim[0], ylim[0]], color=black_color, linewidth=1)
-    
+
     # Save frame 0
     ma.write_figure('gp-optimise-quadratic000.svg', directory=directory, transparent=True)
-    
+
     if generate_frames:
         # Frame 1: Add data point
         y_data = np.array([1.2, 1.4])
-        data_handle = ax.plot(y_data[0], y_data[1], 'x', markersize=10, 
-                             markeredgewidth=3, color=black_color)[0]
-        
+        ax.plot(y_data[0], y_data[1], 'x', markersize=10,
+                markeredgewidth=3, color=black_color)
+
         ma.write_figure('gp-optimise-quadratic001.svg', directory=directory, transparent=True)
-        
+
         # Frame 2: Rotated coordinate system
         # Apply rotation to all elements
         for i, handle in enumerate(arrow_handles):
@@ -4952,36 +4876,36 @@ def gp_optimize_quadratic(lambda1=3, lambda2=1,
             else:  # Second arrow (lambda2)
                 start = np.array([0, 0])
                 end = np.array([0, lambda2])
-            
+
             # Rotate arrow endpoints
             start_rot = R @ start
             end_rot = R @ end
-            
+
             # Remove old arrow and create new one
             handle.remove()
-            arrow_handles[i] = ax.arrow(start_rot[0], start_rot[1], 
+            arrow_handles[i] = ax.arrow(start_rot[0], start_rot[1],
                                        end_rot[0] - start_rot[0], end_rot[1] - start_rot[1],
-                                       head_width=0.1, head_length=0.1, 
+                                       head_width=0.1, head_length=0.1,
                                        fc=black_color, ec=black_color, linewidth=3)
-        
+
         # Rotate contours
         for i, handle in enumerate(contour_handles):
             x_data, y_data = handle.get_data()
             xy_rot = R @ np.array([x_data, y_data])
             handle.set_data(xy_rot[0, :], xy_rot[1, :])
-        
+
         # Rotate eigenvalue labels
         for i, label in enumerate(eig_labels):
             pos = label.get_position()
             pos_rot = R @ np.array(pos)
             label.set_position(pos_rot)
-                
+
         # Update axis labels for rotated view
         ax.set_xlabel(r'$y_1$', fontsize=fontsize)
         ax.set_ylabel(r'$y_2$', fontsize=fontsize)
-        
+
         ma.write_figure('gp-optimise-quadratic002.svg', directory=directory, transparent=True)
-    
+
     return ax
 
 
@@ -4990,14 +4914,14 @@ def gp_optimize_quadratic(lambda1=3, lambda2=1,
 def tsne_example(X, labels, perplexities=[5, 30, 50], random_state=42):
     """Plot t-SNE embeddings with different perplexity values"""
     from sklearn.manifold import TSNE
-    fig, axes = plt.subplots(1, len(perplexities), 
+    fig, axes = plt.subplots(1, len(perplexities),
                             figsize=(5*len(perplexities), 5))
-    
+
     for ax, perplexity in zip(axes, perplexities):
-        tsne = TSNE(n_components=2, perplexity=perplexity, 
+        tsne = TSNE(n_components=2, perplexity=perplexity,
                     random_state=random_state)
         X_tsne = tsne.fit_transform(X)
-        ax.scatter(X_tsne[:, 0], X_tsne[:, 1], c=labels, 
+        ax.scatter(X_tsne[:, 0], X_tsne[:, 1], c=labels,
                   cmap=plt.cm.viridis)
         ax.set_title(f'Perplexity = {perplexity}')
 
@@ -5008,15 +4932,15 @@ def squared_distances(Y, shortname, description, directory="./diagrams", figsize
     """Plot squared distances between points in Y"""
     if figsize is None:
         figsize = wide_figsize
-    
+
     # Compute pairwise squared distances
     from scipy.spatial.distance import pdist
     distances = pdist(Y, metric='sqeuclidean')
-    
+
     # Create histogram
     fig, ax = plt.subplots(figsize=figsize)
     n, bins, patches = ax.hist(distances, bins=50, density=True, alpha=0.7, color='blue')
-    
+
     # Theoretical gamma distribution
     from scipy.stats import gamma
     d = Y.shape[1]  # dimension
@@ -5024,7 +4948,7 @@ def squared_distances(Y, shortname, description, directory="./diagrams", figsize
     x_theory = np.linspace(0, np.max(distances), 100)
     gamma_pdf = gamma.pdf(x_theory, d/2, scale=2*mean_dist/d)
     ax.plot(x_theory, gamma_pdf, 'r-', linewidth=2)
-    
+
     ax.set_xlabel('Squared Distance')
     ax.set_ylabel('Density')
     ax.grid(True, alpha=0.3)
@@ -5034,11 +4958,11 @@ def squared_distances(Y, shortname, description, directory="./diagrams", figsize
 def visualise_relu_activations(nn, X1, X2, layer_idx=0, directory='../diagrams', filename='relu-activations.svg'):
     """
     Visualise which ReLU units are activated in a specific layer.
-    
+
     This function creates a grid of subplots showing the activation patterns
     of each ReLU unit in a neural network layer. Each subplot shows where
     that particular unit is active (positive output) vs inactive (zero output).
-    
+
     :param nn: Trained neural network
     :type nn: NeuralNetwork
     :param X1, X2: Meshgrid coordinates for visualisation
@@ -5047,7 +4971,7 @@ def visualise_relu_activations(nn, X1, X2, layer_idx=0, directory='../diagrams',
     :type layer_idx: int
     :returns: Figure object
     :rtype: matplotlib.figure.Figure
-    
+
     Examples:
         >>> x1 = np.linspace(-2, 2, 50)
         >>> x2 = np.linspace(-2, 2, 50)
@@ -5057,20 +4981,20 @@ def visualise_relu_activations(nn, X1, X2, layer_idx=0, directory='../diagrams',
     """
     # Get input data
     X_pred = np.hstack([X1.flatten()[:, np.newaxis], X2.flatten()[:, np.newaxis]])
-    
+
     # Forward pass to get activations
     _ = nn.predict(X_pred)
-    
+
     # Get activations for the specified layer (before activation function)
     z_layer = nn.z[layer_idx + 1]  # +1 because z[0] is input
     a_layer = nn.a[layer_idx + 1]  # Activations after ReLU
-    
+
     n_units = z_layer.shape[1]
     n_cols = min(5, n_units)
     n_rows = (n_units + n_cols - 1) // n_cols
-    
+
     fig, axes = plt.subplots(n_rows, n_cols, figsize=(3*n_cols, 3*n_rows))
-    
+
     # Handle different subplot configurations
     if n_units == 1:
         # Single subplot case
@@ -5082,7 +5006,7 @@ def visualise_relu_activations(nn, X1, X2, layer_idx=0, directory='../diagrams',
         # Multiple rows, single column
         axes = axes.reshape(-1, 1)
     # For multiple rows and columns, axes is already correct
-    
+
     for i in range(n_units):
         row, col = i // n_cols, i % n_cols
         if n_units == 1:
@@ -5093,26 +5017,26 @@ def visualise_relu_activations(nn, X1, X2, layer_idx=0, directory='../diagrams',
             ax = axes[row, 0]
         else:
             ax = axes[row, col]
-        
+
         # Reshape activations back to grid
         activation_grid = a_layer[:, i].reshape(X1.shape)
-        
+
         # Create binary mask for active/inactive regions
-        active_mask = activation_grid > 0
-        
+
+
         # Plot with clear active/inactive distinction
         im = ax.contourf(X1, X2, activation_grid, levels=20, cmap='RdYlBu_r')
-        
+
         # Overlay contour lines to show zero boundary
         ax.contour(X1, X2, activation_grid, levels=[0], colors='black', linewidths=2)
-        
+
         ax.set_title(f'{i+1}')
         ax.set_xlabel('$x_1$')
         ax.set_ylabel('$x_2$')
-        
+
         # Add colorbar for each subplot
         plt.colorbar(im, ax=ax)
-    
+
     # Hide empty subplots
     for i in range(n_units, n_rows * n_cols):
         if n_units == 1:
@@ -5127,22 +5051,22 @@ def visualise_relu_activations(nn, X1, X2, layer_idx=0, directory='../diagrams',
         else:
             row, col = i // n_cols, i % n_cols
             axes[row, col].set_visible(False)
-    
+
     plt.tight_layout()
     plt.suptitle(f'ReLU Activations - Layer {layer_idx + 1}', y=1.02, fontsize=16)
-    
+
     ma.write_figure(filename, directory=directory, transparent=True)
 
 
 def visualise_activation_summary(nn, X1, X2, layer_idx=0, directory='../diagrams', filename='activation-summary.svg'):
     """
     Create a summary visualisation showing network behavior.
-    
+
     This function creates a 3-panel visualization showing:
     1. Network output
     2. Number of active ReLUs per point
     3. Binary activation pattern
-    
+
     :param nn: Trained neural network
     :type nn: NeuralNetwork
     :param X1, X2: Meshgrid coordinates for visualization
@@ -5151,7 +5075,7 @@ def visualise_activation_summary(nn, X1, X2, layer_idx=0, directory='../diagrams
     :type layer_idx: int
     :returns: Figure object
     :rtype: matplotlib.figure.Figure
-    
+
     Examples:
         >>> x1 = np.linspace(-2, 2, 50)
         >>> x2 = np.linspace(-2, 2, 50)
@@ -5160,48 +5084,48 @@ def visualise_activation_summary(nn, X1, X2, layer_idx=0, directory='../diagrams
         >>> fig = visualize_activation_summary(nn, X1, X2, layer_idx=0)
     """
     from matplotlib.colors import ListedColormap
-    
+
     X_pred = np.hstack([X1.flatten()[:, np.newaxis], X2.flatten()[:, np.newaxis]])
-    
+
     # Get network output and activations
     f_pred = nn.predict(X_pred)
     a_layer = nn.a[layer_idx + 1]  # Activations after ReLU
-    
+
     # Count active units per input point
     active_count = np.sum(a_layer > 0, axis=1)
-    
+
     fig, axes = plt.subplots(1, 3, figsize=(15, 4))
-    
+
     # 1. Network output
     im1 = axes[0].contourf(X1, X2, f_pred.reshape(X1.shape), levels=20, cmap='viridis')
     axes[0].set_title('Network Output')
     axes[0].set_xlabel('$x_1$')
     axes[0].set_ylabel('$x_2$')
     plt.colorbar(im1, ax=axes[0])
-    
+
     # 2. Number of active ReLUs
-    im2 = axes[1].contourf(X1, X2, active_count.reshape(X1.shape), 
+    im2 = axes[1].contourf(X1, X2, active_count.reshape(X1.shape),
                           levels=np.arange(0, np.max(active_count)+2), cmap='plasma')
     axes[1].set_title('Number of Active ReLU Units')
     axes[1].set_xlabel('$x_1$')
     axes[1].set_ylabel('$x_2$')
     plt.colorbar(im2, ax=axes[1])
-    
+
     # 3. Activation patterns (binary)
     # Create a custom colormap for binary visualization
     colors = ['darkblue', 'lightcoral']
     binary_cmap = ListedColormap(colors)
-    
+
     # Average activation strength (normalized)
     avg_activation = np.mean(a_layer, axis=1)
     binary_mask = (avg_activation > 0).astype(int)
-    
-    im3 = axes[2].contourf(X1, X2, binary_mask.reshape(X1.shape), 
+
+    axes[2].contourf(X1, X2, binary_mask.reshape(X1.shape),
                           levels=[0, 0.5, 1], cmap=binary_cmap)
     axes[2].set_title('Average Activation Pattern\n(Blue=Inactive, Red=Active)')
     axes[2].set_xlabel('$x_1$')
     axes[2].set_ylabel('$x_2$')
-    
+
     plt.tight_layout()
     ma.write_figure(filename, directory=directory, transparent=True)
 
@@ -5210,10 +5134,10 @@ def visualise_activation_summary(nn, X1, X2, layer_idx=0, directory='../diagrams
 def visualise_decision_boundaries(nn, X1, X2, layer_idx=0, directory='../diagrams', filename='decision-boundaries.svg'):
     """
     Visualize the linear decision boundaries created by each ReLU unit.
-    
+
     This function shows the linear decision boundaries (where each ReLU unit
     transitions from inactive to active) overlaid on the network's output.
-    
+
     :param nn: Trained neural network
     :type nn: NeuralNetwork
     :param X1, X2: Meshgrid coordinates for visualization
@@ -5222,7 +5146,7 @@ def visualise_decision_boundaries(nn, X1, X2, layer_idx=0, directory='../diagram
     :type layer_idx: int
     :returns: Figure object
     :rtype: matplotlib.figure.Figure
-    
+
     Examples:
         >>> x1 = np.linspace(-2, 2, 50)
         >>> x2 = np.linspace(-2, 2, 50)
@@ -5231,34 +5155,34 @@ def visualise_decision_boundaries(nn, X1, X2, layer_idx=0, directory='../diagram
         >>> fig = visualize_decision_boundaries(nn, X1, X2, layer_idx=0)
     """
     X_pred = np.hstack([X1.flatten()[:, np.newaxis], X2.flatten()[:, np.newaxis]])
-    
+
     # Get pre-activation values (before ReLU)
     _ = nn.predict(X_pred)
     z_layer = nn.z[layer_idx + 1]
-    
+
     n_units = z_layer.shape[1]
-    
+
     fig, ax = plt.subplots(figsize=big_figsize)
-    
+
     # Plot decision boundary for each unit
     colors = plt.cm.tab10(np.linspace(0, 1, n_units))
-    
+
     for i in range(n_units):
         z_grid = z_layer[:, i].reshape(X1.shape)
-        
+
         # Plot the zero-level contour (decision boundary)
-        contour = ax.contour(X1, X2, z_grid, levels=[0], 
+        contour = ax.contour(X1, X2, z_grid, levels=[0],
                            colors=[colors[i]], linewidths=2, alpha=0.7)
-        
+
         # Label the contour - check if contour has any paths
         if contour.get_paths():
             ax.clabel(contour, inline=True, fontsize=10, fmt=f'Unit {i+1}')
-    
+
     # Also show regions where network output is positive/negative
     f_pred = nn.predict(X_pred)
-    ax.contourf(X1, X2, f_pred.reshape(X1.shape), levels=[-100, 0, 100], 
+    ax.contourf(X1, X2, f_pred.reshape(X1.shape), levels=[-100, 0, 100],
                colors=['lightblue', 'lightcoral'], alpha=0.3)
-    
+
     ax.set_xlabel('$x_1$')
     ax.set_ylabel('$x_2$')
     ax.set_title('ReLU Decision Boundaries\n(Background: Network Output Sign)')

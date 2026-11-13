@@ -95,6 +95,17 @@ We welcome contributions! Please:
 
 ---
 
+## 🧹 Lint
+The CI hard-fail gate checks syntax and undefined names (see [CIP-000A](cip/cip000A.md)).
+
+```bash
+uv run ruff check mlai
+```
+
+A second pass reports complexity and line length and does not fail the job.
+
+---
+
 ## 🧪 Testing
 A comprehensive test framework has been implemented (see [CIP-0002](cip/cip0002.md)).
 

@@ -2,7 +2,7 @@
 category: documentation
 created: '2026-09-29'
 id: 2026-09-29_plot-docstring-quality-pass
-last_updated: '2026-09-29'
+last_updated: '2026-11-13'
 owner: Neil Lawrence
 priority: Medium
 related_cips:
@@ -25,7 +25,7 @@ All public callables in `mlai.plot` now have *some* docstring, but many remain t
 
 ## Acceptance Criteria
 
-- [ ] Duplicate `kronecker_illustrate` definitions resolved to a single canonical function
+- [x] Duplicate `kronecker_illustrate` definitions resolved to a single canonical function
 - [ ] Public plot functions/classes that are still prose-only or stub-length gain Sphinx/reST parameter (and return) documentation where they take arguments
 - [ ] Autodoc for `mlai.plot` still builds cleanly
 - [ ] CIP-0003 remaining-function checklist updated to match reality after the pass
@@ -46,3 +46,6 @@ All public callables in `mlai.plot` now have *some* docstring, but many remain t
 
 ### 2026-09-29
 Task created after CIP-0003 acceptance; audit found 85/85 public functions documented at some level, ~33 still lacking Sphinx-style parameter docs, and two `kronecker_illustrate` definitions still present.
+
+### 2026-11-13
+Duplicate `kronecker_illustrate` resolved on `cip000A-ruff-lint` while clearing ruff findings. The surviving definition is the one with `figsize`. The Sphinx-quality criteria on this task are still open, so the task stays Proposed.

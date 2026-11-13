@@ -3,7 +3,7 @@ Linear Models Module
 
 This module contains linear model implementations including:
 - Linear Regression (LM)
-- Bayesian Linear Model (BLM) 
+- Bayesian Linear Model (BLM)
 - Logistic Regression (LR)
 - Basis functions (linear, polynomial, radial, fourier, relu, hyperbolic_tangent)
 - Basis class for managing basis functions
@@ -17,12 +17,12 @@ TODO: Extract from mlai.py during refactoring
 __all__ = [
     # Linear Models
     'LM',
-    'BLM', 
+    'BLM',
     'LR',
-    
+
     # Basis Functions
     'linear',
-    'polynomial', 
+    'polynomial',
     'radial',
     'fourier',
     'relu',
@@ -34,34 +34,34 @@ import numpy as np
 import scipy.linalg as la
 
 # Import base classes from models module
-from .models import Model, ProbModel, MapModel, ProbMapModel
+from .models import ProbModel, ProbMapModel
 
-        
-    
+
+
 ##########           Weeks 4 and 5           ##########
 class LM(ProbMapModel):
     """
     Linear Model with basis function expansion.
-    
+
     This class implements a linear model that uses basis functions to transform
     the input features. The model assumes Gaussian noise and uses maximum
     likelihood estimation to fit the parameters.
-    
+
     Mathematical formulation:
     The model is: y = Φ(X)w + ε, where ε ~ N(0, σ²I)
     - Φ(X) is the basis function matrix
     - w are the weights to be learned
     - σ² is the noise variance
-    
+
     The maximum likelihood solution is: w* = (Φ^T Φ)^(-1) Φ^T y
-    
+
     :param X: Input features, shape (n_samples, n_features)
     :type X: numpy.ndarray
     :param y: Target values, shape (n_samples, 1)
     :type y: numpy.ndarray
     :param basis: Basis function object that provides the feature transformation
     :type basis: Basis
-    
+
     Attributes
     ----------
     w_star : numpy.ndarray
@@ -74,7 +74,7 @@ class LM(ProbMapModel):
         Model name based on the basis function
     objective_name : str
         Name of the objective function
-    
+
     Examples:
         >>> from mlai import polynomial
         >>> basis = polynomial(num_basis=4)
@@ -85,7 +85,7 @@ class LM(ProbMapModel):
     def __init__(self, X, y, basis):
         """
         Initialize a linear model with basis function expansion.
-        
+
         :param X: Input features, shape (n_samples, n_features)
         :type X: numpy.ndarray
         :param y: Target values, shape (n_samples, 1)
@@ -109,11 +109,11 @@ class LM(ProbMapModel):
     def set_param(self, name, val, update_fit=True):
         """
         Set a model parameter to a given value.
-        
+
         This method allows updating model parameters (including basis function
         parameters) and optionally refits the model if the parameter change
         affects the basis function matrix.
-        
+
         :param name: Name of the parameter to set
         :type name: str
         :param val: New value for the parameter
@@ -121,9 +121,9 @@ class LM(ProbMapModel):
         :param update_fit: Whether to refit the model after setting the parameter.
             Default is True.
         :type update_fit: bool, optional
-        
+
         :raises ValueError: If the parameter name is not recognized
-        
+
         Examples:
             >>> model.set_param('sigma2', 0.5)
             >>> model.set_param('num_basis', 6)  # Basis function parameter
@@ -138,7 +138,7 @@ class LM(ProbMapModel):
                 update_fit=False
             else:
                 self.basis.__dict__[name] = val
-                self.Phi = self.basis.Phi(self.X)            
+                self.Phi = self.basis.Phi(self.X)
         else:
             raise ValueError("Unknown parameter '{}' being set.".format(name))
         if update_fit:
@@ -147,11 +147,11 @@ class LM(ProbMapModel):
     def update_QR(self):
         """
         Perform QR decomposition on the basis matrix.
-        
+
         The QR decomposition is used for numerically stable computation
         of the least squares solution. The basis matrix Φ is decomposed as:
         Φ = QR, where Q is orthogonal and R is upper triangular.
-        
+
         This decomposition allows efficient computation of the weight vector:
         w* = R^(-1) Q^T y
         """
@@ -160,14 +160,14 @@ class LM(ProbMapModel):
     def fit(self):
         """
         Fit the linear model using maximum likelihood estimation.
-        
+
         This method computes the optimal weight vector w* using the
         least squares solution and estimates the noise variance σ².
-        
+
         Mathematical formulation:
         - w* = R^(-1) Q^T y (using QR decomposition)
         - σ² = Σ(y_i - ŷ_i)² / n (maximum likelihood estimate)
-        
+
         Examples:
             >>> model = LM(X, y, basis)
             >>> model.fit()
@@ -182,35 +182,35 @@ class LM(ProbMapModel):
     def predict(self, X):
         """
         Make predictions for new input data.
-        
+
         This method applies the learned weight vector to the basis function
         transformation of the input data.
-        
+
         Mathematical formulation:
         ŷ = Φ(X) w*
         where Φ(X) is the basis function matrix and w* are the fitted weights.
-        
+
         :param X: Input features, shape (n_samples, n_features)
         :type X: numpy.ndarray
         :returns: (predictions, None) where predictions are the predicted values
             and None indicates no uncertainty estimate (this is a deterministic model)
         :rtype: tuple
-        
+
         Examples:
             >>> y_pred, _ = model.predict(X_test)
             >>> print(f"Predictions shape: {y_pred.shape}")
         """
         return self.basis.Phi(X)@self.w_star, None
-        
+
     def update_f(self):
         """Update values at the prediction points."""
         self.f = self.Phi@self.w_star
-        
+
     def update_sum_squares(self):
         """Compute the sum of squares error."""
         self.update_f()
         self.sum_squares = ((self.y-self.f)**2).sum()
-        
+
     def objective(self):
         """Compute the objective function."""
         self.update_sum_squares()
@@ -220,19 +220,19 @@ class LM(ProbMapModel):
         """Compute the log likelihood."""
         self.update_sum_squares()
         return -self.num_data/2.*np.log(np.pi*2.)-self.num_data/2.*np.log(self.sigma2)-self.sum_squares/(2.*self.sigma2)
-    
+
     @property
     def parameters(self):
         """
         Get all trainable parameters as a 1D vector: [weights, bias].
-        
+
         This property returns the model parameters in the standard format
         [weights, bias] to be consistent with neural networks and GLMs.
         The internal w_star format [bias, weights] is reordered for external use.
-        
+
         :returns: 1D array of parameters in order [weights, bias]
         :rtype: numpy.ndarray
-        
+
         Examples:
             >>> model = LM(X, y, basis)
             >>> model.fit()
@@ -242,50 +242,50 @@ class LM(ProbMapModel):
         """
         if not hasattr(self, 'w_star'):
             raise ValueError("Model must be fitted or initialised before accessing parameters")
-        
+
         return self.w_star.flatten()
-        
+
     @parameters.setter
     def parameters(self, value):
         """
         Set all trainable parameters from a 1D vector: [weights, bias].
-        
+
         This property setter allows updating all model parameters from a
         single 1D array in the standard format [weights, bias]. The parameters
         are reordered to the internal w_star format [bias, weights].
-        
+
         :param value: 1D array of parameters in order [weights, bias]
         :type value: numpy.ndarray
-        
+
         Examples:
             >>> model = LM(X, y, basis)
             >>> model.fit()
             >>> new_params = model.parameters + 0.1  # Add small perturbation
             >>> model.parameters = new_params
         """
-        
+
         value = np.asarray(value)
         if value.ndim != 1:
             raise ValueError("Parameters must be a 1D array")
-        
+
         expected_length = self.Phi.shape[1]
         if len(value) != expected_length:
             raise ValueError(f"Expected {expected_length} parameters, got {len(value)}")
-        
+
         self.w_star = value.reshape(-1, 1)
         self.update_f()  # Update cached values after setting new parameters
-    
+
     @property
     def gradients(self):
         """
         Get the gradients of the objective function with respect to parameters.
-        
+
         This property computes and returns the gradients of the sum of squares
         objective function with respect to the model parameters.
-        
+
         :returns: 1D array of gradients
         :rtype: numpy.ndarray
-        
+
         Examples:
             >>> model = LM(X, y, basis)
             >>> model.fit()
@@ -297,15 +297,15 @@ class LM(ProbMapModel):
         residual = self.f - self.y  # (n_samples, 1)
         grad = 2 * (self.Phi.T @ residual)  # (n_params, 1)
         return grad.flatten()
-    
+
 
 class Basis():
     """
     Basis function wrapper class.
-    
+
     This class provides a wrapper around basis functions to standardize
     their interface and store their parameters.
-    
+
     :param function: The basis function to wrap
     :type function: function
     :param number: Number of basis functions
@@ -316,7 +316,7 @@ class Basis():
     def __init__(self, function, number, **kwargs):
         """
         Initialize the basis function wrapper.
-        
+
         :param function: The basis function to wrap
         :type function: function
         :param number: Number of basis functions
@@ -331,7 +331,7 @@ class Basis():
     def Phi(self, X):
         """
         Compute the basis function matrix.
-        
+
         :param X: Input features, shape (n_samples, n_features)
         :type X: numpy.ndarray
         :returns: Basis function matrix Φ(X), shape (n_samples, num_basis)
@@ -342,16 +342,16 @@ class Basis():
 def linear(x, **kwargs):
     """
     Define the linear basis function.
-    
+
     Creates a basis matrix with a constant term (bias) and linear terms.
-    
+
     :param x: Input features, shape (n_samples, n_features)
     :type x: numpy.ndarray
     :param **kwargs: Additional arguments (ignored for linear basis)
     :type **kwargs: dict
     :returns: Basis matrix with constant and linear terms, shape (n_samples, n_features + 1)
     :rtype: numpy.ndarray
-    
+
     Examples:
         >>> X = np.array([[1, 2], [3, 4]])
         >>> Phi = linear(X)
@@ -362,10 +362,10 @@ def linear(x, **kwargs):
 def polynomial(x, num_basis=4, data_limits=[-1., 1.]):
     """
     Define the polynomial basis function.
-    
+
     Creates a basis matrix with polynomial terms up to degree (num_basis - 1).
     The input is normalized to the range [-1, 1] for numerical stability.
-    
+
     :param x: Input features, shape (n_samples, n_features)
     :type x: numpy.ndarray
     :param num_basis: Number of basis functions (polynomial degree + 1)
@@ -374,7 +374,7 @@ def polynomial(x, num_basis=4, data_limits=[-1., 1.]):
     :type data_limits: list, optional
     :returns: Polynomial basis matrix, shape (n_samples, num_basis)
     :rtype: numpy.ndarray
-    
+
     Examples:
         >>> X = np.array([[0.5], [1.0]])
         >>> Phi = polynomial(X, num_basis=3)
@@ -392,10 +392,10 @@ def polynomial(x, num_basis=4, data_limits=[-1., 1.]):
 def radial(x, num_basis=4, data_limits=[-1., 1.], width=None):
     """
     Define the radial basis function (RBF).
-    
+
     Creates a basis matrix using Gaussian radial basis functions centered
     at evenly spaced points across the data range.
-    
+
     :param x: Input features, shape (n_samples, n_features)
     :type x: numpy.ndarray
     :param num_basis: Number of radial basis functions
@@ -406,7 +406,7 @@ def radial(x, num_basis=4, data_limits=[-1., 1.], width=None):
     :type width: float, optional
     :returns: Radial basis matrix, shape (n_samples, num_basis)
     :rtype: numpy.ndarray
-    
+
     Examples:
         >>> X = np.array([[0.5], [1.0]])
         >>> Phi = radial(X, num_basis=3)
@@ -420,7 +420,7 @@ def radial(x, num_basis=4, data_limits=[-1., 1.], width=None):
         centres = np.asarray([data_limits[0]/2. + data_limits[1]/2.])
         if width is None:
             width = (data_limits[1]-data_limits[0])/2.
-    
+
     Phi = np.zeros((x.shape[0], num_basis))
     for i in range(num_basis):
         Phi[:, i:i+1] = np.exp(-0.5*((np.asarray(x, dtype=float)-centres[i])/width)**2)
@@ -469,11 +469,11 @@ def radial_multivariate(x, num_basis=4, width=None, random_state=0):
 def fourier(x, num_basis=4, data_limits=[-1., 1.], frequency_range=None):
     """
     Define the Fourier basis function.
-    
+
     Creates a basis matrix using sine and cosine functions with different
     frequencies. The first basis function is a constant (1), followed by
     alternating sine and cosine terms.
-    
+
     :param x: Input features, shape (n_samples, n_features)
     :type x: numpy.ndarray
     :param num_basis: Number of basis functions (including constant term)
@@ -484,7 +484,7 @@ def fourier(x, num_basis=4, data_limits=[-1., 1.], frequency_range=None):
     :type frequency_range: list, optional
     :returns: Fourier basis matrix, shape (n_samples, num_basis)
     :rtype: numpy.ndarray
-    
+
     Examples:
         >>> X = np.array([[0.5], [1.0]])
         >>> Phi = fourier(X, num_basis=4)
@@ -508,11 +508,11 @@ def fourier(x, num_basis=4, data_limits=[-1., 1.], frequency_range=None):
 def relu(x, num_basis=4, data_limits=[-1., 1.], gain=None):
     """
     Define the rectified linear units (ReLU) basis function.
-    
+
     Creates a basis matrix using ReLU activation functions with different
     thresholds. The first basis function is a constant (1), followed by
     ReLU functions with varying thresholds and gains.
-    
+
     :param x: Input features, shape (n_samples, n_features)
     :type x: numpy.ndarray
     :param num_basis: Number of basis functions (including constant term)
@@ -523,7 +523,7 @@ def relu(x, num_basis=4, data_limits=[-1., 1.], gain=None):
     :type gain: numpy.ndarray, optional
     :returns: ReLU basis matrix, shape (n_samples, num_basis)
     :rtype: numpy.ndarray
-    
+
     Examples:
         >>> X = np.array([[0.5], [1.0]])
         >>> Phi = relu(X, num_basis=3)
@@ -551,11 +551,11 @@ def relu(x, num_basis=4, data_limits=[-1., 1.], gain=None):
 def hyperbolic_tangent(x, num_basis=4, data_limits=[-1., 1.], gain=None):
     """
     Define the hyperbolic tangent basis function.
-    
+
     Creates a basis matrix using tanh activation functions with different
     thresholds and gains. The first basis function is a constant (1),
     followed by tanh functions with varying parameters.
-    
+
     :param x: Input features, shape (n_samples, n_features)
     :type x: numpy.ndarray
     :param num_basis: Number of basis functions (including constant term)
@@ -566,7 +566,7 @@ def hyperbolic_tangent(x, num_basis=4, data_limits=[-1., 1.], gain=None):
     :type gain: numpy.ndarray, optional
     :returns: Tanh basis matrix, shape (n_samples, num_basis)
     :rtype: numpy.ndarray
-    
+
     Examples:
         >>> X = np.array([[0.5], [1.0]])
         >>> Phi = hyperbolic_tangent(X, num_basis=3)
@@ -593,7 +593,7 @@ def hyperbolic_tangent(x, num_basis=4, data_limits=[-1., 1.], gain=None):
 class Noise(ProbModel):
     """
     Abstract base class for noise models.
-    
+
     This class extends ProbModel to provide a framework for modeling
     noise distributions in probabilistic models.
     """
@@ -603,14 +603,14 @@ class Noise(ProbModel):
     def _repr_html_(self):
         raise NotImplementedError
 
-    
+
 class Gaussian(Noise):
     """
     Gaussian noise model.
-    
+
     This class implements a Gaussian noise model with configurable
     offset and scale parameters.
-    
+
     :param offset: Offset parameter for the noise model
     :type offset: float, optional
     :param scale: Scale parameter for the noise model
@@ -625,7 +625,7 @@ class Gaussian(Noise):
     def log_likelihood(self, mu, varsigma, y):
         """
         Compute the log likelihood of the data under a Gaussian noise model.
-        
+
         :param mu: Input mean locations for the log likelihood
         :type mu: numpy.ndarray
         :param varsigma: Input variance locations for the log likelihood
@@ -641,7 +641,7 @@ class Gaussian(Noise):
         varsigma = varsigma + self.scale*self.scale
         for i in range(d):
             mu[:, i] += self.offset[i]
-        arg = (y - mu);
+        arg = (y - mu)
         arg = arg*arg/varsigma
 
         return - 0.5*(np.log(varsigma).sum() + arg.sum() + n*d*np.log(2*np.pi))
@@ -650,7 +650,7 @@ class Gaussian(Noise):
     def grad_vals(self, mu, varsigma, y):
         """
         Compute the gradient of noise log Z with respect to input mean and variance.
-        
+
         :param mu: Mean input locations with respect to which gradients are being computed
         :type mu: numpy.ndarray
         :param varsigma: Variance input locations with respect to which gradients are being computed
@@ -674,11 +674,11 @@ class Gaussian(Noise):
 class BLM(LM):
     """
     Bayesian Linear Model.
-    
+
     This class implements a Bayesian linear model with a Gaussian prior
     on the weights and Gaussian noise. The model provides uncertainty
     estimates for predictions.
-    
+
     :param X: Input values
     :type X: numpy.ndarray
     :param y: Target values, shape (n_samples, 1)
@@ -694,7 +694,7 @@ class BLM(LM):
     def __init__(self, X, y, basis, alpha=1.0, sigma2=1.0):
         """
         Initialize the Bayesian Linear Model.
-        
+
         :param X: Input values
         :type X: numpy.ndarray
         :param y: Target values, shape (n_samples, 1)
@@ -718,7 +718,7 @@ class BLM(LM):
     def set_param(self, name, val, update_fit=True):
         """
         Set a parameter to a given value.
-        
+
         :param name: Name of the parameter to set
         :type name: str
         :param val: New value for the parameter
@@ -736,16 +736,16 @@ class BLM(LM):
                 update_fit=False
             else:
                 self.basis.__dict__[name] = val
-                self.Phi = self.basis.Phi(self.X)            
+                self.Phi = self.basis.Phi(self.X)
         else:
             raise ValueError("Unknown parameter being set.")
         if update_fit:
             self.fit()
-        
+
     def update_QR(self):
         """
         Perform the QR decomposition on the basis matrix.
-        
+
         This method performs QR decomposition on the augmented basis matrix
         that includes the prior regularization term.
         """
@@ -754,7 +754,7 @@ class BLM(LM):
     def fit(self):
         """
         Minimize the objective function with respect to the parameters.
-        
+
         This method computes the posterior mean and covariance of the weights
         using the QR decomposition approach.
         """
@@ -768,7 +768,7 @@ class BLM(LM):
     def predict(self, X, full_cov=False):
         """
         Return the result of the prediction function.
-        
+
         :param X: Input features for prediction
         :type X: numpy.ndarray
         :param full_cov: Whether to return full covariance matrix
@@ -784,11 +784,11 @@ class BLM(LM):
             return mu, self.sigma2*A.T@A
         else:
             return mu, self.sigma2*(A*A).sum(0)[:, None]
-        
+
     def update_f(self):
         """
         Update values at the prediction points.
-        
+
         This method computes the posterior mean and variance of the
         function values at the training points.
         """
@@ -798,17 +798,17 @@ class BLM(LM):
     def update_sum_squares(self):
         """
         Compute the sum of squares error.
-        
+
         This method computes the sum of squared differences between
         the observed targets and the posterior mean predictions.
         """
         self.update_f()
         self.sum_squares = ((self.y-self.f_bar)**2).sum()
-    
+
     def objective(self):
         """
         Compute the objective function.
-        
+
         For the Bayesian linear model, this is the negative log-likelihood.
         """
         return - self.log_likelihood()
@@ -816,33 +816,33 @@ class BLM(LM):
     def update_nll(self):
         """
         Precompute terms needed for the log likelihood.
-        
+
         This method computes the log determinant and quadratic terms
         that are used in the negative log-likelihood calculation.
         """
         self.log_det = self.num_data*np.log(self.sigma2*np.pi*2.)-2*np.log(np.abs(np.linalg.det(self.Q[self.y.shape[0]:, :])))
         self.quadratic = (self.y*self.y).sum()/self.sigma2 - (self.QTy*self.QTy).sum()/self.sigma2
-        
+
     def nll_split(self):
         """
         Compute the determinant and quadratic term of the negative log likelihood.
-        
+
         :returns: Tuple of (log_det, quadratic) terms
         :rtype: tuple
         """
         self.update_nll()
         return self.log_det, self.quadratic
-    
+
     def log_likelihood(self):
         """
         Compute the log likelihood.
-        
+
         :returns: Log likelihood value
         :rtype: float
         """
         self.update_nll()
         return -self.log_det - self.quadratic
-    
+
 ##########          Week 10          ##########
 
 class LR(ProbMapModel):
@@ -862,7 +862,7 @@ class LR(ProbMapModel):
             y = y.reshape(-1, 1)
         elif y.ndim != 2 or y.shape[1] != 1:
             raise ValueError("y must be 2D with shape (n_samples, 1)")
-        
+
         ProbMapModel.__init__(self, X, y)
         self.basis = basis
         self.Phi = self.basis.Phi(X)
@@ -886,24 +886,23 @@ class LR(ProbMapModel):
     def gradient(self):
         """
         Generate the gradient of the objective function (the negative log-likelihood).
-        
+
         :returns: Gradient vector of negative log-likelihood
         :rtype: numpy.ndarray
         """
         self.update_g()
-        y_bool = self.y.flatten().astype(bool)  # Ensure 1D
-        
+
         # Compute deltas: (y - g) for each data point
         deltas = self.y - self.g
-        
+
         # Gradient is Phi^T @ deltas
         grad = self.Phi.T @ deltas
-        return -grad.flatten()  # Negative because we're minimizing negative log-likelihood 
-    
+        return -grad.flatten()  # Negative because we're minimizing negative log-likelihood
+
     def fit(self, learning_rate=0.1, max_iterations=1000, tolerance=1e-6):
         """
         Fit the logistic regression model using gradient descent.
-        
+
         :param learning_rate: Learning rate for gradient descent
         :type learning_rate: float, optional
         :param max_iterations: Maximum number of iterations
@@ -915,7 +914,7 @@ class LR(ProbMapModel):
             old_objective = self.objective()
             self.parameters -= learning_rate * self.gradients  # Minimize negative log-likelihood (go in direction of negative gradient)
             new_objective = self.objective()
-            
+
             if abs(new_objective - old_objective) < tolerance:
                 break
 
@@ -930,24 +929,24 @@ class LR(ProbMapModel):
         """
         # Use log-sum-exp trick for numerical stability
         g = 1./(1+np.exp(-f))
-        
+
         # log_g = log(g) = log(1/(1+exp(-f))) = -log(1+exp(-f))
         # Use log-sum-exp trick: log(1+exp(-f)) = max(0, -f) + log(1+exp(-max(0, -f)))
         max_val = np.maximum(0, -f)
         log_g = -max_val - np.log(1 + np.exp(-f - max_val))
-        
+
         # log_gminus = log(1-g) = log(1-1/(1+exp(-f))) = log(exp(-f)/(1+exp(-f)))
         # = -f - log(1+exp(-f)) = -f + log_g
         log_gminus = -f + log_g
         return g, log_g, log_gminus
-        
+
     def update_g(self):
         """
         Compute the prediction function on training data.
         """
         self.f = self.Phi @ self.w_star  # (n_samples, 1)
         self.g, self.log_g, self.log_gminus = self.compute_g(self.f)
-        
+
     def log_likelihood(self):
         """
         Compute the log-likelihood.
@@ -963,19 +962,19 @@ class LR(ProbMapModel):
         proba = np.clip(g_flat, 1e-15, 1 - 1e-15)
         log_likelihood = np.sum(y_flat * np.log(proba) + (1 - y_flat) * np.log(1 - proba))
         return log_likelihood
-            
+
     @property
     def parameters(self):
         """
         Get all trainable parameters as a 1D vector.
-        
+
         This property returns the model parameters as a flattened version
         of w_star. The bias is included as the first element due to the
         design of the Phi matrix (with a column of ones).
-        
+
         :returns: 1D array of parameters
         :rtype: numpy.ndarray
-        
+
         Examples:
             >>> model = LR(X, y, basis)
             >>> model.fit()
@@ -983,18 +982,18 @@ class LR(ProbMapModel):
             >>> print(f"Parameters shape: {params.shape}")
         """
         return self.w_star.flatten()
-    
+
     @parameters.setter
     def parameters(self, value):
         """
         Set all trainable parameters from a 1D vector.
-        
+
         This property setter allows updating all model parameters from a
         single 1D array. The parameters are reshaped to match w_star.
-        
+
         :param value: 1D array of parameters
         :type value: numpy.ndarray
-        
+
         Examples:
             >>> model = LR(X, y, basis)
             >>> model.fit()
@@ -1004,25 +1003,25 @@ class LR(ProbMapModel):
         value = np.asarray(value)
         if value.ndim != 1:
             raise ValueError("Parameters must be a 1D array")
-        
+
         expected_length = self.w_star.size
         if len(value) != expected_length:
             raise ValueError(f"Expected {expected_length} parameters, got {len(value)}")
-        
+
         self.w_star = value.reshape(-1, 1)
         self.update_g()  # Update cached values after setting new parameters
-    
+
     @property
     def gradients(self):
         """
         Get the gradients of the objective function with respect to parameters.
-        
+
         This property computes and returns the gradients of the log-likelihood
         objective function with respect to the model parameters.
-        
+
         :returns: 1D array of gradients
         :rtype: numpy.ndarray
-        
+
         Examples:
             >>> model = LR(X, y, basis)
             >>> model.fit()

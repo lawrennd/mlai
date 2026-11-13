@@ -86,6 +86,8 @@ This file provides an overview of all current backlog items organized by categor
 
 ## Recently Completed Tasks
 
+- [CIP-000A flake8 to ruff lint cutover](infrastructure/2026-11-13_cip000A-ruff-lint-cutover.md)
+
 - [CIP-0009 Poetry to uv packaging cutover](infrastructure/2026-11-13_cip0009-uv-packaging-cutover.md)
 
 - [Fix visualize_pinball ribbon shape mismatch for non-flat predict outputs](bugs/2026-10-13_deepgp-pinball-shape-mismatch.md)

@@ -1,4 +1,3 @@
-import os
 import numpy as np
 
 import matplotlib.pyplot as plt
@@ -9,7 +8,6 @@ import GPy
 #from GPyOpt.acquisitions import AcquisitionBase
 
 from matplotlib import animation
-from IPython.display import display, HTML
 from pylab import cm
 
 import mlai.plot as plot
@@ -18,11 +16,11 @@ import mlai.utils as ma
 N_STEPS_MAX = 500
 
 
-    
+
 def make_multi_output_multi_fidelity_kernel(input_dim):
     k_simulator = GPy.kern.Matern52(input_dim = input_dim, active_dims = list(range(input_dim)), ARD=True)
     k_error = GPy.kern.Matern52(input_dim = input_dim, active_dims = list(range(input_dim)), ARD=True)
-    k_indicator = GPy.kern.Linear(input_dim = 1, active_dims = [input_dim]) 
+    k_indicator = GPy.kern.Linear(input_dim = 1, active_dims = [input_dim])
     # Some constraints on hyperparameters
     k_indicator.variances.constrain_fixed(1)
     k_indicator.variances.fix(1)
@@ -53,11 +51,7 @@ def low_cost_simulation(state):
     """Define a low fidelity simulation that returns the approximate car dynamics"""
     # A corrupted version of the function above
     power = 0.002
-    max_speed = 0.07
-    min_position = -1.2
-    max_position = 0.6
     position = state[0]
-    velocity = state[1]
     action = state[2]
     d_velocity = power*action - 0.004*(np.cos(3.3*position - 0.3))**2 - 0.001
     d_position = d_velocity
@@ -84,17 +78,17 @@ def low_cost_simulation(state):
 
 #     def _compute_acq(self, x):
 #         """
-#         Computes the GP-Lower Confidence Bound 
+#         Computes the GP-Lower Confidence Bound
 #         """
-#         _, s = self.model.predict(x)   
+#         _, s = self.model.predict(x)
 #         return s
 
 #     def _compute_acq_withGradients(self, x):
 #         """
 #         Computes the GP-Lower Confidence Bound and its derivative
 #         """
-#         _, s, _, dsdx = self.model.predict_withGradients(x) 
-#         f_acqu = s       
+#         _, s, _, dsdx = self.model.predict_withGradients(x)
+#         f_acqu = s
 #         df_acqu = dsdx
 #         return f_acqu, df_acqu
 
@@ -103,7 +97,7 @@ def run_simulation(env, controller_gains, render=False):
     # Reset environment to starting point
     env.seed(0)
     observation = env.reset()
-    
+
     # Initalise matrices to store state + control inputs
     state_trajectory = np.ndarray((0, observation.shape[0]))
     control_inputs = np.ndarray((0, env.action_space.shape[0]))
@@ -139,7 +133,7 @@ def run_emulation(dynamics_models, controller_gains, X_0, fidelity='single'):
         # Store state + control
         state_trajectory = np.concatenate([state_trajectory, observation[np.newaxis, :]], axis=0)
         control_inputs = np.concatenate([control_inputs, control_input[np.newaxis, :]])
-        
+
         # Evalute emulator
         gp_input = np.hstack([observation, control_input])[np.newaxis, :]
         next_state_mean = evalute_model(dynamics_models[0], gp_input, fidelity)
@@ -174,17 +168,12 @@ def v_simulation(state):
     state = state.copy().flatten()
     power = 0.0015
     max_speed = 0.07
-    min_position = -1.2
-    max_position = 0.6
     position = state[0]
     velocity = state[1]
     action = state[2]
     new_velocity = velocity + power*action - 0.0025*np.cos(3*position)
     new_velocity = np.clip(new_velocity, -max_speed, max_speed)
     d_velocity = new_velocity - velocity
-    new_position = position + new_velocity
-    new_position = np.clip(new_position, min_position, max_position)
-    d_position = new_position-position
     return np.asarray([d_velocity])[np.newaxis, :]
 
 class plot_control(object):
@@ -200,15 +189,15 @@ class plot_control(object):
         x_contour = np.ones((n_points_contour**2, 3))*control
         for i in range(0, len(x_contour_grid)):
             x_contour[:, i] = x_contour_grid[i].flatten()
-        
+
         # Evalute emulator
         y_emulator = evalute_model(self.velocity_emulator, x_contour, self.fidelity)
-        
+
         # Evalute simulator
         y_simulator = np.zeros(x_contour.shape[0])
         for i in range(0, x_contour.shape[0]):
             y_simulator[i] = v_simulation(x_contour[i, :])
-        
+
         # Do plots
         fig, ax = plt.subplots(1, 2, figsize=(12, 4))
         ax[0].set_title('Acceleration from Emulator')
@@ -244,10 +233,10 @@ def create_deep_multi_fidelity_models(x, y1, y2):
     Function to create deep multi-fidelity models
     """
     m1 = GPy.models.GPRegression(x.copy(), y1, kernel=GPy.kern.RBF(3))
-    m1.optimize_restarts(10, verbose=False);
+    m1.optimize_restarts(10, verbose=False)
     mu1, _ = m1.predict(x)
     XX = np.hstack((x.copy(), mu1))
-    
+
     ## Make second model
     n_dim = x.shape[1]
     k2 = GPy.kern.RBF(1, active_dims = [n_dim])*GPy.kern.RBF(n_dim, active_dims=np.arange(0, n_dim)) \
@@ -268,12 +257,12 @@ def animate_frames(frames, title=None):
         ax.set_title(title)
     ax.set_alpha(0.0)
     patch = ax.imshow(frames[0])
-    
+
     plt.axis('off')
 
     def animate(i):
         patch.set_data(frames[i])
-        
+
     return animation.FuncAnimation(plt.gcf(), animate, frames = len(frames), interval=30)
     #HTML(anim.to_jshtml())##display(display_animation(anim, default_mode='loop'))
     #HTML(anim.to_html5_video())##display(display_animation(anim, default_mode='loop'))
@@ -282,13 +271,11 @@ def animate_frames(frames, title=None):
 def emu_sim_comparison(env, control_params, emulator, fidelity='single', max_steps=500, diagrams='../diagrams'):
     """Plot a comparison between the emulator and the simulator"""
     reward, state_trajectory, control_inputs, _ = run_simulation(env, control_params)
-    
+
     reward_emu, state_trajectory_emu_mean, control_inputs_emu_mean = run_emulation(
         emulator, control_params, state_trajectory[0, :].copy(), fidelity=fidelity)
 
     fig, ax = plt.subplots(1, 3, figsize=plot.three_figsize)
-    x_axis = np.arange(0, max_steps)
-    x_axis_emu = np.arange(0, max_steps)
     h1, = ax[0].plot(state_trajectory_emu_mean[:, 0])
 
     h2, = ax[0].plot(state_trajectory[:, 0])

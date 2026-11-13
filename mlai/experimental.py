@@ -23,7 +23,7 @@ __all__ = [
     # Dropout Neural Networks
     'SimpleDropoutNeuralNetwork',
     'NonparametricDropoutNeuralNetwork',
-    
+
     # Experimental Algorithms
 ]
 
@@ -31,10 +31,10 @@ __all__ = [
 class SimpleDropoutNeuralNetwork(SimpleNeuralNetwork):
     """
     Simple neural network with dropout.
-    
+
     This class extends SimpleNeuralNetwork to include dropout regularization
     during training.
-    
+
     :param nodes: Number of hidden nodes
     :type nodes: int
     :param drop_p: Dropout probability
@@ -46,22 +46,22 @@ class SimpleDropoutNeuralNetwork(SimpleNeuralNetwork):
         self.drop_p = drop_p
         super().__init__(nodes=nodes)
         # renormalize the network weights
-        self.w2 /= self.drop_p 
-        
+        self.w2 /= self.drop_p
+
     def do_samp(self):
         """
         Sample the set of basis functions to use.
-        
+
         This method randomly selects which basis functions to use
         based on the dropout probability.
-        """ 
+        """
         gen = np.random.rand(self.nodes)
         self.use = gen > self.drop_p
-        
+
     def predict(self, x):
         """
         Compute output given current basis functions used.
-        
+
         :param x: Input value
         :type x: float
         :returns: Network output using only the sampled basis functions
@@ -74,10 +74,10 @@ class SimpleDropoutNeuralNetwork(SimpleNeuralNetwork):
 class NonparametricDropoutNeuralNetwork(SimpleDropoutNeuralNetwork):
     """
     A non-parametric dropout neural network.
-    
+
     This class implements a neural network with non-parametric dropout
     using the Indian Buffet Process (IBP) to control the dropout mechanism.
-    
+
     :param alpha: Alpha parameter of the IBP controlling dropout
     :type alpha: float, optional
     :param beta: Beta parameter of the two-parameter IBP controlling dropout
@@ -103,17 +103,17 @@ class NonparametricDropoutNeuralNetwork(SimpleDropoutNeuralNetwork):
         self.maxval = 0
         self.w2 *= self.maxk/self.alpha
         self.count = np.zeros(self.maxk)
-    
-    
-        
+
+
+
     def do_samp(self):
         """
         Sample the next set of basis functions to be used.
-        
+
         This method implements the Indian Buffet Process (IBP) sampling
         to determine which basis functions to use in the current iteration.
         """
-        
+
         new=np.random.poisson(self.alpha*self.beta/(self.beta + self.update_num))
         use_prob = self.count[:self.maxval]/(self.update_num+self.beta)
         gen = np.random.rand(1, self.maxval)
