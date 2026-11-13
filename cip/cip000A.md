@@ -123,11 +123,12 @@ No effect on the published `mlai` wheel or on students using `pip install mlai`.
 - [x] `lint.yml` cut over
 - [x] Docs updated
 - [x] Drop stale `__all__` names that ruff F822 reports and flake8 7 does not, so the hard-fail gate stays green
+- [x] Clear advisory findings that do not change teaching structure: whitespace, unused names, shadowed definitions, and the small syntax rules in the advisory select. Line length (E501) and McCabe complexity (C901) stay as advisory leftovers
 - [ ] CI Lint green on the cutover pull request
 
 ## References
 
-- Current lint job: `.github/workflows/lint.yml` (flake8 two-pass; post-0009: `uv run flake8`)
+- Current lint job: `.github/workflows/lint.yml` (`uv run ruff check` hard-fail, then the advisory select with `--exit-zero`)
 - Prerequisite: [CIP-0009](cip0009.md) / https://github.com/lawrennd/mlai/pull/6
 - Ruff: https://docs.astral.sh/ruff/
 - Ruff flake8 compatibility: https://docs.astral.sh/ruff/faq/#how-does-ruff-compare-to-flake8

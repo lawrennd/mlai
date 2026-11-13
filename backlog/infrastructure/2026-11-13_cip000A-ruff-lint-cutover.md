@@ -60,3 +60,7 @@ and complexity limit in `pyproject.toml`, and point the Lint workflow at
 Task created with the CIP-000A implementation on `cip000A-ruff-lint`. Local
 `uv lock`, hard-fail check, advisory `--exit-zero` pass, and an undefined-name
 probe are done. Awaiting Lint workflow on the pull request before CIP close.
+
+Follow-up on the same branch: advisory whitespace, unused names, shadowed
+definitions, and the small syntax rules in the advisory select are cleared.
+E501 and C901 remain, and the advisory CI pass still exits zero.

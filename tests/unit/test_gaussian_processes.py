@@ -183,7 +183,16 @@ class TestKernelFunctions:
         result = mlai.mlp_cov(x, x_prime, variance=1.0, w=1.0, b=5.0)
         assert isinstance(result, (int, float))
         assert result > 0
-    
+
+    def test_arccos_cov_kernel(self):
+        """Test arccos_cov kernel function."""
+        x = np.array([1, 2])
+        x_prime = np.array([2, 3])
+
+        result = mlai.arccos_cov(x, x_prime, variance=1.0, w=1.0, b=5.0)
+        assert isinstance(result, (int, float))
+        assert result > 0
+
     def test_icm_cov_kernel(self):
         """Test icm_cov kernel function."""
         x = np.array([0, 1, 2])  # First element is output index

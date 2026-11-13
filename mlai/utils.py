@@ -17,15 +17,15 @@ import matplotlib.pyplot as plt
 __all__ = [
     # Optimization Utilities
     'finite_difference_gradient',
-    'finite_difference_jacobian', 
+    'finite_difference_jacobian',
     'verify_gradient_implementation',
-    
+
     # File manipulation
     'load_pgm',
-    
+
     # Mathematical Utilities
     'dist2',
-    
+
     # Plotting Utilities
     'write_figure',
     'write_figure_caption',
@@ -34,11 +34,11 @@ __all__ = [
 def filename_join(filename, directory=None):
     """
     Join a filename to a directory and create directory if it doesn't exist.
-    
+
     This utility function ensures that the target directory exists before
     attempting to create files, which is useful for saving figures, animations,
     and other outputs during tutorials.
-    
+
     :param filename: The name of the file to create
     :type filename: str
     :param directory: The directory path. If None, returns just the filename.
@@ -46,7 +46,7 @@ def filename_join(filename, directory=None):
     :type directory: str, optional
     :returns: The full path to the file
     :rtype: str
-    
+
     Examples:
         >>> filename_join("plot.png", "figures")
         'figures/plot.png'
@@ -62,10 +62,10 @@ def filename_join(filename, directory=None):
 def write_animation(anim, filename, directory=None, **kwargs):
     """
     Write a matplotlib animation to a file.
-    
+
     This function saves animations (e.g., from matplotlib.animation) to files
     in the specified directory, creating the directory if necessary.
-    
+
     :param anim: The animation object to save
     :type anim: matplotlib.animation.Animation
     :param filename: The name of the output file (e.g., 'animation.gif', 'animation.mp4')
@@ -74,7 +74,7 @@ def write_animation(anim, filename, directory=None, **kwargs):
     :type directory: str, optional
     :param **kwargs: Additional arguments passed to anim.save()
     :type **kwargs: dict
-    
+
     Examples:
         >>> import matplotlib.animation as animation
         >>> # Create animation...
@@ -86,17 +86,17 @@ def write_animation(anim, filename, directory=None, **kwargs):
 def write_animation_html(anim, filename, directory=None):
     """
     Save a matplotlib animation as an HTML file with embedded JavaScript.
-    
+
     This function creates an HTML file containing the animation that can be
     viewed in a web browser. The animation is embedded as JavaScript code.
-    
+
     :param anim: The animation object to save
     :type anim: matplotlib.animation.Animation
     :param filename: The name of the output HTML file
     :type filename: str
     :param directory: The directory to save the HTML file in. If None, saves in current directory.
     :type directory: str, optional
-    
+
     Examples:
         >>> import matplotlib.animation as animation
         >>> # Create animation...
@@ -110,11 +110,11 @@ def write_animation_html(anim, filename, directory=None):
 def write_figure(filename, figure=None, directory=None, frameon=None, **kwargs):
     """
     Save a matplotlib figure to a file with proper formatting.
-    
+
     This function saves figures with transparent background by default,
     which is useful for presentations and publications. The function
     automatically creates the target directory if it doesn't exist.
-    
+
     :param filename: The name of the output file (e.g., 'plot.png', 'figure.pdf')
     :type filename: str
     :param figure: The figure to save. If None, saves the current figure.
@@ -125,7 +125,7 @@ def write_figure(filename, figure=None, directory=None, frameon=None, **kwargs):
     :type frameon: bool, optional
     :param **kwargs: Additional arguments passed to plt.savefig() or figure.savefig()
     :type **kwargs: dict
-    
+
     Examples:
         >>> plt.plot([1, 2, 3], [1, 4, 2])
         >>> write_figure("linear_plot.png", directory="figures")
@@ -152,7 +152,7 @@ def write_figure_caption(counter, caption, filestub, ext="svg", directory="./dia
     with open(os.path.join(directory,f"{filestub}_{counter:0>3}.md"), 'w') as f:
         f.write(caption)
 
-        
+
 def load_pgm(filename, directory=None, byteorder='>'):
     """
     Return image data from a raw PGM file as a numpy array.
@@ -176,10 +176,10 @@ def load_pgm(filename, directory=None, byteorder='>'):
         buffer = f.read()
     try:
         header, width, height, maxval = re.search(
-            b"(^P5\\s(?:\s*#.*[\r\n])*"
-            b"(\\d+)\\s(?:\s*#.*[\r\n])*"
-            b"(\\d+)\\s(?:\s*#.*[\r\n])*"
-            b"(\\d+)\\s(?:\s*#.*[\r\n]\s)*)", buffer).groups()
+            b"(^P5\\s(?:\\s*#.*[\r\n])*"
+            b"(\\d+)\\s(?:\\s*#.*[\r\n])*"
+            b"(\\d+)\\s(?:\\s*#.*[\r\n])*"
+            b"(\\d+)\\s(?:\\s*#.*[\r\n]\\s)*)", buffer).groups()
     except AttributeError:
         raise ValueError("Not a raw PGM file: '%s'" % filename)
     return np.frombuffer(
@@ -195,15 +195,15 @@ def load_pgm(filename, directory=None, byteorder='>'):
 def finite_difference_gradient(func, x, h=1e-5):
     """
     Compute gradient using finite differences.
-    
+
     This is a numerical method to approximate gradients by computing
     the difference quotient: f'(x) ≈ (f(x+h) - f(x-h)) / (2h)
-    
+
     This is useful for:
     1. Verifying analytical gradient implementations
     2. Educational purposes to understand gradient computation
     3. Debugging gradient-related issues
-    
+
     :param func: Function to compute gradient for
     :type func: callable
     :param x: Point at which to compute gradient
@@ -212,7 +212,7 @@ def finite_difference_gradient(func, x, h=1e-5):
     :type h: float
     :returns: Numerical gradient approximation
     :rtype: numpy.ndarray
-    
+
     Examples:
         >>> def f(x): return x**2
         >>> x = np.array([2.0])
@@ -221,40 +221,40 @@ def finite_difference_gradient(func, x, h=1e-5):
     """
     x = np.asarray(x, dtype=float)
     gradient = np.zeros_like(x)
-    
+
     # Compute gradient for each dimension
     for i in range(x.size):
         # Create perturbation vectors
         x_plus = x.copy()
         x_minus = x.copy()
-        
+
         # Perturb the i-th element
         x_plus.flat[i] += h
         x_minus.flat[i] -= h
-        
+
         # Compute finite difference
         # Handle both scalar and array outputs
         f_plus = func(x_plus)
         f_minus = func(x_minus)
-        
+
         # If function returns array, take the sum (for activation functions)
         if np.asarray(f_plus).ndim > 0:
             f_plus = np.sum(f_plus)
             f_minus = np.sum(f_minus)
-        
+
         gradient.flat[i] = (f_plus - f_minus) / (2 * h)
-    
+
     return gradient
 
 
 def finite_difference_jacobian(func, x, h=1e-5):
     """
     Compute Jacobian matrix using finite differences.
-    
+
     This computes the Jacobian matrix of a vector-valued function
     using finite differences. Useful for testing neural network
     gradient computations.
-    
+
     :param func: Vector-valued function to compute Jacobian for
     :type func: callable
     :param x: Point at which to compute Jacobian
@@ -263,7 +263,7 @@ def finite_difference_jacobian(func, x, h=1e-5):
     :type h: float
     :returns: Jacobian matrix (output_size × input_size)
     :rtype: numpy.ndarray
-    
+
     Examples:
         >>> def f(x): return np.array([x[0]**2, x[1]**3])
         >>> x = np.array([2.0, 3.0])
@@ -273,37 +273,37 @@ def finite_difference_jacobian(func, x, h=1e-5):
     x = np.asarray(x, dtype=float)
     output = func(x)
     output = np.asarray(output, dtype=float)
-    
+
     # Initialize Jacobian matrix
     jacobian = np.zeros((output.size, x.size))
-    
+
     # Compute gradient for each input dimension
     for i in range(x.size):
         # Create perturbation vectors
         x_plus = x.copy()
         x_minus = x.copy()
-        
+
         # Perturb the i-th element
         x_plus.flat[i] += h
         x_minus.flat[i] -= h
-        
+
         # Compute finite difference
         output_plus = func(x_plus)
         output_minus = func(x_minus)
-        
+
         jacobian[:, i] = (output_plus - output_minus).flatten() / (2 * h)
-    
+
     return jacobian
 
 
 def verify_gradient_implementation(analytical_grad, numerical_grad, rtol=1e-5, atol=1e-8):
     """
     Verify that analytical gradient matches numerical gradient.
-    
+
     This function compares analytical and numerical gradients to ensure
     the analytical implementation is correct. This is crucial for
     debugging gradient computations in neural networks.
-    
+
     :param analytical_grad: Analytically computed gradient
     :type analytical_grad: numpy.ndarray
     :param numerical_grad: Numerically computed gradient
@@ -315,7 +315,7 @@ def verify_gradient_implementation(analytical_grad, numerical_grad, rtol=1e-5, a
     :returns: True if gradients match within tolerance
     :rtype: bool
     :raises ValueError: If gradient dimensions don't match
-    
+
     Examples:
         >>> analytical = np.array([4.0, 6.0])
         >>> numerical = np.array([4.0001, 6.0001])
@@ -325,14 +325,14 @@ def verify_gradient_implementation(analytical_grad, numerical_grad, rtol=1e-5, a
     # Convert to numpy arrays if needed
     analytical_grad = np.asarray(analytical_grad)
     numerical_grad = np.asarray(numerical_grad)
-    
+
     # Check dimension compatibility
     if analytical_grad.shape != numerical_grad.shape:
         raise ValueError(
             f"Gradient dimension mismatch: analytical gradient shape {analytical_grad.shape} "
             f"does not match numerical gradient shape {numerical_grad.shape}"
         )
-    
+
     try:
         np.testing.assert_allclose(analytical_grad, numerical_grad, rtol=rtol, atol=atol)
         return True
@@ -343,14 +343,14 @@ def verify_gradient_implementation(analytical_grad, numerical_grad, rtol=1e-5, a
 def dist2(X1, X2):
     """
     Return the squared distance matrix between two 2-D arrays.
-    
+
     Key insight: ||x - y||² = ||x||² + ||y||² - 2⟨x,y⟩
-    
+
     Why? Expand (x-y)·(x-y) = x·x - 2x·y + y·y
     """
 
     return (np.sum(X1*X1, axis=1, keepdims=True)
-            + np.sum(X2*X2, axis=1) 
+            + np.sum(X2*X2, axis=1)
             - 2*X1@X2.T)
 
-    
+

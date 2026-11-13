@@ -40,7 +40,7 @@ def gpplot(x,
 
     #here's the box
     kwargs['linewidth']=0.5
-    if not 'alpha' in kwargs.keys():
+    if 'alpha' not in kwargs:
         kwargs['alpha'] = 0.3
     plots.append(axes.fill(np.hstack((x,x[::-1])),np.hstack((upper,lower[::-1])),color=fillcol,**kwargs))
 
