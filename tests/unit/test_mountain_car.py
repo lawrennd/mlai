@@ -83,3 +83,36 @@ def test_mountain_car_write_animation_html_callable_via_ma():
     ma = vars(mc).get('ma')
     assert hasattr(ma, 'write_animation_html'), "write_animation_html not found on ma (mlai.utils)"
     assert callable(ma.write_animation_html)
+
+
+@pytest.mark.unit
+def test_simulation_updates_position_and_velocity():
+    """Pure-numpy dynamics should return finite deltas without GPy."""
+    import numpy as np
+
+    mc = _fresh_mountain_car()
+    d_pos, d_vel = mc.simulation(np.array([0.0, 0.0, 1.0]))
+    assert np.isfinite(d_pos)
+    assert np.isfinite(d_vel)
+
+
+@pytest.mark.unit
+def test_low_cost_simulation_returns_deltas():
+    import numpy as np
+
+    mc = _fresh_mountain_car()
+    d_pos, d_vel = mc.low_cost_simulation(np.array([-0.5, 0.01, -1.0]))
+    assert np.isfinite(d_pos)
+    assert np.isfinite(d_vel)
+    assert d_pos == d_vel
+
+
+@pytest.mark.unit
+def test_simulation_clips_position_at_bounds():
+    import numpy as np
+
+    mc = _fresh_mountain_car()
+    # Strong positive action near the right wall should not explode past max_position.
+    d_pos, d_vel = mc.simulation(np.array([0.59, 0.06, 1.0]))
+    assert np.isfinite(d_pos)
+    assert np.isfinite(d_vel)

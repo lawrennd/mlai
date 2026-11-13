@@ -3,12 +3,13 @@ author: Neil Lawrence
 category: features
 created: '2025-07-16'
 id: 2025-07-16_plot-py-testing
-last_updated: '2026-09-29'
+last_updated: '2026-11-13'
 owner: Neil Lawrence
-priority: Medium
+priority: High
 related_cips:
 - '0002'
-status: Proposed
+- '000B'
+status: Completed
 tags:
 - backlog
 - features
@@ -51,10 +52,15 @@ The `plot.py` module currently has very low test coverage (8%) and needs compreh
 
 ## Related
 - CIP: 0002 (Comprehensive Test Framework)
-- Current Coverage: 8% (1906 statements, 1752 missed)
+- CIP: 000B (coverage campaign — Phase A owns the ≥80% plot gate)
+- Related task: `2026-11-13_cip000B-phaseA-plot-coverage`
+- Current Coverage: remasure under CIP-000B Phase 0 (was ~64% on CIP-000A branch)
 - Target Coverage: >80%
 
 ## Progress Updates
+
+### 2026-11-13
+Retargeted under CIP-000B Phase A. `plot.py` reached **81%** under the unit suite; ≥80% acceptance criterion met. Remaining uncovered lines are mostly multi-output / graphical-model / lagrange helpers — optional follow-on, not blocking this task. Status → Completed.
 
 ### 2025-07-16
 Task created with Proposed status.

@@ -4,7 +4,7 @@ created: "2026-11-13"
 id: "000B"
 last_updated: "2026-11-13"
 owner: Neil D. Lawrence
-status: Proposed
+status: In Progress
 compressed: false
 related_requirements:
 - "0002"
@@ -25,8 +25,8 @@ title: Raise package test coverage for teaching-critical surfaces
 ## Status
 
 - [x] Proposed - Initial idea documented
-- [ ] Accepted - Approved, ready to start work
-- [ ] In Progress - Actively being implemented
+- [x] Accepted - Approved, ready to start work
+- [x] In Progress - Actively being implemented
 - [ ] Implemented - Work complete, awaiting verification
 - [ ] Closed - Verified and complete
 - [ ] Rejected - Will not be implemented
@@ -144,13 +144,24 @@ Related HOW already in flight:
 ## Implementation Status
 
 - [x] Draft CIP (Proposed)
-- [ ] Accept CIP and create phase backlog tasks
-- [ ] Phase 0 baseline remasurement
-- [ ] Phase A `plot.py` ≥80%
-- [ ] Phase B mid modules
-- [ ] Phase C teaching scripts
+- [x] Accept CIP and create phase backlog tasks
+- [x] Phase 0 baseline remasurement
+- [x] Phase A `plot.py` ≥80%
+- [x] Phase B mid modules (already met on baseline; see progress)
+- [ ] Phase C teaching scripts (`mountain_car` still below 80%)
 - [ ] Phase D coverage floor (optional)
-- [ ] Package ≥85% verified in CI-equivalent run
+- [x] Package ≥85% verified in CI-equivalent run
+
+## Progress Updates
+
+### 2026-11-13
+Accepted and moved to In Progress after CIP-000A (PR #7) merged. Linked CIP-0002 residual plot-coverage item and existing `2025-07-16_plot-py-testing` backlog under this campaign. Phase backlog tasks created; Phase 0 remasurement started on post-ruff `main`.
+
+**Phase 0 baseline** (`uv run pytest tests/unit -m "not slow" --cov=mlai` on post-ruff `main`): **77%** overall; `plot.py` 68%; `gp_tutorial` 19%; `mountain_car` 14%. Mid modules already strong (`loss`/`optimisation` 100%, `hmc` 95%, `data` 92%) — Phase B target effectively pre-met.
+
+**First implementation pass** (same command after new tests): **85%** overall; `plot.py` **81%**; `gp_tutorial` **100%**; `mountain_car` 24%. Changes: always export `gp_tutorial` (no GPy gate); real `gp_tutorial` tests; mountain-car dynamics tests; unskip/rewrite plot helpers (`covariance_capacity`, `holdout_fit`/`loo_fit`/`cv_fit`, `basis`, `computing_covariance`, `kern_circular_sample`).
+
+Remaining for Phase C: `mountain_car` (GPy-heavy controllers/animation) toward ≥80%. Phase D coverage floor still deferred until that settles.
 
 ## References
 
