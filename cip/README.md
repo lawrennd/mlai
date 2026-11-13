@@ -17,3 +17,4 @@ Use `cip_template.md` to create new CIPs.
 | [0007](cip0007.md) | Unified Optimization Interface and Algorithms | In Progress |
 | [0008](cip0008.md) | Teachable Hamiltonian Monte Carlo Component (Neal) | Implemented |
 | [0009](cip0009.md) | Contributor packaging via uv (succeed Poetry) | Proposed |
+| [000A](cip000A.md) | Replace flake8 with ruff for linting | Proposed |
