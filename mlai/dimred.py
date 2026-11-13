@@ -215,15 +215,19 @@ def ppca_eig(Y, q):
     
     Y_cent = Y - Y.mean(0)
 
-    # Comute covariance
+    # Covariance is symmetric: use eigh so eigenvalues stay real.
+    # eigh returns ascending order; PPCA needs largest first.
     S = np.dot(Y_cent.T, Y_cent)/Y.shape[0]
-    lambd, U = np.linalg.eig(S)
+    lambd, U = np.linalg.eigh(S)
+    order = np.argsort(lambd)[::-1]
+    lambd = lambd[order]
+    U = U[:, order]
 
     # Choose number of eigenvectors
     sigma2 = np.sum(lambd[q:])/(Y.shape[1]-q)
     l = np.sqrt(lambd[:q]-sigma2)
     W = U[:, :q]*l[None, :]
-    return W, sigma2
+    return W, float(sigma2)
 
 def ppca_svd(Y, q, center=True):
     """Probabilistic PCA through singular value decomposition"""

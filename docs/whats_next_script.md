@@ -38,13 +38,13 @@ You can install everything needed using:
    ./scripts/run-python-tests.sh
    ```
 
-3. Using the pyproject.toml file (if you have Poetry installed):
+3. Using the pyproject.toml file (if you have uv installed):
    ```bash
-   # Install Poetry if you don't have it
-   curl -sSL https://install.python-poetry.org | python3 -
-   
+   # Install uv if you don't have it
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+
    # Install dependencies
-   poetry install
+   uv sync
    ```
 
 ## Usage

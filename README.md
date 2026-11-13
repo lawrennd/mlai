@@ -30,9 +30,9 @@ MLAI was originally developed to support the "Machine Learning and Adaptive Inte
 
 ## 🚀 Installation
 
-### With Poetry (recommended)
+### With uv (recommended for contributors)
 ```bash
-poetry install
+uv sync
 ```
 
 ### With pip

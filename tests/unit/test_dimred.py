@@ -433,7 +433,9 @@ class TestDimensionalityReduction:
         
         # Check shapes
         assert W.shape == (5, 2)  # n_features x q
-        assert isinstance(sigma2, (int, float))
+        assert isinstance(sigma2, (int, float, np.floating))
+        assert np.isrealobj(W)
+        assert np.isrealobj(np.asarray(sigma2))
         
         # Check that results are finite (allow for some numerical issues)
         assert np.all(np.isfinite(W)) or np.any(np.isfinite(W))  # At least some should be finite
