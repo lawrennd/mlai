@@ -4,7 +4,7 @@ Utilities Module
 This module contains utility functions including:
 - Optimization utilities (finite_difference_gradient, finite_difference_jacobian, verify_gradient_implementation)
 - File manipluation utilities (load_pgm)
-- Mathematical utilities (radial_multivariate, dist2)
+- Mathematical utilities (dist2)
 - Plotting utilities (write_figure_caption)
 
 TODO: Extract from mlai.py during refactoring
@@ -24,7 +24,6 @@ __all__ = [
     'load_pgm',
     
     # Mathematical Utilities
-    'radial_multivariate',
     'dist2',
     
     # Plotting Utilities

@@ -3,8 +3,6 @@ Neural Networks Module
 
 This module contains neural network implementations including:
 - SimpleNeuralNetwork
-- SimpleDropoutNeuralNetwork  
-- NonparametricDropoutNeuralNetwork
 - NeuralNetwork
 - Activation functions (ReLUActivation, SigmoidActivation, LinearActivation, SoftReLUActivation)
 - Perceptron functionality
@@ -17,8 +15,6 @@ from .models import Model, ProbModel, MapModel, ProbMapModel
 __all__ = [
     # Neural Network Classes
     'SimpleNeuralNetwork',
-    'SimpleDropoutNeuralNetwork',
-    'NonparametricDropoutNeuralNetwork', 
     'NeuralNetwork',
     'LayeredNeuralNetwork',
     
