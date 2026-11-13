@@ -142,17 +142,28 @@ class TestWorkflowScript:
         stderr = result.stderr
         if stderr:
             # Allow for overflow warnings in logistic regression (expected)
-            allowed_warnings = [
+            # Headless CI uses Agg; show/pause emit UserWarnings plus stack frames.
+            allowed_fragments = (
                 "overflow encountered in exp",
                 "RuntimeWarning",
-                "g = 1./(1+np.exp(f))",  # This is the actual warning line
-                "proba = 1. / (1 + np.exp(-f))"  # Another expected warning line
-            ]
-            
-            for line in stderr.split('\n'):
-                if line.strip():
-                    is_allowed = any(warning in line for warning in allowed_warnings)
-                    assert is_allowed, f"Unexpected error/warning: {line}"
+                "UserWarning",
+                "FigureCanvasAgg",
+                "plt.show",
+                "plt.pause",
+                "g = 1./(1+np.exp(f))",
+                "proba = 1. / (1 + np.exp(-f))",
+            )
+            unexpected = []
+            for line in stderr.splitlines():
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                if any(fragment in line for fragment in allowed_fragments):
+                    continue
+                if stripped.startswith("File ") or ".py:" in stripped:
+                    continue
+                unexpected.append(line)
+            assert not unexpected, "Unexpected stderr:\n" + "\n".join(unexpected)
     
     def test_workflow_script_imports_correctly(self):
         """Test that the workflow script can be imported without errors."""

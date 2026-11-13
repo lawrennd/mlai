@@ -1,30 +1,31 @@
 Installation Guide
 ==================
 
-MLAI can be installed using either Poetry (recommended) or pip.
+MLAI can be installed with uv (recommended for contributors) or pip.
 
 Prerequisites
 ------------
 
 - Python 3.11 or higher
-- pip or Poetry
+- `uv <https://docs.astral.sh/uv/>`_ or pip
 
-Installation with Poetry
------------------------
+Installation with uv
+--------------------
 
-Poetry is the recommended way to install MLAI as it manages dependencies automatically:
+uv is the recommended way to install MLAI for development. It creates a locked
+virtual environment from ``uv.lock``:
 
 .. code-block:: bash
 
-   # Install Poetry if you don't have it
-   curl -sSL https://install.python-poetry.org | python3 -
-   
+   # Install uv if you do not have it
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+
    # Clone the repository
    git clone https://github.com/lawrennd/mlai.git
    cd mlai
-   
-   # Install dependencies
-   poetry install
+
+   # Install runtime and development dependencies
+   uv sync
 
 Installation with pip
 --------------------
@@ -36,7 +37,7 @@ You can also install MLAI using pip:
    # Clone the repository
    git clone https://github.com/lawrennd/mlai.git
    cd mlai
-   
+
    # Install in development mode
    pip install -e .
 
@@ -47,11 +48,16 @@ For additional functionality, you can install optional dependencies:
 
 .. code-block:: bash
 
-   # For mountain car demo
+   # For mountain car demo or GP tutorials
    pip install GPy
-   
-   # For GP tutorials
-   pip install GPy
+
+   # For graphical-model diagrams
+   pip install daft-pgm
+
+   # Or with uv extras
+   uv sync --extra mountain-car
+   uv sync --extra gp-tutorials
+   uv sync --extra graphical-models
 
 Verifying Installation
 ---------------------
@@ -66,4 +72,4 @@ To verify that MLAI is installed correctly:
 Next Steps
 ----------
 
-After installation, check out the :doc:`quickstart` guide to get started with MLAI. 
+After installation, check out the :doc:`quickstart` guide to get started with MLAI.
