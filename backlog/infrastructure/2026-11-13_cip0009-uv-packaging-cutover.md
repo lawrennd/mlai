@@ -59,4 +59,4 @@ contents locally.
 
 Task created after CIP-0009 Accept. Implementation completed on
 `cip0009-uv-packaging`: metadata, workflows, docs, lockfile, and local
-verification. Awaiting PR CI before CIP close.
+verification. PR #6 CI green (tests + lint on 3.11/3.12); CIP-0009 Closed.
