@@ -174,7 +174,8 @@ def v_simulation(state):
     new_velocity = velocity + power*action - 0.0025*np.cos(3*position)
     new_velocity = np.clip(new_velocity, -max_speed, max_speed)
     d_velocity = new_velocity - velocity
-    return np.asarray([d_velocity])[np.newaxis, :]
+    # Scalar: plot_control assigns into a flat float array element-wise.
+    return float(d_velocity)
 
 class plot_control(object):
     def __init__(self, velocity_emulator, fidelity='single'):

@@ -10,6 +10,8 @@ omit =
     setup.py
 
 [report]
+# CIP-000B Phase D: floor after Phases A–C stabilised package line cover ≥85%.
+fail_under = 85
 exclude_lines =
     pragma: no cover
     def __repr__
