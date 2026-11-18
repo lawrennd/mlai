@@ -15,6 +15,7 @@ import inspect
 import numpy as np
 import scipy.linalg as la
 from .models import ProbMapModel
+from .parameters import POSITIVE, Param, ParamGroup
 
 
 __all__ = [
@@ -58,6 +59,11 @@ class GP(ProbMapModel):
     """
     Gaussian Process model.
 
+    Trainable noise and scalar kernel hyperparameters use Paramz-lite
+    ``+ve`` transforms (:meth:`param_group`). Shared optimisers see a packed
+    unconstrained vector via :attr:`parameters`; ``print(gp)`` shows
+    ``Name | Value | Constraint``.
+
     :param X: Input values
     :type X: numpy.ndarray
     :param y: Target values
@@ -68,6 +74,11 @@ class GP(ProbMapModel):
     :type kernel: function
     :param jitter: Extra diagonal on ``K_y`` (default ``1e-8``, matching
         GPy exact inference ``variance + 1e-8``)
+
+    Examples
+    --------
+    >>> # print(gp)  # Name | Value | Constraint table
+    >>> # from mlai import SCG; SCG().optimize(gp, max_iters=50)
     """
     def __init__(self, X, y, sigma2, kernel, jitter=1e-8):
         self.sigma2 = float(sigma2)
@@ -140,40 +151,67 @@ class GP(ProbMapModel):
         """Ordered names for the shared optimiser surface: noise then kernel."""
         return ['sigma2'] + self._scalar_kernel_param_names()
 
+    def _kernel_display_name(self):
+        """Short kernel path segment for Paramz-style display."""
+        if getattr(self.kernel, 'name', None):
+            return str(self.kernel.name)
+        if getattr(self.kernel, 'shortname', None):
+            return str(self.kernel.shortname)
+        fname = getattr(self.kernel.function, '__name__', 'kern')
+        return fname.replace('_cov', '').replace('exponentiated_quadratic', 'rbf')
+
+    def param_group(self):
+        """
+        Paramz-lite group mirroring natural ``sigma2`` and scalar kernel params.
+
+        All entries use the ``+ve`` (log/exp) transform. Natural attributes
+        ``self.sigma2`` and ``kernel.parameters`` remain the source of truth;
+        this group is built on demand for packing, gradients, and display.
+        """
+        root = 'gp'
+        kern = self._kernel_display_name()
+        group = ParamGroup(name=root)
+        group.add(
+            Param('sigma2', self.sigma2, transform=POSITIVE, path=f'{root}.sigma2')
+        )
+        for name in self._scalar_kernel_param_names():
+            group.add(
+                Param(
+                    name,
+                    float(self.kernel.parameters[name]),
+                    transform=POSITIVE,
+                    path=f'{root}.{kern}.{name}',
+                )
+            )
+        return group
+
     @property
     def parameters(self):
         """
-        Trainable hyperparameters as a 1D vector in log space.
+        Trainable hyperparameters as a 1D unconstrained vector.
 
         Layout is ``[log(sigma2), log(theta_1), ...]`` for each scalar kernel
-        hyperparameter in ``kernel.parameters`` insertion order. Log space keeps
-        variances and lengthscales positive under unconstrained SGD/Adam steps.
+        hyperparameter in ``kernel.parameters`` insertion order (Paramz-lite
+        ``+ve`` transforms via :meth:`param_group`).
 
         :returns: 1D array of unconstrained parameters
         :rtype: numpy.ndarray
         """
-        values = [np.log(self.sigma2)]
-        for name in self._scalar_kernel_param_names():
-            values.append(np.log(float(self.kernel.parameters[name])))
-        return np.asarray(values, dtype=float)
+        return self.param_group().pack()
 
     @parameters.setter
     def parameters(self, value):
         """
-        Set trainable hyperparameters from a 1D log-space vector.
+        Set trainable hyperparameters from a 1D unconstrained vector.
 
         :param value: Parameters matching :meth:`parameters` layout
         :type value: numpy.ndarray
         """
-        value = np.asarray(value, dtype=float).ravel()
-        names = self._trainable_param_names()
-        if value.size != len(names):
-            raise ValueError(
-                f"Expected {len(names)} parameters {names}, got shape {value.shape}"
-            )
-        self.sigma2 = float(np.exp(value[0]))
-        for i, name in enumerate(names[1:], start=1):
-            self.kernel.parameters[name] = float(np.exp(value[i]))
+        group = self.param_group()
+        values = group.unpack(value)
+        self.sigma2 = float(values[0])
+        for name, natural in zip(self._scalar_kernel_param_names(), values[1:]):
+            self.kernel.parameters[name] = float(natural)
         self.update_kernel_matrix()
 
     def _nll_gradient_natural(self):
@@ -213,16 +251,21 @@ class GP(ProbMapModel):
     @property
     def gradients(self):
         """
-        Gradients of :meth:`objective` w.r.t. :attr:`parameters` (log space).
+        Gradients of :meth:`objective` w.r.t. :attr:`parameters` (unconstrained).
 
-        Chain rule: ``∂NLL/∂log θ = θ · ∂NLL/∂θ``.
+        Chain rule through Paramz-lite ``+ve`` transforms:
+        ``∂NLL/∂log θ = θ · ∂NLL/∂θ``.
 
         :returns: 1D array of gradients matching :attr:`parameters`
         :rtype: numpy.ndarray
         """
-        natural = self._nll_gradient_natural()
-        scale = np.exp(self.parameters)
-        return natural * scale
+        return self.param_group().scale_natural_gradients(self._nll_gradient_natural())
+
+    def __repr__(self):
+        return repr(self.param_group())
+
+    def _repr_html_(self):
+        return self.param_group()._repr_html_()
 
     def update_nll(self):
         """

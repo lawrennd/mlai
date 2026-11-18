@@ -4,7 +4,7 @@ created: "2026-11-18"
 id: "000F"
 last_updated: "2026-11-18"
 owner: Neil D. Lawrence
-status: Proposed
+status: Implemented
 compressed: false
 related_requirements:
 - "0007"
@@ -32,9 +32,9 @@ title: Paramz-lite named parameters and teaching display
 ## Status
 
 - [x] Proposed
-- [ ] Accepted
-- [ ] In Progress
-- [ ] Implemented
+- [x] Accepted
+- [x] In Progress
+- [x] Implemented
 - [ ] Closed
 - [ ] Rejected
 - [ ] Deferred
@@ -125,12 +125,13 @@ opt.optimize(gp)   # unchanged: model.parameters / model.gradients
 ## Implementation Status
 
 - [x] CIP drafted (Proposed)
-- [ ] Accepted
-- [ ] `Param` / group + display helpers
-- [ ] `GP` migrated
-- [ ] `SparseGP` migrated
-- [ ] Optimiser regression tests green
-- [ ] Exports / teaching docstring examples
+- [x] Accepted
+- [x] `Param` / group + display helpers (`mlai/parameters.py`)
+- [x] `GP` migrated
+- [x] `SparseGP` migrated
+- [x] Optimiser regression tests green
+- [x] Exports / teaching `print(model)` via `__repr__` / `_repr_html_`
+
 
 ## References
 

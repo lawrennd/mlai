@@ -12,6 +12,7 @@ import inspect
 import numpy as np
 
 from .models import ProbMapModel
+from .parameters import POSITIVE, Param, ParamGroup
 
 __all__ = [
     'lq_factor',
@@ -210,10 +211,18 @@ class SparseGP(ProbMapModel):
         self._neg_bound = float(neg_bound)
 
     # ------------------------------------------------------------------
-    # Shared optimiser surface
+    # Shared optimiser surface (Paramz-lite)
     # ------------------------------------------------------------------
+    def _kernel_display_name(self):
+        if getattr(self.kernel, 'name', None):
+            return str(self.kernel.name)
+        if getattr(self.kernel, 'shortname', None):
+            return str(self.kernel.shortname)
+        fname = getattr(self.kernel.function, '__name__', 'kern')
+        return fname.replace('_cov', '').replace('exponentiated_quadratic', 'rbf')
+
     def _param_layout(self):
-        """Describe flat log-space / unconstrained parameter blocks."""
+        """Describe flat unconstrained parameter blocks."""
         blocks = [('sigma2', 1)]
         for name in self._scalar_kernel_param_names():
             blocks.append((f'kernel:{name}', 1))
@@ -224,12 +233,35 @@ class SparseGP(ProbMapModel):
         return blocks
 
     def _expected_parameter_size(self):
-        expected = 1 + len(self._scalar_kernel_param_names())
+        return self.param_group().size
+
+    def param_group(self):
+        """
+        Paramz-lite group: ``+ve`` noise/kernel; unconstrained ``Z`` / ``X``.
+
+        Natural attributes remain the source of truth; the group is built on
+        demand for packing, gradient scaling, and display.
+        """
+        root = 'sparse_gp'
+        kern = self._kernel_display_name()
+        group = ParamGroup(name=root)
+        group.add(
+            Param('sigma2', self.sigma2, transform=POSITIVE, path=f'{root}.sigma2')
+        )
+        for name in self._scalar_kernel_param_names():
+            group.add(
+                Param(
+                    name,
+                    float(self.kernel.parameters[name]),
+                    transform=POSITIVE,
+                    path=f'{root}.{kern}.{name}',
+                )
+            )
         if self.optimize_Z:
-            expected += self.Z.size
+            group.add(Param('Z', self.Z, transform=None, path=f'{root}.Z'))
         if self.latent_X:
-            expected += self.X.size
-        return expected
+            group.add(Param('X', self.X, transform=None, path=f'{root}.X'))
+        return group
 
     @property
     def parameters(self):
@@ -238,32 +270,23 @@ class SparseGP(ProbMapModel):
 
         Layout: ``[log σ², log θ…, optional vec(Z), optional vec(X)]``.
         """
-        values = [np.log(self.sigma2)]
-        for name in self._scalar_kernel_param_names():
-            values.append(np.log(float(self.kernel.parameters[name])))
-        if self.optimize_Z:
-            values.extend(self.Z.ravel().tolist())
-        if self.latent_X:
-            values.extend(self.X.ravel().tolist())
-        return np.asarray(values, dtype=float)
+        return self.param_group().pack()
 
     @parameters.setter
     def parameters(self, value):
-        value = np.asarray(value, dtype=float).ravel()
-        expected = self._expected_parameter_size()
-        if value.size != expected:
-            raise ValueError(f'Expected {expected} parameters, got {value.size}')
+        group = self.param_group()
+        values = group.unpack(value)
         idx = 0
-        self.sigma2 = float(np.exp(value[idx]))
+        self.sigma2 = float(values[idx])
         idx += 1
         for name in self._scalar_kernel_param_names():
-            self.kernel.parameters[name] = float(np.exp(value[idx]))
+            self.kernel.parameters[name] = float(values[idx])
             idx += 1
         if self.optimize_Z:
-            self.Z = value[idx:idx + self.Z.size].reshape(self.Z.shape).copy()
-            idx += self.Z.size
+            self.Z = np.asarray(values[idx], dtype=float).reshape(self.Z.shape).copy()
+            idx += 1
         if self.latent_X:
-            self.X = value[idx:idx + self.X.size].reshape(self.X.shape).copy()
+            self.X = np.asarray(values[idx], dtype=float).reshape(self.X.shape).copy()
         self._update_bound()
 
     def objective(self):
@@ -395,15 +418,16 @@ class SparseGP(ProbMapModel):
         """
         Gradients of :meth:`objective` w.r.t. :attr:`parameters`.
 
-        Log-space chain rule for ``σ²`` and kernel hyperparameters; natural
-        scale for ``Z`` (and ``X`` when ``latent_X``).
+        Paramz-lite ``+ve`` chain rule for ``σ²`` and kernel hyperparameters;
+        identity map for ``Z`` (and ``X`` when ``latent_X``).
         """
-        natural = self._nll_gradient_natural()
-        params = self.parameters
-        n_log = 1 + len(self._scalar_kernel_param_names())
-        scale = np.ones_like(natural)
-        scale[:n_log] = np.exp(params[:n_log])
-        return natural * scale
+        return self.param_group().scale_natural_gradients(self._nll_gradient_natural())
+
+    def __repr__(self):
+        return repr(self.param_group())
+
+    def _repr_html_(self):
+        return self.param_group()._repr_html_()
 
     # ------------------------------------------------------------------
     # Prediction (DTC-style posterior at inducing)
