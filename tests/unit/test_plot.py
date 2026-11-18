@@ -225,6 +225,59 @@ class TestModelOutputFunctions:
             result = plot.model_sample(self.mock_model, ax=self.mock_ax)
             assert result == self.mock_ax
 
+
+class TestModelOutputMlaiGP:
+    """CIP-000E Phase 0: model_output works with mlai GP / SparseGP."""
+
+    def test_model_output_with_exact_gp(self):
+        """Exact GP uses model.y and column predictive shapes."""
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        from mlai import GP, Kernel, eq_cov
+
+        rng = np.random.default_rng(0)
+        x = np.linspace(-1, 1, 8)[:, None]
+        y = np.sin(x[:, 0]) + 0.05 * rng.normal(size=x.shape[0])
+        model = GP(x, y, sigma2=0.05, kernel=Kernel(eq_cov, lengthscale=0.5, variance=1.0))
+        fig, ax = plt.subplots()
+        result = plot.model_output(model, ax=ax)
+        assert result is ax
+        plt.close(fig)
+
+    def test_model_output_with_sparse_gp_inducing_markers(self):
+        """SparseGP 1D predict returns and Z markers are handled."""
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        from mlai import Kernel, SparseGP, eq_cov
+
+        rng = np.random.default_rng(1)
+        x = np.linspace(0, 5, 20)[:, None]
+        y = np.sin(x[:, 0]) + 0.05 * rng.normal(size=x.shape[0])
+        z = np.linspace(0.5, 4.5, 4)[:, None]
+        model = SparseGP(
+            x, y, z, sigma2=0.05, kernel=Kernel(eq_cov, lengthscale=1.0, variance=1.0)
+        )
+        fig, ax = plt.subplots()
+        result = plot.model_output(model, ax=ax)
+        assert result is ax
+        # One data scatter + mean/band artists + inducing markers
+        assert any(
+            getattr(line, 'get_marker', lambda: None)() == '^'
+            for line in ax.get_lines()
+        )
+        plt.close(fig)
+
+    def test_model_observation_matrix_prefers_y(self):
+        """mlai models without Y still expose targets via y."""
+        from types import SimpleNamespace
+
+        model = SimpleNamespace(y=np.array([1.0, 2.0, 3.0]))
+        Y = plot._model_observation_matrix(model)
+        assert Y.shape == (3, 1)
+        np.testing.assert_allclose(Y[:, 0], [1.0, 2.0, 3.0])
+
 class TestPerceptronFunctions:
     """Test perceptron-related functions."""
     

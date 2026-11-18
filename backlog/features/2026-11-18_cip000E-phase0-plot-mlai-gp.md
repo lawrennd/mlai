@@ -7,7 +7,7 @@ owner: Neil D. Lawrence
 priority: High
 related_cips:
 - "000E"
-status: Ready
+status: Completed
 tags:
 - backlog
 - features
@@ -26,11 +26,11 @@ Make `mlai.plot.model_output` and `model_sample` work with `mlai.GP` and `mlai.S
 
 ## Acceptance Criteria
 
-- [ ] Targets read from `model.y` or `model.Y` (normalised to 2D columns)
-- [ ] Predict mean/variance 1D returns are reshaped for plotting
-- [ ] `gpplot` is used without gating on `GPY_AVAILABLE`
-- [ ] Inducing markers still appear when `model.Z` is present
-- [ ] Unit tests cover a tiny `GP` and `SparseGP` path (GPy not required)
+- [x] Targets read from `model.y` or `model.Y` (normalised to 2D columns)
+- [x] Predict mean/variance 1D returns are reshaped for plotting
+- [x] `gpplot` is used without gating on `GPY_AVAILABLE`
+- [x] Inducing markers still appear when `model.Z` is present
+- [x] Unit tests cover a tiny `GP` and `SparseGP` path (GPy not required)
 
 ## Implementation Notes
 
@@ -44,3 +44,6 @@ Blocker for Batch A/B snippet migration. Keep GPy models working for unmigrated 
 
 ### 2026-11-18
 Task created (Ready) with CIP-000E acceptance.
+
+### 2026-11-18
+Implemented plot helpers and unit tests; marked Completed.

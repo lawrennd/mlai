@@ -4527,6 +4527,68 @@ def three_pillars_innovation(directory='./diagrams'):
     matplotlib.rc('font', weight=orig_font_weight)
 
 
+def _as_2d_columns(values):
+    """Return a float array with shape ``(N, D)``."""
+    arr = np.asarray(values, dtype=float)
+    if arr.ndim == 1:
+        return arr[:, np.newaxis]
+    return arr
+
+
+def _is_numeric_ndarray(values):
+    return isinstance(values, np.ndarray)
+
+
+def _model_observation_matrix(model):
+    """
+    Training targets for GP plotting as an ``(N, D)``-style matrix.
+
+    Prefers GPy-style ``model.Y`` when it is a numeric ndarray, otherwise
+    mlai-style ``model.y``. Falls back to ``model.Y`` for test doubles that
+    only implement attribute access.
+    """
+    Y = getattr(model, 'Y', None)
+    if _is_numeric_ndarray(Y):
+        return _as_2d_columns(Y)
+    y = getattr(model, 'y', None)
+    if _is_numeric_ndarray(y):
+        return _as_2d_columns(y)
+    if Y is not None:
+        return Y
+    if y is not None:
+        return y
+    raise AttributeError('GP plot helpers need model.Y or model.y')
+
+
+def _normalize_predict_mean_var(mean, var):
+    """Ensure predictive mean/variance are column matrices ``(N*, D)``."""
+    return _as_2d_columns(mean), _as_2d_columns(var)
+
+
+def _plot_gp_mean_band(ax, xt, yt_mean, yt_sd, output_dim=0):
+    """Draw posterior mean ± 2 sd using ``gpplot`` when possible."""
+    x_flat = np.asarray(xt, dtype=float).flatten()
+    mean = np.asarray(yt_mean[:, output_dim], dtype=float).flatten()
+    sd = np.asarray(yt_sd, dtype=float).flatten()
+    try:
+        import mlai.gp_tutorial as gpt
+        gpt.gpplot(
+            x_flat,
+            mean,
+            mean - 2 * sd,
+            mean + 2 * sd,
+            ax=ax,
+        )
+    except Exception:
+        ax.plot(x_flat, mean, 'b-', linewidth=2)
+        ax.fill_between(
+            x_flat,
+            mean - 2 * sd,
+            mean + 2 * sd,
+            alpha=0.3,
+        )
+
+
 def model_output(model, output_dim=0, scale=1.0, offset=0.0, ax=None, xlabel='$x$', ylabel='$y$', xlim=None, ylim=None, fontsize=20, portion=0.2):
     """Plot the output of a GP.
     :param model: the model for the output plotting.
@@ -4542,7 +4604,8 @@ def model_output(model, output_dim=0, scale=1.0, offset=0.0, ax=None, xlabel='$x
     :param portion: What proportion of the input range to put outside the data."""
     if ax is None:
         fig, ax = plt.subplots(figsize=big_figsize)
-    ax.plot(model.X.flatten(), model.Y[:, output_dim]*scale + offset, 'r.',markersize=10)
+    Y = _model_observation_matrix(model)
+    ax.plot(model.X.flatten(), Y[:, output_dim]*scale + offset, 'r.',markersize=10)
     ax.set_xlabel(xlabel, fontsize=fontsize)
     ax.set_ylabel(ylabel, fontsize=fontsize)
     xt = pred_range(model.X, portion=portion)
@@ -4550,35 +4613,34 @@ def model_output(model, output_dim=0, scale=1.0, offset=0.0, ax=None, xlabel='$x
         xlim = [np.min(xt.flatten()), np.max(xt.flatten())]
 
     yt_mean, yt_var = model.predict(xt)
-    yt_mean = yt_mean*scale + offset
-    yt_var *= scale*scale
-    yt_sd = np.sqrt(yt_var)
-    if yt_sd.shape[1]>1:
-        yt_sd = yt_sd[:, output_dim]
-
-    if GPY_AVAILABLE:
-        import mlai.gp_tutorial as gpt
-        _ = gpt.gpplot(xt.flatten(),
-                           yt_mean[:, output_dim],
-                           yt_mean[:, output_dim]-2*yt_sd.flatten(),
-                           yt_mean[:, output_dim]+2*yt_sd.flatten(),
-                           ax=ax)
+    if _is_numeric_ndarray(yt_mean) or _is_numeric_ndarray(yt_var):
+        yt_mean, yt_var = _normalize_predict_mean_var(yt_mean, yt_var)
+        yt_mean = yt_mean*scale + offset
+        yt_var = yt_var*scale*scale
+        yt_sd = np.sqrt(yt_var)
+        if yt_sd.shape[1] > 1:
+            yt_sd = yt_sd[:, output_dim]
+        else:
+            yt_sd = yt_sd[:, 0]
+        _plot_gp_mean_band(ax, xt, yt_mean, yt_sd, output_dim=output_dim)
     else:
-        ax.plot(xt.flatten(), yt_mean[:, output_dim], 'b-', linewidth=2)
-        ax.fill_between(xt.flatten(),
-                       (yt_mean[:, output_dim]-2*yt_sd.flatten()).flatten(),
-                       (yt_mean[:, output_dim]+2*yt_sd.flatten()).flatten(),
-                       alpha=0.3)
-
+        # Test doubles / non-array predict outputs: keep legacy indexing path.
+        yt_mean = yt_mean*scale + offset
+        yt_var = yt_var*scale*scale
+        yt_sd = np.sqrt(yt_var)
+        if yt_sd.shape[1] > 1:
+            yt_sd = yt_sd[:, output_dim]
+        _plot_gp_mean_band(ax, xt, yt_mean, yt_sd, output_dim=output_dim)
 
     if ylim is None:
         ylim=ax.get_ylim()
     else:
         ax.set_ylim(ylim)
 
-    if hasattr(model, 'Z'):
-        z = model.Z.flatten()
-        ax.plot(z, np.full_like(z, ylim[0]), 'k^', markersize='20')
+    Z = getattr(model, 'Z', None)
+    if _is_numeric_ndarray(Z):
+        z = np.asarray(Z, dtype=float).flatten()
+        ax.plot(z, np.full_like(z, ylim[0]), 'k^', markersize=20)
 
     ax.autoscale(enable=True, axis='x', tight=True)
     return ax
@@ -4596,30 +4658,31 @@ def model_sample(model, output_dim=0, scale=1.0, offset=0.0,
 
     xt = pred_range(model.X, portion=portion)
     yt_mean, yt_var = model.predict(xt)
-    yt_mean = yt_mean*scale + offset
-    yt_var *= scale*scale
-    yt_sd=np.sqrt(yt_var)
-    if yt_sd.shape[1]>1:
-        yt_sd = yt_sd[:, output_dim]
-
-    if GPY_AVAILABLE:
-        import mlai.gp_tutorial as gpt
-        _ = gpt.gpplot(xt.flatten(),
-                   yt_mean[:, output_dim],
-                   yt_mean[:, output_dim]-2*yt_sd.flatten(),
-                   yt_mean[:, output_dim]+2*yt_sd.flatten(),
-                   ax=ax)
+    if _is_numeric_ndarray(yt_mean) or _is_numeric_ndarray(yt_var):
+        yt_mean, yt_var = _normalize_predict_mean_var(yt_mean, yt_var)
+        yt_mean = yt_mean*scale + offset
+        yt_var = yt_var*scale*scale
+        yt_sd = np.sqrt(yt_var)
+        if yt_sd.shape[1] > 1:
+            yt_sd = yt_sd[:, output_dim]
+        else:
+            yt_sd = yt_sd[:, 0]
+        _plot_gp_mean_band(ax, xt, yt_mean, yt_sd, output_dim=output_dim)
     else:
-        ax.plot(xt.flatten(), yt_mean[:, output_dim], 'b-', linewidth=2)
-        ax.fill_between(xt.flatten(),
-                       (yt_mean[:, output_dim]-2*yt_sd.flatten()).flatten(),
-                       (yt_mean[:, output_dim]+2*yt_sd.flatten()).flatten(),
-                       alpha=0.3)
+        yt_mean = yt_mean*scale + offset
+        yt_var = yt_var*scale*scale
+        yt_sd = np.sqrt(yt_var)
+        if yt_sd.shape[1] > 1:
+            yt_sd = yt_sd[:, output_dim]
+        _plot_gp_mean_band(ax, xt, yt_mean, yt_sd, output_dim=output_dim)
     for i in range(samps):
         xt = pred_range(model.X, portion=portion, randomize=True)
         a = model.posterior_sample(xt)
+        if _is_numeric_ndarray(a) and a.ndim == 1:
+            a = a[:, np.newaxis]
         ax.plot(xt.flatten(), a[:, output_dim]*scale+offset, 'b.',markersize=3, alpha=0.2)
-    ax.plot(model.X.flatten(), model.Y[:, output_dim]*scale+offset, 'r.',markersize=10)
+    Y = _model_observation_matrix(model)
+    ax.plot(model.X.flatten(), Y[:, output_dim]*scale+offset, 'r.',markersize=10)
 
     if xlim is not None:
         ax.set_xlim(xlim)
@@ -4628,9 +4691,16 @@ def model_sample(model, output_dim=0, scale=1.0, offset=0.0,
     if ylim is not None:
         ax.set_ylim(ylim)
 
-    if hasattr(model, 'Z'):
-        ylim = ax.get_ylim()
-        ax.plot(model.Z, np.ones(model.Z.shape)*ax.get_ylim()[0], marker='^', linestyle=None, markersize=20)
+    Z = getattr(model, 'Z', None)
+    if _is_numeric_ndarray(Z):
+        ax_ylim = ax.get_ylim()
+        ax.plot(
+            np.asarray(Z, dtype=float).flatten(),
+            np.full(np.asarray(Z).size, ax_ylim[0]),
+            marker='^',
+            linestyle='None',
+            markersize=20,
+        )
     return ax
 
 def multiple_optima(ax=None, gene_number=937, resolution=80, model_restarts=10, seed=10000, max_iters=300, optimize=True, fontsize=20, directory='./diagrams'):

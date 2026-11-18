@@ -4,7 +4,7 @@ created: "2026-11-18"
 id: "000E"
 last_updated: "2026-11-18"
 owner: Neil D. Lawrence
-status: Accepted
+status: In Progress
 compressed: false
 related_requirements:
 - "0007"
@@ -33,7 +33,7 @@ title: Migrate GP teaching snippets from GPy to mlai
 
 - [x] Proposed - Initial idea documented
 - [x] Accepted - Approved, ready to start work
-- [ ] In Progress - Actively being implemented
+- [x] In Progress - Actively being implemented
 - [ ] Implemented - Work complete, awaiting verification
 - [ ] Closed - Verified and complete
 - [ ] Rejected - Will not be implemented
@@ -168,7 +168,7 @@ This is the primary classroom payoff of CIP-000C + CIP-000D.
 
 ## Implementation Status
 
-- [ ] Phase 0: `model_output` / `model_sample` accept `mlai.GP` and `SparseGP`
+- [x] Phase 0: `model_output` / `model_sample` accept `mlai.GP` and `SparseGP`
 - [ ] Batch A: exact GP regression snippets migrated
 - [ ] Batch B: `inducing-variables-demo.md` migrated
 - [ ] Smoke-check representative includes / builds
