@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Tests for optimization module in mlai.
+Tests for optimisation module in mlai.
 
-This module tests the optimization algorithms and training utilities.
+This module tests the optimisation algorithms and training utilities.
 """
 
 import unittest
@@ -31,7 +31,7 @@ class TestOptimiserBaseClass(unittest.TestCase):
 
 
 class TestSGD(unittest.TestCase):
-    """Test suite for SGD optimizer."""
+    """Test suite for SGD optimiser."""
     
     def test_sgd_instantiation(self):
         """Test that SGD can be instantiated with default parameters."""
@@ -114,7 +114,7 @@ class TestSGD(unittest.TestCase):
 
 
 class TestAdam(unittest.TestCase):
-    """Test suite for Adam optimizer."""
+    """Test suite for Adam optimiser."""
     
     def test_adam_instantiation(self):
         """Test that Adam can be instantiated with default parameters."""
@@ -238,7 +238,7 @@ class TestTrainModel(unittest.TestCase):
     """Test suite for train_model function."""
     
     def test_train_model_with_sgd(self):
-        """Test train_model with SGD optimizer."""
+        """Test train_model with SGD optimiser."""
         # Create a simple linear model
         from mlai import LM, MeanSquaredError, SGD, Basis, linear
         
@@ -267,7 +267,7 @@ class TestTrainModel(unittest.TestCase):
         self.assertLess(losses[-1], losses[0])
     
     def test_train_model_with_adam(self):
-        """Test train_model with Adam optimizer."""
+        """Test train_model with Adam optimiser."""
         from mlai import NeuralNetwork, ReLUActivation, LinearActivation, MeanSquaredError, Adam
         
         np.random.seed(42)
@@ -370,10 +370,10 @@ class TestTrainModel(unittest.TestCase):
 
 
 class TestOptimisationIntegration(unittest.TestCase):
-    """Integration tests for optimization with different model types."""
+    """Integration tests for optimisation with different model types."""
     
     def test_sgd_with_linear_model(self):
-        """Test SGD optimization with linear model."""
+        """Test SGD optimisation with linear model."""
         from mlai import LM, Basis, linear, SGD, MeanSquaredError
         
         np.random.seed(42)
@@ -403,7 +403,7 @@ class TestOptimisationIntegration(unittest.TestCase):
         self.assertLess(final_loss, initial_loss)
     
     def test_adam_with_neural_network(self):
-        """Test Adam optimization with neural network."""
+        """Test Adam optimisation with neural network."""
         from mlai import NeuralNetwork, ReLUActivation, LinearActivation, Adam, MeanSquaredError
         
         np.random.seed(42)
@@ -457,9 +457,9 @@ class TestSCG(unittest.TestCase):
         self.assertTrue(hasattr(mlai, 'SCG'))
         self.assertIsInstance(mlai.SCG(), mlai.Optimiser)
 
-    def test_scg_optimizes_quadratic(self):
+    def test_scg_optimises_quadratic(self):
         model = _QuadraticBowl(np.array([3.0, -2.0, 1.5]))
-        flog = mlai.SCG(ftol=1e-12, xtol=1e-12, gtol=1e-12).optimize(
+        flog = mlai.SCG(ftol=1e-12, xtol=1e-12, gtol=1e-12).optimise(
             model, max_iters=100
         )
         self.assertLess(flog[-1], flog[0])
@@ -473,7 +473,7 @@ class TestSCG(unittest.TestCase):
         kernel = mlai.Kernel(mlai.eq_cov, variance=1.0, lengthscale=0.3)
         gp = mlai.GP(X, y, sigma2=0.5, kernel=kernel)
         initial = gp.objective()
-        flog = mlai.SCG().optimize(gp, max_iters=40)
+        flog = mlai.SCG().optimise(gp, max_iters=40)
         self.assertLess(flog[-1], initial)
         self.assertLess(gp.objective(), initial)
 
@@ -484,11 +484,15 @@ class TestSCG(unittest.TestCase):
         Z = np.linspace(-2, 2, 5)[:, None]
         kernel = mlai.Kernel(mlai.eq_cov, variance=1.0, lengthscale=0.4)
         model = mlai.SparseGP(X, y, Z, sigma2=0.4, kernel=kernel)
-        # Freeze Z in the optimiser path by only checking that optimize runs and drops
         initial = model.objective()
-        flog = mlai.SCG().optimize(model, max_iters=30)
+        flog = mlai.SCG().optimise(model, max_iters=30)
         self.assertTrue(np.isfinite(flog[-1]))
         self.assertLess(model.objective(), initial)
+
+    def test_scg_optimize_alias(self):
+        model = _QuadraticBowl(np.array([1.0, -1.0]))
+        flog = mlai.SCG().optimize(model, max_iters=20)
+        self.assertLess(flog[-1], flog[0])
 
 
 class TestLBFGS(unittest.TestCase):
@@ -498,9 +502,9 @@ class TestLBFGS(unittest.TestCase):
         self.assertTrue(hasattr(mlai, 'LBFGS'))
         self.assertIsInstance(mlai.LBFGS(), mlai.Optimiser)
 
-    def test_lbfgs_optimizes_quadratic(self):
+    def test_lbfgs_optimises_quadratic(self):
         model = _QuadraticBowl(np.array([2.0, -1.0]))
-        flog = mlai.LBFGS().optimize(model, max_iters=50)
+        flog = mlai.LBFGS().optimise(model, max_iters=50)
         self.assertLess(flog[-1], flog[0])
         np.testing.assert_allclose(model.parameters, np.zeros(2), atol=1e-5)
 
@@ -511,7 +515,7 @@ class TestLBFGS(unittest.TestCase):
         kernel = mlai.Kernel(mlai.eq_cov, variance=1.0, lengthscale=0.25)
         gp = mlai.GP(X, y, sigma2=0.4, kernel=kernel)
         initial = gp.objective()
-        mlai.LBFGS().optimize(gp, max_iters=40)
+        mlai.LBFGS().optimise(gp, max_iters=40)
         self.assertLess(gp.objective(), initial)
 
 

@@ -210,7 +210,7 @@ class SCG(Optimiser):
     Examples
     --------
     >>> opt = SCG()
-    >>> flog = opt.optimize(gp, max_iters=50)
+    >>> flog = opt.optimise(gp, max_iters=50)
     """
 
     def __init__(self, xtol=1e-6, ftol=1e-6, gtol=1e-5, sigma0=1e-7):
@@ -351,7 +351,7 @@ class SCG(Optimiser):
         model.parameters = st['x']
         return st['fnow']
 
-    def optimize(self, model, max_iters=100, verbose=False):
+    def optimise(self, model, max_iters=100, verbose=False):
         """
         Run SCG until convergence or ``max_iters``.
 
@@ -377,6 +377,9 @@ class SCG(Optimiser):
         model.parameters = self._state['x']
         return list(self._state['flog'])
 
+    # GPy-facing alias (American spelling)
+    optimize = optimise
+
 
 class LBFGS(Optimiser):
     """
@@ -388,7 +391,7 @@ class LBFGS(Optimiser):
     Examples
     --------
     >>> opt = LBFGS()
-    >>> flog = opt.optimize(gp, max_iters=100)
+    >>> flog = opt.optimise(gp, max_iters=100)
     """
 
     def __init__(self, ftol=1e-9, gtol=1e-5):
@@ -407,12 +410,12 @@ class LBFGS(Optimiser):
         """
         Run a short L-BFGS-B pulse (``maxiter=1`` budget) for manual loops.
 
-        Prefer :meth:`optimize` for normal teaching use.
+        Prefer :meth:`optimise` for normal teaching use.
         """
-        flog = self.optimize(model, max_iters=1, verbose=False)
+        flog = self.optimise(model, max_iters=1, verbose=False)
         return flog[-1]
 
-    def optimize(self, model, max_iters=100, verbose=False):
+    def optimise(self, model, max_iters=100, verbose=False):
         """
         Minimise ``model.objective()`` with L-BFGS-B.
 
@@ -452,6 +455,9 @@ class LBFGS(Optimiser):
         if verbose:
             print(f"L-BFGS-B: {self.status}  f={self.result_.fun:.6g}")
         return list(flog)
+
+    # GPy-facing alias (American spelling)
+    optimize = optimise
 
 
 def train_model(model, X, y, loss_fn, optimiser, n_epochs=100, verbose=True):
