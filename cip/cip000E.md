@@ -169,7 +169,7 @@ This is the primary classroom payoff of CIP-000C + CIP-000D.
 ## Implementation Status
 
 - [x] Phase 0: `model_output` / `model_sample` accept `mlai.GP` and `SparseGP`
-- [ ] Batch A: exact GP regression snippets migrated
+- [x] Batch A: exact GP regression snippets migrated
 - [ ] Batch B: `inducing-variables-demo.md` migrated
 - [ ] Smoke-check representative includes / builds
 - [ ] (Stretch) Batch follow-on only if explicitly accepted

@@ -7,7 +7,7 @@ owner: Neil D. Lawrence
 priority: High
 related_cips:
 - "000E"
-status: Ready
+status: Completed
 tags:
 - backlog
 - features
@@ -28,23 +28,29 @@ Replace `GPy.models.GPRegression` + `optimize()` in exact GP teaching includes w
 
 ## Acceptance Criteria
 
-- [ ] `_gp/includes/gp-fit.md` uses `mlai.GP` + SCG/L-BFGS
-- [ ] `_gp/includes/step-function-gp.md` migrated
-- [ ] `_gp/includes/della-gatta-gene-gp.md` migrated (lengthscale/noise init via mlai)
-- [ ] `_gp/includes/motorcycle-helmet-gp.md` migrated
-- [ ] `_gp/includes/robot-wireless-gp.md` migrated
-- [ ] `_gp/includes/erich-friedman-packing-gp.md` migrated
-- [ ] Migrated paths do not import GPy
+- [x] `_gp/includes/gp-fit.md` uses `mlai.GP` + SCG/L-BFGS
+- [x] `_gp/includes/step-function-gp.md` migrated
+- [x] `_gp/includes/della-gatta-gene-gp.md` migrated (lengthscale/noise init via mlai)
+- [x] `_gp/includes/motorcycle-helmet-gp.md` migrated
+- [x] `_gp/includes/robot-wireless-gp.md` migrated
+- [x] `_gp/includes/erich-friedman-packing-gp.md` migrated
+- [x] Migrated paths do not import GPy
 
 ## Implementation Notes
 
 Edits land in the `snippets` repository. Depends on Phase 0 plot compatibility. Default optimiser: SCG.
 
+Note: `plot.multiple_optima` (still called from della-gatta) remains GPy-backed inside `mlai.plot` for now; the three gene-expression fits themselves no longer use GPy.
+
 ## Related
 
 - CIP: 000E
+- Snippets branch: `cip000E-migrate-gp-snippets`
 
 ## Progress Updates
 
 ### 2026-11-18
 Task created (Ready) with CIP-000E acceptance.
+
+### 2026-11-18
+Batch A snippets migrated on snippets branch; marked Completed.
