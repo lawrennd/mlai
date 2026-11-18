@@ -225,6 +225,211 @@ class TestModelOutputFunctions:
             result = plot.model_sample(self.mock_model, ax=self.mock_ax)
             assert result == self.mock_ax
 
+
+class TestModelOutputMlaiGP:
+    """CIP-000E Phase 0: model_output works with mlai GP / SparseGP."""
+
+    def test_model_output_with_exact_gp(self):
+        """Exact GP uses model.y and column predictive shapes."""
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        from mlai import GP, Kernel, eq_cov
+
+        rng = np.random.default_rng(0)
+        x = np.linspace(-1, 1, 8)[:, None]
+        y = np.sin(x[:, 0]) + 0.05 * rng.normal(size=x.shape[0])
+        model = GP(x, y, sigma2=0.05, kernel=Kernel(eq_cov, lengthscale=0.5, variance=1.0))
+        fig, ax = plt.subplots()
+        result = plot.model_output(model, ax=ax)
+        assert result is ax
+        plt.close(fig)
+
+    def test_model_output_with_sparse_gp_inducing_markers(self):
+        """SparseGP 1D predict returns and Z markers are handled."""
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        from mlai import Kernel, SparseGP, eq_cov
+
+        rng = np.random.default_rng(1)
+        x = np.linspace(0, 5, 20)[:, None]
+        y = np.sin(x[:, 0]) + 0.05 * rng.normal(size=x.shape[0])
+        z = np.linspace(0.5, 4.5, 4)[:, None]
+        model = SparseGP(
+            x, y, z, sigma2=0.05, kernel=Kernel(eq_cov, lengthscale=1.0, variance=1.0)
+        )
+        fig, ax = plt.subplots()
+        result = plot.model_output(model, ax=ax)
+        assert result is ax
+        # One data scatter + mean/band artists + inducing markers
+        assert any(
+            getattr(line, 'get_marker', lambda: None)() == '^'
+            for line in ax.get_lines()
+        )
+        plt.close(fig)
+
+    def test_model_observation_matrix_prefers_y(self):
+        """mlai models without Y still expose targets via y."""
+        from types import SimpleNamespace
+
+        model = SimpleNamespace(y=np.array([1.0, 2.0, 3.0]))
+        Y = plot._model_observation_matrix(model)
+        assert Y.shape == (3, 1)
+        np.testing.assert_allclose(Y[:, 0], [1.0, 2.0, 3.0])
+
+    def test_model_observation_matrix_prefers_numeric_Y(self):
+        """GPy-style numeric ``Y`` wins over ``y``."""
+        from types import SimpleNamespace
+
+        model = SimpleNamespace(
+            Y=np.array([[1.0], [2.0], [3.0]]),
+            y=np.array([9.0, 9.0, 9.0]),
+        )
+        Y = plot._model_observation_matrix(model)
+        np.testing.assert_allclose(Y[:, 0], [1.0, 2.0, 3.0])
+
+    def test_model_observation_matrix_non_array_fallbacks(self):
+        """Non-ndarray ``Y``/``y`` fall through; missing both raises."""
+        from types import SimpleNamespace
+
+        assert plot._model_observation_matrix(SimpleNamespace(Y=[1, 2])) == [1, 2]
+        assert plot._model_observation_matrix(SimpleNamespace(y=[3, 4])) == [3, 4]
+        with pytest.raises(AttributeError, match='model.Y or model.y'):
+            plot._model_observation_matrix(SimpleNamespace())
+
+    def test_plot_gp_mean_band_fallback_when_gpplot_fails(self):
+        """Band plot uses fill_between when gpplot raises."""
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+
+        fig, ax = plt.subplots()
+        xt = np.linspace(0, 1, 5)[:, None]
+        mean = np.zeros((5, 1))
+        sd = np.ones(5)
+        with patch('mlai.gp_tutorial.gpplot', side_effect=RuntimeError('no gpplot')):
+            plot._plot_gp_mean_band(ax, xt, mean, sd)
+        assert len(ax.lines) >= 1
+        assert len(ax.collections) >= 1
+        plt.close(fig)
+
+    def test_model_output_legacy_non_array_predict(self):
+        """Non-ndarray predict outputs take the legacy indexing path."""
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+
+        class ArrayLike:
+            def __init__(self, a):
+                self._a = np.asarray(a, dtype=float)
+
+            @property
+            def shape(self):
+                return self._a.shape
+
+            def __mul__(self, other):
+                return ArrayLike(self._a * other)
+
+            __rmul__ = __mul__
+
+            def __add__(self, other):
+                return ArrayLike(self._a + other)
+
+            def __getitem__(self, item):
+                return ArrayLike(self._a[item])
+
+            def __array__(self, dtype=None):
+                return np.asarray(self._a, dtype=dtype)
+
+        model = MagicMock()
+        model.X = np.array([[0.0], [1.0], [2.0]])
+        model.Y = np.array([[0.0, 0.1], [1.0, 0.2], [0.5, 0.3]])
+        model.Z = None
+        n = 4
+        model.predict.return_value = (
+            ArrayLike(np.ones((n, 2))),
+            ArrayLike(0.25 * np.ones((n, 2))),
+        )
+        fig, ax = plt.subplots()
+        with patch('mlai.plot.pred_range', return_value=np.linspace(0, 2, n)[:, None]):
+            result = plot.model_output(model, ax=ax, output_dim=1)
+        assert result is ax
+        plt.close(fig)
+
+    def test_model_sample_with_sparse_gp_and_1d_samples(self):
+        """model_sample handles 1D predict/samples and inducing markers."""
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        from mlai import Kernel, SparseGP, eq_cov
+
+        rng = np.random.default_rng(2)
+        x = np.linspace(0, 5, 12)[:, None]
+        y = np.sin(x[:, 0]) + 0.05 * rng.normal(size=x.shape[0])
+        z = np.linspace(0.5, 4.5, 3)[:, None]
+        model = SparseGP(
+            x, y, z, sigma2=0.05, kernel=Kernel(eq_cov, lengthscale=1.0, variance=1.0)
+        )
+
+        def posterior_sample(xt):
+            return np.zeros(np.asarray(xt).shape[0])
+
+        model.posterior_sample = posterior_sample
+        fig, ax = plt.subplots()
+        result = plot.model_sample(model, ax=ax, samps=2)
+        assert result is ax
+        assert any(
+            getattr(line, 'get_marker', lambda: None)() == '^'
+            for line in ax.get_lines()
+        )
+        plt.close(fig)
+
+    def test_model_sample_legacy_non_array_predict(self):
+        """model_sample legacy path for non-ndarray predict outputs."""
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+
+        class ArrayLike:
+            def __init__(self, a):
+                self._a = np.asarray(a, dtype=float)
+
+            @property
+            def shape(self):
+                return self._a.shape
+
+            def __mul__(self, other):
+                return ArrayLike(self._a * other)
+
+            __rmul__ = __mul__
+
+            def __add__(self, other):
+                return ArrayLike(self._a + other)
+
+            def __getitem__(self, item):
+                return ArrayLike(self._a[item])
+
+            def __array__(self, dtype=None):
+                return np.asarray(self._a, dtype=dtype)
+
+        model = MagicMock()
+        model.X = np.array([[0.0], [1.0]])
+        model.Y = np.array([[0.0, 0.1], [1.0, 0.2]])
+        model.Z = np.array([[0.5]])
+        n = 3
+        model.predict.return_value = (
+            ArrayLike(np.ones((n, 2))),
+            ArrayLike(0.25 * np.ones((n, 2))),
+        )
+        model.posterior_sample.return_value = np.zeros((n, 2))
+        fig, ax = plt.subplots()
+        with patch('mlai.plot.pred_range', return_value=np.linspace(0, 1, n)[:, None]):
+            result = plot.model_sample(model, ax=ax, samps=1, output_dim=1)
+        assert result is ax
+        plt.close(fig)
+
+
 class TestPerceptronFunctions:
     """Test perceptron-related functions."""
     

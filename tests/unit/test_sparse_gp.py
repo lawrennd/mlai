@@ -15,7 +15,7 @@ from mlai import (
 )
 
 
-def _toy_model(latent_X=False, approximation='vfe', seed=0):
+def _toy_model(latent_X=False, approximation='vfe', optimize_Z=True, seed=0):
     rng = np.random.RandomState(seed)
     X = rng.randn(20, 1)
     y = np.sin(X[:, 0]) + 0.05 * rng.randn(20)
@@ -23,7 +23,7 @@ def _toy_model(latent_X=False, approximation='vfe', seed=0):
     kernel = Kernel(eq_cov, variance=1.0, lengthscale=1.0)
     return SparseGP(
         X, y, Z, sigma2=0.1, kernel=kernel,
-        approximation=approximation, latent_X=latent_X,
+        approximation=approximation, latent_X=latent_X, optimize_Z=optimize_Z,
     )
 
 
@@ -109,3 +109,30 @@ class TestSparseGPSharedSurface:
             opt.step(model)
         assert np.isfinite(model.objective())
         assert model.objective() < initial
+
+    def test_optimize_Z_false_excludes_inducing(self):
+        model = _toy_model(optimize_Z=False)
+        Z0 = model.Z.copy()
+        assert model.parameters.size == 1 + len(model._scalar_kernel_param_names())
+        assert model.gradients.size == model.parameters.size
+        p = model.parameters.copy()
+        p[0] = np.log(0.5)
+        model.parameters = p
+        np.testing.assert_allclose(model.Z, Z0)
+        from mlai import SCG
+        SCG().optimize(model, max_iters=20)
+        np.testing.assert_allclose(model.Z, Z0)
+
+    def test_param_layout_respects_optimize_Z_and_latent_X(self):
+        free = _toy_model(optimize_Z=True)
+        names = [name for name, _ in free._param_layout()]
+        assert names[0] == 'sigma2'
+        assert 'Z' in names
+        assert 'X' not in names
+
+        fixed = _toy_model(optimize_Z=False)
+        assert 'Z' not in [name for name, _ in fixed._param_layout()]
+
+        latent = _toy_model(optimize_Z=True, latent_X=True)
+        latent_names = [name for name, _ in latent._param_layout()]
+        assert 'Z' in latent_names and 'X' in latent_names

@@ -21,3 +21,4 @@ Use `cip_template.md` to create new CIPs.
 | [000B](cip000B.md) | Raise package test coverage for teaching-critical surfaces | Implemented |
 | [000C](cip000C.md) | Teaching LQ sparse VFE/DTC with gradients (and a minimal GP-LVM path) | Implemented |
 | [000D](cip000D.md) | Teaching SCG and L-BFGS on the shared optimiser surface | Implemented |
+| [000E](cip000E.md) | Migrate GP teaching snippets from GPy to mlai | In Progress |
