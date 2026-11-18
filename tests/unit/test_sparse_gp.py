@@ -56,6 +56,30 @@ class TestSparseGPForward:
         assert var.shape == (7,)
         assert np.all(var >= 0)
 
+    def test_predict_matches_dtc_closed_form(self):
+        """Mean/var must match DTC algebra (no spurious 1/σ on the mean)."""
+        model = _toy_model(seed=2)
+        X_test = np.linspace(-1.5, 1.5, 11)[:, None]
+        mu, var = model.predict(X_test)
+
+        Kmm, Kmn, _ = model._kernel_blocks()
+        Kms = model.kernel.K(model.Z, X_test)
+        Kss = model.kernel.diag(X_test).ravel()
+        sigma2 = model.sigma2
+        # μ* = K_*m (σ² Kmm + Kmn Knm)^{-1} Kmn y
+        Sigma = sigma2 * Kmm + Kmn @ Kmn.T
+        mu_ref = Kms.T @ np.linalg.solve(Sigma, Kmn @ model.y)
+        # Latent var: k** - Q** + K_*m (Kmm + Kmn Knm/σ²)^{-1} K_m*
+        Qdiag = np.sum(
+            np.linalg.solve(Kmm, Kms) * Kms, axis=0
+        )
+        cov_u = np.linalg.inv(Kmm + (Kmn @ Kmn.T) / sigma2)
+        var_ref = Kss - Qdiag + np.sum((Kms.T @ cov_u) * Kms.T, axis=1)
+
+        np.testing.assert_allclose(mu, mu_ref, atol=1e-10)
+        np.testing.assert_allclose(var, var_ref, atol=1e-10)
+        # Guard the historical 1/σ mean bug when noise ≠ 1
+        assert not np.allclose(mu, mu_ref / np.sqrt(sigma2), atol=1e-5)
 
 class TestSparseGPSharedSurface:
     def test_parameters_roundtrip(self):

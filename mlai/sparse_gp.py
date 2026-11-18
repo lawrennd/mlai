@@ -436,6 +436,17 @@ class SparseGP(ProbMapModel):
         """
         Predictive mean and marginal variance (DTC/VFE inducing posterior).
 
+        Latent-function posterior (no observation noise on the returned
+        variance), matching GPy ``predict(..., include_likelihood=False)``.
+
+        With whitening ``A = σ⁻¹ L_m⁻¹ K_{mn}`` and ``L Lᵀ = I+AAᵀ``:
+
+        .. math::
+
+            \\mu_* = W_{*}^{\\top}(I+AA^{\\top})^{-1} A y/\\sigma,
+            \\quad
+            W_* = L_m^{-1} K_{m*}
+
         :param X_test: Test inputs
         :returns: ``(mean, var)`` each shape ``(N*,)``
         """
@@ -443,18 +454,12 @@ class SparseGP(ProbMapModel):
         X_test = np.asarray(X_test, dtype=float)
         Kms = self.kernel.K(self.Z, X_test)
         Kss_diag = self.kernel.diag(X_test).ravel()
-        # Posterior over u: use L from LQ of [I,A] as chol of I+AAᵀ
         L = self.L
         ys = self.y / np.sqrt(self.sigma2)
-        # α = (I+AAᵀ)^{-1} A ys = solve(L.T, solve(L, A ys))
+        # α = (I+AAᵀ)^{-1} A ys; μ* = Wsmᵀ α  (σ already absorbed in A, ys)
         alpha = np.linalg.solve(L.T, np.linalg.solve(L, self.A @ ys))
-        # mean_f* = Ksm Kmm^{-1} Lm ...  standard: mu = Ksm @ solve(Lm.T, alpha)/σ?
-        # A = Lm^{-1} Kmn / σ ⇒ Kmn = σ Lm A
-        # mu* = Ksm Kmm^{-1} Kmn (σ²I + Q)^{-1} y ... DTC
-        # With whitening: mu* = (Ksm Lm^{-T}) @ solve(I+AAᵀ, A ys) / σ
-            # = (solve(Lm, Kms).T) @ alpha / σ  wait Kms is M×N*
         Wsm = np.linalg.solve(self.Lm, Kms)
-        mu = (Wsm.T @ alpha) / np.sqrt(self.sigma2)
+        mu = Wsm.T @ alpha
         tmp = np.linalg.solve(L, Wsm)
         var = Kss_diag - np.sum(Wsm * Wsm, axis=0) + np.sum(tmp * tmp, axis=0)
         var = np.maximum(var, 0.0)
