@@ -2,11 +2,12 @@
 category: features
 created: '2026-09-29'
 id: 2026-09-29_optimisation-extra-algorithms
-last_updated: '2026-09-29'
+last_updated: '2026-11-18'
 owner: Neil D. Lawrence
 priority: Low
 related_cips:
 - '0007'
+- '000D'
 status: Proposed
 tags:
 - backlog
@@ -44,3 +45,6 @@ CIP-0007’s course-core surface already includes `SGD` and `Adam` with tests. T
 
 ### 2026-09-29
 Task created when CIP-0007 was accepted; residual Phase 2 optional scope.
+
+### 2026-11-18
+SCG and L-BFGS for GP teaching moved to CIP-000D / `2026-11-18_scg-lbfgs-teaching-optimisers` (Completed). This task retains only RMSprop / Adagrad / AdamW / schedules / clipping if still desired.

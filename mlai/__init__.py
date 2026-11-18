@@ -56,7 +56,7 @@ from .dimred import (
     kmeans_assignments, kmeans_update, kmeans_objective,
     ppca_eig, ppca_svd, ppca_posterior, kruskal_stress,
 )
-from .optimisation import Optimiser, SGD, Adam, train_model
+from .optimisation import Optimiser, SGD, Adam, SCG, LBFGS, train_model
 from .hmc import HamiltonianMonteCarlo, HMCResult, leapfrog, kinetic_energy
 
 try:
@@ -183,6 +183,8 @@ __all__ = [
     "Optimiser",
     "SGD",
     "Adam",
+    "SCG",
+    "LBFGS",
     "train_model",
     "HamiltonianMonteCarlo",
     "HMCResult",
