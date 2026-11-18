@@ -24,7 +24,7 @@ title: Teaching SCG and L-BFGS on the shared optimiser surface
 
 # CIP-000D: Teaching SCG and L-BFGS on the shared optimiser surface
 
-> CIPs describe HOW to achieve requirements (WHAT). This CIP extends [CIP-0007](cip0007.md)’s shared `parameters` / `gradients` surface with the **full-batch** optimisers that GP teaching historically uses, so exact and sparse GP snippets need not call Adam/SGD or GPy’s internal `optimize`.
+> CIPs describe HOW to achieve requirements (WHAT). This CIP extends [CIP-0007](cip0007.md)’s shared `parameters` / `gradients` surface with the **full-batch** optimisers that GP teaching historically uses, so exact and sparse GP snippets need not call Adam/SGD or GPy’s internal `optimize` (mlai’s teaching entry is British `optimise`, with `optimize` kept as an alias).
 
 ## Status
 
@@ -42,7 +42,7 @@ Add teachable **Scaled Conjugate Gradients (SCG)** and **L-BFGS** as `Optimiser`
 
 ## Motivation
 
-CIP-0007 shipped SGD and Adam so neural nets and linear models share one loop. Exact and sparse GPs are smooth, full-batch, low-dimensional objectives. Course narrative and GPy/GPc practice use **SCG** (and often L-BFGS), not stochastic first-order steps. Snippet migration (`inducing-variables-demo.md` and friends) should replace `m.optimize()` with `mlai` SCG/L-BFGS, not Adam.
+CIP-0007 shipped SGD and Adam so neural nets and linear models share one loop. Exact and sparse GPs are smooth, full-batch, low-dimensional objectives. Course narrative and GPy/GPc practice use **SCG** (and often L-BFGS), not stochastic first-order steps. Snippet migration (`inducing-variables-demo.md` and friends) should replace `m.optimize()` with `mlai` SCG/L-BFGS `optimise`, not Adam.
 
 ## Detailed Description
 
@@ -50,10 +50,11 @@ CIP-0007 shipped SGD and Adam so neural nets and linear models share one loop. E
 
 ```python
 opt = SCG()          # or LBFGS()
-flog = opt.optimize(model, max_iters=100, verbose=False)
+flog = opt.optimise(model, max_iters=100, verbose=False)
 ```
 
-- `optimize` is the primary teaching entry (matches GPy’s “run until done” story).
+- `optimise` is the primary teaching entry (British spelling, consistent with `Optimiser` / `optimisation.py`).
+- `optimize` remains as an alias for GPy familiarity.
 - `step(model)` performs one SCG iteration (or one L-BFGS iteration budget) for demos that want a manual loop.
 - Models must expose `parameters` / `gradients` / `objective()` (GP, SparseGP, LM, …).
 
@@ -84,7 +85,7 @@ Additive. Existing SGD/Adam callers unchanged.
 ## Testing Strategy
 
 - Synthetic quadratic with known minimum
-- `GP` and `SparseGP` smoke: `optimize` reduces `objective()`
+- `GP` and `SparseGP` smoke: `optimise` reduces `objective()`
 - Gradient path: SCG probes must restore `parameters` correctly after directional FD
 
 ## Related Requirements

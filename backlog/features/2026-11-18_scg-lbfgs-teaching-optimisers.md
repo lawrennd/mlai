@@ -29,7 +29,7 @@ GP teaching (exact and sparse) should use Scaled Conjugate Gradients and L-BFGS,
 
 ## Acceptance Criteria
 
-- [x] `SCG` (Netlab/paramz lineage) with `optimize(model, …)`
+- [x] `SCG` (Netlab/paramz lineage) with `optimise(model, …)` (plus `optimize` alias)
 - [x] `LBFGS` SciPy wrapper with the same API
 - [x] Tests on quadratic bowl, `GP`, and `SparseGP`
 - [x] Exported from `mlai`
