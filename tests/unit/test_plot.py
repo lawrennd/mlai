@@ -226,6 +226,53 @@ class TestModelOutputFunctions:
             assert result == self.mock_ax
 
 
+class TestNystromAndNomenclaturePlots:
+    """Reconstructed Nyström / inducing nomenclature slide figures."""
+
+    def test_nystrom_covariance_approx_writes_svg(self, tmp_path):
+        import matplotlib
+        matplotlib.use('Agg')
+        stub = plot.nystrom_covariance_approx(
+            diagrams=str(tmp_path), n=12, m=4, optimized_Z=False
+        )
+        assert stub == 'cov_approx'
+        assert (tmp_path / 'cov_approx.svg').is_file()
+        stub_opt = plot.nystrom_covariance_approx(
+            diagrams=str(tmp_path), n=12, m=4, optimized_Z=True
+        )
+        assert (tmp_path / f'{stub_opt}.svg').is_file()
+
+    def test_nystrom_covariance_inducing_writes_svg(self, tmp_path):
+        import matplotlib
+        matplotlib.use('Agg')
+        stub = plot.nystrom_covariance_inducing(
+            diagrams=str(tmp_path), n=12, m=4
+        )
+        assert (tmp_path / f'{stub}.svg').is_file()
+
+    def test_inducing_nomenclature_writes_panels(self, tmp_path):
+        import matplotlib
+        matplotlib.use('Agg')
+        stubs = plot.inducing_nomenclature(
+            diagrams=str(tmp_path),
+            n_pool=30,
+            n_data=12,
+            n_inducing=4,
+            optimize=False,
+        )
+        expected = {
+            'nomenclature1',
+            'nomenclature2',
+            'nomenclature3',
+            'nomenclature3a',
+            'nomenclature4',
+            'nomenclature5',
+        }
+        assert set(stubs) == expected
+        for stub in stubs:
+            assert (tmp_path / f'{stub}.svg').is_file()
+
+
 class TestModelOutputMlaiGP:
     """CIP-000E Phase 0: model_output works with mlai GP / SparseGP."""
 

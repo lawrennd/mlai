@@ -3537,6 +3537,251 @@ def low_rank_approximation(fontsize=25, diagrams='../diagrams'):
     ax[3].axes.get_yaxis().set_visible(True)
     ma.write_figure('wisuvt.svg', directory=diagrams, transparent=True)
 
+
+def _eq_kernel_blocks(X, Z, variance=1.0, lengthscale=1.0):
+    """EQ covariance blocks ``Kff, Kfu, Kuf, Kuu`` for Nyström diagrams."""
+    from .gaussian_processes import Kernel, eq_cov
+
+    kern = Kernel(eq_cov, variance=float(variance), lengthscale=float(lengthscale))
+    Kff = kern.K(X, X)
+    Kfu = kern.K(X, Z)
+    Kuu = kern.K(Z, Z)
+    return Kff, Kfu, Kfu.T.copy(), Kuu
+
+
+def _matshow_jet(ax, A, clim):
+    """Pixel heatmap with shared colour limits (legacy Nyström slide style)."""
+    ax.imshow(
+        A,
+        cmap='jet',
+        vmin=clim[0],
+        vmax=clim[1],
+        aspect='equal',
+        interpolation='nearest',
+        origin='upper',
+    )
+    ax.set_xticks([])
+    ax.set_yticks([])
+    for spine in ax.spines.values():
+        spine.set_visible(False)
+
+
+def nystrom_covariance_approx(
+    diagrams='../diagrams',
+    n=25,
+    m=5,
+    lengthscale=None,
+    optimized_Z=False,
+    filename=None,
+    seed=0,
+):
+    """
+    Nyström block heatmaps ``Kff ≈ Kfu Kuu^{-1} Kuf``.
+
+    Writes five panels: ``Kff``, ``Qff``, ``Kfu``, ``Kuu``, ``Kuf``. Matches the
+    layout of the historical ``cov_approx`` / ``cov_approx_opt`` slide figures
+    (Ed Snelson–style), reconstructed without the lost matplotlib 1.2 script.
+
+    :param diagrams: Output directory
+    :param n: Number of ordered inputs on a 1-D grid
+    :param m: Number of inducing / landmark inputs
+    :param lengthscale: EQ lengthscale (default scales with the grid)
+    :param optimized_Z: If True, space inducing inputs evenly (``cov_approx_opt``);
+        if False, use a clustered subset (``cov_approx``)
+    :param filename: Basename without extension (default depends on ``optimized_Z``)
+    :param seed: RNG seed for the clustered-``Z`` path
+    :returns: Path stub written (filename without directory)
+    """
+    X = np.linspace(0.0, 1.0, int(n))[:, None]
+    if lengthscale is None:
+        lengthscale = 2.5 / max(n - 1, 1)
+    rng = np.random.RandomState(seed)
+    if optimized_Z:
+        Z = np.linspace(0.0, 1.0, int(m))[:, None]
+        stub = filename or 'cov_approx_opt'
+    else:
+        # Cluster landmarks toward the left so Qff shows clear structure loss.
+        idx = np.sort(rng.choice(n, size=min(m, n), replace=False))
+        Z = X[idx]
+        stub = filename or 'cov_approx'
+
+    Kff, Kfu, Kuf, Kuu = _eq_kernel_blocks(X, Z, lengthscale=lengthscale)
+    jitter = 1e-6 * np.eye(Kuu.shape[0])
+    Qff = Kfu @ np.linalg.solve(Kuu + jitter, Kuf)
+    clim = (0.0, float(max(Kff.max(), Qff.max(), Kuu.max())))
+
+    fig, axes = plt.subplots(
+        1,
+        5,
+        figsize=big_wide_figsize,
+        gridspec_kw={'width_ratios': [n, n, m, m, n]},
+    )
+    for ax, mat in zip(axes, (Kff, Qff, Kfu, Kuu, Kuf)):
+        _matshow_jet(ax, mat, clim)
+    fig.subplots_adjust(wspace=0.08, left=0.02, right=0.98, top=0.95, bottom=0.05)
+    ma.write_figure(f'{stub}.svg', directory=diagrams, transparent=True, figure=fig)
+    plt.close(fig)
+    return stub
+
+
+def nystrom_covariance_inducing(
+    diagrams='../diagrams',
+    n=25,
+    m=6,
+    lengthscale=None,
+    seed=1,
+    filename='cov_inducing_withX',
+):
+    """
+    Joint covariance blocks ``[Kff, Kfu; Kuf, Kuu]`` for the inducing-variable intro.
+
+    :param diagrams: Output directory
+    :param n: Training-grid size
+    :param m: Inducing-grid size
+    :param lengthscale: EQ lengthscale (default scales with the grid)
+    :param seed: RNG seed for selecting inducing locations from the grid
+    :param filename: Basename without extension
+    :returns: Filename stub written
+    """
+    X = np.linspace(0.0, 1.0, int(n))[:, None]
+    if lengthscale is None:
+        lengthscale = 3.0 / max(n - 1, 1)
+    rng = np.random.RandomState(seed)
+    idx = np.sort(rng.choice(n, size=min(m, n), replace=False))
+    Z = X[idx]
+    Kff, Kfu, Kuf, Kuu = _eq_kernel_blocks(X, Z, lengthscale=lengthscale)
+    clim = (0.0, float(Kff.max()))
+
+    fig, axes = plt.subplots(
+        2,
+        2,
+        figsize=two_figsize,
+        gridspec_kw={'width_ratios': [n, m], 'height_ratios': [n, m]},
+    )
+    _matshow_jet(axes[0, 0], Kff, clim)
+    _matshow_jet(axes[0, 1], Kfu, clim)
+    _matshow_jet(axes[1, 0], Kuf, clim)
+    _matshow_jet(axes[1, 1], Kuu, clim)
+    fig.subplots_adjust(wspace=0.05, hspace=0.05, left=0.02, right=0.98, top=0.98, bottom=0.02)
+    ma.write_figure(f'{filename}.svg', directory=diagrams, transparent=True, figure=fig)
+    plt.close(fig)
+    return filename
+
+
+def inducing_nomenclature(
+    diagrams='../diagrams',
+    seed=1,
+    n_pool=50,
+    n_data=20,
+    n_inducing=7,
+    optimize=True,
+):
+    """
+    Inducing-variable nomenclature panels (successor to ``svigp/.../figures.py``).
+
+    Writes ``nomenclature1.svg`` … ``nomenclature5.svg`` and ``nomenclature3a.svg``
+    using ``mlai.SparseGP`` (no XKCD styling, no GPy).
+
+    :param diagrams: Output directory
+    :param seed: RNG seed
+    :param n_pool: Size of the GP-prior pool before subsampling
+    :param n_data: Subsample size used in the panels
+    :param n_inducing: Number of inducing inputs
+    :param optimize: If True, run a short SCG fit before plotting
+    :returns: List of filename stubs written
+    """
+    from .gaussian_processes import Kernel, eq_cov
+    from .sparse_gp import SparseGP
+
+    rng = np.random.RandomState(seed)
+    X_pool = np.sort(rng.rand(n_pool, 1) * 6.0 - 1.0, axis=0)
+    kern = Kernel(eq_cov, variance=1.0, lengthscale=1.0)
+    K = kern.K(X_pool, X_pool) + 1e-6 * np.eye(n_pool)
+    y_pool = rng.multivariate_normal(np.zeros(n_pool), K)[:, None]
+    idx = np.sort(rng.choice(n_pool, size=n_data, replace=False))
+    X = X_pool[idx]
+    y = y_pool[idx]
+
+    Z = np.linspace(float(X.min()), float(X.max()), n_inducing)[:, None]
+    model = SparseGP(
+        X, y, Z, sigma2=0.05, kernel=Kernel(eq_cov, variance=1.0, lengthscale=1.0),
+        optimize_Z=True,
+    )
+    if optimize:
+        from .optimisation import SCG
+        SCG().optimize(model, max_iters=40)
+
+    xx = np.linspace(float(X.min()) - 0.5, float(X.max()) + 0.5, 200)[:, None]
+    mu_xx, var_xx = model.predict(xx)
+    mu_X, _ = model.predict(X)
+    mu_Z, var_Z = model.predict(model.Z)
+    stubs = []
+
+    def _finish(fig, stub):
+        ma.write_figure(f'{stub}.svg', directory=diagrams, transparent=True, figure=fig)
+        plt.close(fig)
+        stubs.append(stub)
+
+    # 1: data only
+    fig, ax = plt.subplots(figsize=one_figsize)
+    ax.plot(X[:, 0], y[:, 0], 'kx', markersize=8, markeredgewidth=1.5)
+    ax.set_xlabel('input space ($x$)')
+    ax.set_ylabel('function values')
+    _finish(fig, 'nomenclature1')
+
+    # 2: data + predictive mean
+    fig, ax = plt.subplots(figsize=one_figsize)
+    ax.plot(X[:, 0], y[:, 0], 'kx', markersize=8, markeredgewidth=1.5, alpha=0.35)
+    ax.plot(xx[:, 0], mu_xx, 'b-', linewidth=2)
+    ax.set_xlabel('input space ($x$)')
+    ax.set_ylabel('function values')
+    _finish(fig, 'nomenclature2')
+
+    # 3: mean + predictions at training inputs
+    fig, ax = plt.subplots(figsize=one_figsize)
+    ax.plot(X[:, 0], y[:, 0], 'kx', markersize=8, markeredgewidth=1.5, alpha=0.35)
+    ax.plot(xx[:, 0], mu_xx, 'b-', linewidth=2, alpha=0.35)
+    ax.plot(X[:, 0], mu_X, 'bo', markersize=6)
+    ax.set_xlabel('input space ($x$)')
+    ax.set_ylabel('function values')
+    _finish(fig, 'nomenclature3')
+
+    # 3a: posterior band (for the p(f|y,X) slide)
+    fig, ax = plt.subplots(figsize=one_figsize)
+    ax.plot(X[:, 0], y[:, 0], 'kx', markersize=8, markeredgewidth=1.5, alpha=0.35)
+    sd = np.sqrt(np.maximum(var_xx, 0.0))
+    ax.fill_between(xx[:, 0], mu_xx - 2 * sd, mu_xx + 2 * sd, color='b', alpha=0.2)
+    ax.plot(xx[:, 0], mu_xx, 'b-', linewidth=2)
+    ax.set_xlabel('input space ($x$)')
+    ax.set_ylabel('function values')
+    _finish(fig, 'nomenclature3a')
+
+    # 4: inducing locations on the mean
+    fig, ax = plt.subplots(figsize=one_figsize)
+    ax.plot(X[:, 0], y[:, 0], 'kx', markersize=8, markeredgewidth=1.5, alpha=0.35)
+    ax.plot(xx[:, 0], mu_xx, 'b-', linewidth=2, alpha=0.35)
+    ax.plot(model.Z[:, 0], mu_Z, 'ro', markersize=7)
+    ax.set_xlabel('input space ($x$)')
+    ax.set_ylabel('function values')
+    _finish(fig, 'nomenclature4')
+
+    # 5: full sparse posterior + inducing uncertainty bars
+    fig, ax = plt.subplots(figsize=one_figsize)
+    ax.plot(X[:, 0], y[:, 0], 'kx', markersize=8, markeredgewidth=1.5)
+    sd = np.sqrt(np.maximum(var_xx, 0.0))
+    ax.fill_between(xx[:, 0], mu_xx - 2 * sd, mu_xx + 2 * sd, color='b', alpha=0.2)
+    ax.plot(xx[:, 0], mu_xx, 'b-', linewidth=2)
+    sd_Z = np.sqrt(np.maximum(var_Z, 0.0))
+    for z_i, mu_i, sd_i in zip(model.Z[:, 0], mu_Z, sd_Z):
+        ax.plot([z_i, z_i], [mu_i - 2 * sd_i, mu_i + 2 * sd_i], 'r-', linewidth=2)
+    ax.plot(model.Z[:, 0], mu_Z, 'ro', markersize=7)
+    ax.set_xlabel('input space ($x$)')
+    ax.set_ylabel('function values')
+    _finish(fig, 'nomenclature5')
+
+    return stubs
+
+
 def blank_canvas(ax):
     """
     Create a blank canvas for plotting.
