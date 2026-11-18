@@ -10,6 +10,8 @@ This module contains Gaussian Process implementations including:
 TODO: Extract from mlai.py during refactoring
 """
 
+import inspect
+
 import numpy as np
 import scipy.linalg as la
 from .models import ProbMapModel
@@ -66,23 +68,48 @@ class GP(ProbMapModel):
     :type kernel: function
     """
     def __init__(self, X, y, sigma2, kernel):
-        self.sigma2 = sigma2
+        self.sigma2 = float(sigma2)
         self.kernel = kernel
+        self._materialize_kernel_defaults()
         self.K = kernel.K(X, X)
         self.X = X
-        self.y = y
+        self.y = np.asarray(y, dtype=float)
         self.update_inverse()
         self.name = 'GP_'+kernel.function.__name__
         self.objective_name = 'Negative Marginal Likelihood'
+
+    def _materialize_kernel_defaults(self):
+        """
+        Copy scalar defaults from the covariance function into ``kernel.parameters``.
+
+        ``Kernel(eq_cov)`` stores an empty kwargs dict and relies on Python
+        defaults inside ``eq_cov``. Materialising those defaults makes
+        lengthscale/variance visible to the shared optimiser surface.
+        """
+        try:
+            signature = inspect.signature(self.kernel.function)
+        except (TypeError, ValueError):
+            return
+        for name, param in signature.parameters.items():
+            if name in ('x', 'x_prime'):
+                continue
+            if name in self.kernel.parameters:
+                continue
+            if param.default is inspect.Parameter.empty:
+                continue
+            if np.isscalar(param.default):
+                self.kernel.parameters[name] = float(param.default)
 
     def update_inverse(self):
         """
         Pre-compute the inverse covariance and related quantities.
         """
-        self.Kinv = np.linalg.inv(self.K+self.sigma2*np.eye(self.K.shape[0]))
-        self.logdetK = np.linalg.det(self.K+self.sigma2*np.eye(self.K.shape[0]))
-        self.Kinvy = self.Kinv@self.y
-        self.yKinvy = (self.y*self.Kinvy).sum()
+        Ky = self.K + self.sigma2 * np.eye(self.K.shape[0])
+        self.Kinv = np.linalg.inv(Ky)
+        # Store log|Ky| (slogdet), not det(Ky) — required for a correct NLL.
+        self.logdetK = np.linalg.slogdet(Ky)[1]
+        self.Kinvy = self.Kinv @ self.y
+        self.yKinvy = float(np.sum(self.y * self.Kinvy))
 
     def update_kernel_matrix(self):
         """
@@ -97,6 +124,102 @@ class GP(ProbMapModel):
         Fit the Gaussian Process model (no-op placeholder).
         """
         pass
+
+    def _scalar_kernel_param_names(self):
+        """Names of scalar kernel hyperparameters (dict insertion order)."""
+        names = []
+        for key, value in self.kernel.parameters.items():
+            if np.isscalar(value) or (isinstance(value, np.ndarray) and value.shape == ()):
+                names.append(key)
+        return names
+
+    def _trainable_param_names(self):
+        """Ordered names for the shared optimiser surface: noise then kernel."""
+        return ['sigma2'] + self._scalar_kernel_param_names()
+
+    @property
+    def parameters(self):
+        """
+        Trainable hyperparameters as a 1D vector in log space.
+
+        Layout is ``[log(sigma2), log(theta_1), ...]`` for each scalar kernel
+        hyperparameter in ``kernel.parameters`` insertion order. Log space keeps
+        variances and lengthscales positive under unconstrained SGD/Adam steps.
+
+        :returns: 1D array of unconstrained parameters
+        :rtype: numpy.ndarray
+        """
+        values = [np.log(self.sigma2)]
+        for name in self._scalar_kernel_param_names():
+            values.append(np.log(float(self.kernel.parameters[name])))
+        return np.asarray(values, dtype=float)
+
+    @parameters.setter
+    def parameters(self, value):
+        """
+        Set trainable hyperparameters from a 1D log-space vector.
+
+        :param value: Parameters matching :meth:`parameters` layout
+        :type value: numpy.ndarray
+        """
+        value = np.asarray(value, dtype=float).ravel()
+        names = self._trainable_param_names()
+        if value.size != len(names):
+            raise ValueError(
+                f"Expected {len(names)} parameters {names}, got shape {value.shape}"
+            )
+        self.sigma2 = float(np.exp(value[0]))
+        for i, name in enumerate(names[1:], start=1):
+            self.kernel.parameters[name] = float(np.exp(value[i]))
+        self.update_kernel_matrix()
+
+    def _nll_gradient_natural(self):
+        """
+        Gradients of the negative log likelihood w.r.t. natural-scale params.
+
+        Uses the standard GP matrix calculus identity
+        ``dNLL/dθ = 1/2 tr((K^{-1} - ααᵀ) dK/dθ)`` with ``α = K^{-1} y``.
+        Noise uses ``dK/dσ² = I``. Kernel hyperparameter derivatives of ``K``
+        use central finite differences so any scalar kernel parameter works
+        without a hand-written kernel Jacobian.
+        """
+        alpha = np.asarray(self.Kinvy, dtype=float)
+        if alpha.ndim == 1:
+            W = self.Kinv - np.outer(alpha, alpha)
+        else:
+            W = self.Kinv - alpha @ alpha.T
+        grads = []
+
+        # ∂NLL/∂σ²
+        grads.append(0.5 * float(np.trace(W)))
+
+        # ∂NLL/∂θ for each scalar kernel hyperparameter
+        h = 1e-5
+        for name in self._scalar_kernel_param_names():
+            theta = float(self.kernel.parameters[name])
+            step = h * max(abs(theta), 1.0)
+            self.kernel.parameters[name] = theta + step
+            K_plus = self.kernel.K(self.X, self.X)
+            self.kernel.parameters[name] = theta - step
+            K_minus = self.kernel.K(self.X, self.X)
+            self.kernel.parameters[name] = theta
+            dK = (K_plus - K_minus) / (2.0 * step)
+            grads.append(0.5 * float(np.sum(W * dK)))
+        return np.asarray(grads, dtype=float)
+
+    @property
+    def gradients(self):
+        """
+        Gradients of :meth:`objective` w.r.t. :attr:`parameters` (log space).
+
+        Chain rule: ``∂NLL/∂log θ = θ · ∂NLL/∂θ``.
+
+        :returns: 1D array of gradients matching :attr:`parameters`
+        :rtype: numpy.ndarray
+        """
+        natural = self._nll_gradient_natural()
+        scale = np.exp(self.parameters)
+        return natural * scale
 
     def update_nll(self):
         """

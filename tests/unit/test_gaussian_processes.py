@@ -1474,7 +1474,87 @@ class TestContourDataFunction:
         
         result = mlai.prod_cov(x, x_prime, [kernel1, kernel2], [{}, {}])
         assert result == 6.0  # 2.0 * 3.0
-        
+
+
+class TestGPSharedOptimizationSurface:
+    """CIP-0007: GP parameters / gradients on the shared optimiser surface."""
+
+    def setup_method(self):
+        rng = np.random.RandomState(0)
+        self.X = rng.randn(12, 1)
+        self.y = np.sin(self.X[:, 0]) + 0.05 * rng.randn(12)
+        self.kernel = mlai.Kernel(mlai.eq_cov, variance=1.0, lengthscale=1.0)
+        self.gp = mlai.GP(self.X, self.y, sigma2=0.1, kernel=self.kernel)
+
+    def test_parameters_log_space_layout(self):
+        params = self.gp.parameters
+        assert params.shape == (3,)
+        np.testing.assert_allclose(params[0], np.log(0.1))
+        np.testing.assert_allclose(params[1], np.log(1.0))  # variance
+        np.testing.assert_allclose(params[2], np.log(1.0))  # lengthscale
+
+    def test_parameters_roundtrip(self):
+        original = self.gp.parameters.copy()
+        new_params = original + np.array([0.2, -0.1, 0.3])
+        self.gp.parameters = new_params
+        np.testing.assert_allclose(self.gp.parameters, new_params)
+        assert self.gp.sigma2 == pytest.approx(np.exp(new_params[0]))
+        assert self.gp.kernel.parameters['variance'] == pytest.approx(np.exp(new_params[1]))
+        assert self.gp.kernel.parameters['lengthscale'] == pytest.approx(np.exp(new_params[2]))
+        self.gp.parameters = original
+        np.testing.assert_allclose(self.gp.parameters, original)
+
+    def test_parameters_wrong_length_raises(self):
+        with pytest.raises(ValueError, match="Expected 3 parameters"):
+            self.gp.parameters = np.array([0.0, 0.0])
+
+    def test_logdet_is_log_determinant(self):
+        Ky = self.gp.K + self.gp.sigma2 * np.eye(self.gp.K.shape[0])
+        expected = np.linalg.slogdet(Ky)[1]
+        assert self.gp.logdetK == pytest.approx(expected)
+
+    def test_gradients_match_finite_differences(self):
+        from mlai import finite_difference_gradient, verify_gradient_implementation
+
+        def objective_func(params):
+            self.gp.parameters = params
+            return self.gp.objective()
+
+        analytical = self.gp.gradients.copy()
+        numerical = finite_difference_gradient(
+            objective_func, self.gp.parameters.copy(), h=1e-5
+        )
+        assert verify_gradient_implementation(
+            analytical, numerical, rtol=1e-3, atol=1e-4
+        )
+
+    def test_materializes_eq_cov_defaults(self):
+        kernel = mlai.Kernel(mlai.eq_cov)
+        gp = mlai.GP(self.X, self.y, sigma2=0.2, kernel=kernel)
+        assert 'variance' in kernel.parameters
+        assert 'lengthscale' in kernel.parameters
+        assert gp.parameters.shape == (3,)
+
+    def test_sgd_reduces_objective(self):
+        from mlai import SGD
+
+        self.gp.parameters = np.array([np.log(0.2), np.log(1.0), np.log(0.05)])
+        initial_obj = self.gp.objective()
+        optimiser = SGD(learning_rate=0.05)
+        for _ in range(40):
+            optimiser.step(self.gp)
+        assert self.gp.objective() < initial_obj
+
+    def test_adam_reduces_objective(self):
+        from mlai import Adam
+
+        self.gp.parameters = np.array([np.log(0.5), np.log(2.0), np.log(0.1)])
+        initial_obj = self.gp.objective()
+        optimiser = Adam(learning_rate=0.05)
+        for _ in range(50):
+            optimiser.step(self.gp)
+        assert self.gp.objective() < initial_obj
+
 
 if __name__ == '__main__':
     unittest.main()

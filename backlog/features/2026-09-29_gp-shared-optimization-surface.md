@@ -2,12 +2,12 @@
 category: features
 created: '2026-09-29'
 id: 2026-09-29_gp-shared-optimization-surface
-last_updated: '2026-09-29'
+last_updated: '2026-11-18'
 owner: Neil D. Lawrence
 priority: Medium
 related_cips:
 - '0007'
-status: Proposed
+status: Completed
 tags:
 - backlog
 - features
@@ -25,16 +25,17 @@ CIP-0007’s shared optimiser loop (`Optimiser.step` via `parameters` / `gradien
 
 ## Acceptance Criteria
 
-- [ ] `GP` (or a clear hyperparameter-facing wrapper) exposes `parameters` and `gradients` consistent with other trainable models
-- [ ] At least one kernel / likelihood hyperparameter path can be stepped with `SGD` or `Adam` from `mlai.optimisation`
-- [ ] Unit or integration test shows loss/objective improving under the shared optimiser
-- [ ] Teaching notes can refer to the same “fit by gradients” story used for linear / NN models
+- [x] `GP` (or a clear hyperparameter-facing wrapper) exposes `parameters` and `gradients` consistent with other trainable models
+- [x] At least one kernel / likelihood hyperparameter path can be stepped with `SGD` or `Adam` from `mlai.optimisation`
+- [x] Unit or integration test shows loss/objective improving under the shared optimiser
+- [x] Teaching notes can refer to the same “fit by gradients” story used for linear / NN models
 
 ## Implementation Notes
 
 - Prefer additive API; do not break existing GP fitting helpers
 - Align shapes with how `SGD`/`Adam` already treat flat parameter vectors
 - Finite-difference checks against `objective()` where practical
+- Delivered as log-space `[log(σ²), log(θ…)]` with analytic NLL gradient and FD `∂K/∂θ`; `logdetK` corrected to `slogdet`
 
 ## Related
 
@@ -45,3 +46,6 @@ CIP-0007’s shared optimiser loop (`Optimiser.step` via `parameters` / `gradien
 
 ### 2026-09-29
 Task created when CIP-0007 was accepted; residual Phase 1 GP work.
+
+### 2026-11-18
+Implemented on branch `cip0007-gp-shared-optimization-surface`: `GP.parameters` / `GP.gradients`, FD-verified gradients, SGD/Adam objective reduction tests. Marked Completed.
