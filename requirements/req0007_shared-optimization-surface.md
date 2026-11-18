@@ -1,10 +1,10 @@
 ---
 id: "0007"
 title: "Trainable models expose a shared optimization surface"
-status: "Proposed"
+status: "Implemented"
 priority: "Medium"
 created: "2026-09-29"
-last_updated: "2026-09-29"
+last_updated: "2026-11-18"
 related_tenets:
 - vibesafe-mlai-tenets
 stakeholders:
@@ -29,10 +29,10 @@ Linear models, neural networks, and other trainable objects in `mlai` can be dri
 
 ## Acceptance Criteria
 
-- [ ] Trainable model types used in teaching expose parameters and gradients in a consistent way
-- [ ] At least the common first-order algorithms needed for courses can run against that shared surface
-- [ ] Adding or demonstrating a new optimizer does not require rewriting each model’s training method
-- [ ] Teaching material can show the same optimizer on more than one model family
+- [x] Trainable model types used in teaching expose parameters and gradients in a consistent way
+- [x] At least the common first-order algorithms needed for courses can run against that shared surface
+- [x] Adding or demonstrating a new optimizer does not require rewriting each model’s training method
+- [x] Teaching material can show the same optimizer on more than one model family
 
 ## Notes
 
@@ -50,3 +50,8 @@ Requirement extracted from CIP-0007.
 
 ### 2026-09-29 (CIP-0007 Accepted)
 CIP-0007 accepted and marked In Progress: `Optimiser` / `SGD` / `Adam` / `train_model` ship with LM and neural-net integration tests. This requirement stays **Proposed** until the GP shared surface (and any other teaching-critical families) land; optional extra algorithms are backlog, not blockers for the core outcome.
+
+### 2026-11-18
+GP `parameters` / `gradients` landed with SGD/Adam and finite-difference tests. Status → **Implemented**. Mark **Validated** after human review / CIP-0007 close.
+
+CIP-000C (sparse LQ VFE / latent GP) proposed under REQ-0009. With the exact-GP surface in place, that work is unblocked.

@@ -19,3 +19,4 @@ Use `cip_template.md` to create new CIPs.
 | [0009](cip0009.md) | Contributor packaging via uv (succeed Poetry) | Implemented |
 | [000A](cip000A.md) | Replace flake8 with ruff for linting | Implemented |
 | [000B](cip000B.md) | Raise package test coverage for teaching-critical surfaces | Implemented |
+| [000C](cip000C.md) | Teaching LQ sparse VFE/DTC with gradients (and a minimal GP-LVM path) | Proposed |
