@@ -428,6 +428,93 @@ class TestOptimisationIntegration(unittest.TestCase):
         self.assertLess(final_loss, initial_loss * 0.5)
 
 
+class _QuadraticBowl:
+    """Simple xᵀx / 2 model for full-batch optimiser tests."""
+
+    def __init__(self, x0):
+        self._x = np.asarray(x0, dtype=float).ravel().copy()
+
+    @property
+    def parameters(self):
+        return self._x.copy()
+
+    @parameters.setter
+    def parameters(self, value):
+        self._x = np.asarray(value, dtype=float).ravel().copy()
+
+    @property
+    def gradients(self):
+        return self._x.copy()
+
+    def objective(self):
+        return 0.5 * float(np.dot(self._x, self._x))
+
+
+class TestSCG(unittest.TestCase):
+    """CIP-000D: Scaled Conjugate Gradients."""
+
+    def test_scg_exports(self):
+        self.assertTrue(hasattr(mlai, 'SCG'))
+        self.assertIsInstance(mlai.SCG(), mlai.Optimiser)
+
+    def test_scg_optimizes_quadratic(self):
+        model = _QuadraticBowl(np.array([3.0, -2.0, 1.5]))
+        flog = mlai.SCG(ftol=1e-12, xtol=1e-12, gtol=1e-12).optimize(
+            model, max_iters=100
+        )
+        self.assertLess(flog[-1], flog[0])
+        np.testing.assert_allclose(model.parameters, np.zeros(3), atol=1e-5)
+        self.assertLess(model.objective(), 1e-10)
+
+    def test_scg_reduces_gp_objective(self):
+        rng = np.random.RandomState(0)
+        X = rng.randn(15, 1)
+        y = np.sin(X[:, 0]) + 0.05 * rng.randn(15)
+        kernel = mlai.Kernel(mlai.eq_cov, variance=1.0, lengthscale=0.3)
+        gp = mlai.GP(X, y, sigma2=0.5, kernel=kernel)
+        initial = gp.objective()
+        flog = mlai.SCG().optimize(gp, max_iters=40)
+        self.assertLess(flog[-1], initial)
+        self.assertLess(gp.objective(), initial)
+
+    def test_scg_reduces_sparse_gp_objective(self):
+        rng = np.random.RandomState(1)
+        X = rng.randn(20, 1)
+        y = np.sin(X[:, 0]) + 0.05 * rng.randn(20)
+        Z = np.linspace(-2, 2, 5)[:, None]
+        kernel = mlai.Kernel(mlai.eq_cov, variance=1.0, lengthscale=0.4)
+        model = mlai.SparseGP(X, y, Z, sigma2=0.4, kernel=kernel)
+        # Freeze Z in the optimiser path by only checking that optimize runs and drops
+        initial = model.objective()
+        flog = mlai.SCG().optimize(model, max_iters=30)
+        self.assertTrue(np.isfinite(flog[-1]))
+        self.assertLess(model.objective(), initial)
+
+
+class TestLBFGS(unittest.TestCase):
+    """CIP-000D: L-BFGS-B wrapper."""
+
+    def test_lbfgs_exports(self):
+        self.assertTrue(hasattr(mlai, 'LBFGS'))
+        self.assertIsInstance(mlai.LBFGS(), mlai.Optimiser)
+
+    def test_lbfgs_optimizes_quadratic(self):
+        model = _QuadraticBowl(np.array([2.0, -1.0]))
+        flog = mlai.LBFGS().optimize(model, max_iters=50)
+        self.assertLess(flog[-1], flog[0])
+        np.testing.assert_allclose(model.parameters, np.zeros(2), atol=1e-5)
+
+    def test_lbfgs_reduces_gp_objective(self):
+        rng = np.random.RandomState(2)
+        X = rng.randn(12, 1)
+        y = np.sin(X[:, 0]) + 0.05 * rng.randn(12)
+        kernel = mlai.Kernel(mlai.eq_cov, variance=1.0, lengthscale=0.25)
+        gp = mlai.GP(X, y, sigma2=0.4, kernel=kernel)
+        initial = gp.objective()
+        mlai.LBFGS().optimize(gp, max_iters=40)
+        self.assertLess(gp.objective(), initial)
+
+
 if __name__ == '__main__':
     unittest.main()
 

@@ -55,3 +55,5 @@ CIP-0007 accepted and marked In Progress: `Optimiser` / `SGD` / `Adam` / `train_
 GP `parameters` / `gradients` landed with SGD/Adam and finite-difference tests. Status → **Implemented**. Mark **Validated** after human review / CIP-0007 close.
 
 CIP-000C (sparse LQ VFE / latent GP) proposed under REQ-0009. With the exact-GP surface in place, that work is unblocked.
+
+CIP-000D adds teachable **SCG** and **L-BFGS** on the same surface for GP-style full-batch demos (preferred over Adam/SGD for exact/sparse GP snippets).
