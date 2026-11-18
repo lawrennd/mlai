@@ -122,3 +122,17 @@ class TestSparseGPSharedSurface:
         from mlai import SCG
         SCG().optimize(model, max_iters=20)
         np.testing.assert_allclose(model.Z, Z0)
+
+    def test_param_layout_respects_optimize_Z_and_latent_X(self):
+        free = _toy_model(optimize_Z=True)
+        names = [name for name, _ in free._param_layout()]
+        assert names[0] == 'sigma2'
+        assert 'Z' in names
+        assert 'X' not in names
+
+        fixed = _toy_model(optimize_Z=False)
+        assert 'Z' not in [name for name, _ in fixed._param_layout()]
+
+        latent = _toy_model(optimize_Z=True, latent_X=True)
+        latent_names = [name for name, _ in latent._param_layout()]
+        assert 'Z' in latent_names and 'X' in latent_names
