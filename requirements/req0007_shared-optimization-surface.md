@@ -53,3 +53,5 @@ CIP-0007 accepted and marked In Progress: `Optimiser` / `SGD` / `Adam` / `train_
 
 ### 2026-11-18
 GP `parameters` / `gradients` landed with SGD/Adam and finite-difference tests. Status → **Implemented**. Mark **Validated** after human review / CIP-0007 close.
+
+CIP-000C (sparse LQ VFE / latent GP) proposed under REQ-0009. With the exact-GP surface in place, that work is unblocked.
