@@ -5,6 +5,7 @@ __version__ = "0.1.3"
 from . import models
 from . import linear_models
 from . import gaussian_processes
+from . import sparse_gp
 from . import neural_networks
 from . import utils
 from . import dimred
@@ -49,6 +50,7 @@ from .gaussian_processes import (
     icm_cov, lmc_cov, slfm_cov,
     posterior_f, update_inverse, contour_data,
 )
+from .sparse_gp import SparseGP, lq_factor, lq_adjoint
 from .dimred import (
     ClusterModel, WardsMethod,
     kmeans_assignments, kmeans_update, kmeans_objective,
@@ -68,6 +70,7 @@ __all__ = [
     "models",
     "linear_models",
     "gaussian_processes",
+    "sparse_gp",
     "neural_networks",
     "utils",
     "dimred",
@@ -141,6 +144,9 @@ __all__ = [
     "NonparametricDropoutNeuralNetwork",
     "GP",
     "Kernel",
+    "SparseGP",
+    "lq_factor",
+    "lq_adjoint",
     "eq_cov",
     "exponentiated_quadratic",
     "ou_cov",

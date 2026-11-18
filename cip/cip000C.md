@@ -4,9 +4,9 @@ created: "2026-11-18"
 id: "000C"
 last_updated: "2026-11-18"
 owner: Neil D. Lawrence
-status: Proposed
+status: Implemented
 compressed: false
-blocked_by: "0007"
+blocked_by: []
 related_requirements:
 - "0009"
 - "0007"
@@ -33,9 +33,9 @@ title: Teaching LQ sparse VFE/DTC with gradients (and a minimal GP-LVM path)
 ## Status
 
 - [x] Proposed - Initial idea documented
-- [ ] Accepted - Approved, ready to start work
-- [ ] In Progress - Actively being implemented
-- [ ] Implemented - Work complete, awaiting verification
+- [x] Accepted - Approved, ready to start work
+- [x] In Progress - Actively being implemented
+- [x] Implemented - Work complete, awaiting verification
 - [ ] Closed - Verified and complete
 - [ ] Rejected - Will not be implemented
 - [ ] Deferred - Postponed (blocked by CIP-0007 GP surface)
@@ -148,12 +148,12 @@ Additive. Existing `GP` and GPy-optional tutorials remain. New imports are opt-i
 
 ## Implementation Status
 
-- [ ] CIP-0007 exact GP surface available (blocker)
-- [ ] LQ forward VFE/DTCVAR bound in `mlai`
-- [ ] Reverse-mode grads (LQ + whitening) FD-verified
-- [ ] Shared optimiser integration for \(\sigma\), kernel, \(Z\)
-- [ ] Optional latent \(X\) / minimal GP-LVM demo
-- [ ] Tests + teaching docstrings
+- [x] CIP-0007 exact GP surface available (blocker cleared; stacked on `b4a71d6`)
+- [x] LQ forward VFE/DTCVAR bound in `mlai` (`mlai/sparse_gp.py`)
+- [x] Reverse-mode grads (LQ + whitening; FD \(\partial K\) for kernel/\(Z\)/\(X\)) FD-verified on noise+kernel
+- [x] Shared optimiser integration for \(\sigma\), kernel, \(Z\)
+- [x] Optional latent \(X\) / minimal GP-LVM path (`latent_X=True`)
+- [x] Tests + teaching docstrings (`tests/unit/test_sparse_gp.py`)
 
 ## References
 

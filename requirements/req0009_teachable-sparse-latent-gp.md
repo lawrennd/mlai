@@ -1,7 +1,7 @@
 ---
 id: "0009"
 title: "Learners can fit sparse and latent Gaussian processes with readable numerics"
-status: "Proposed"
+status: "Implemented"
 priority: "Medium"
 created: "2026-11-18"
 last_updated: "2026-11-18"
@@ -32,11 +32,11 @@ Course users can construct a small sparse variational Gaussian process (inducing
 
 ## Acceptance Criteria
 
-- [ ] A teachable sparse variational GP exposes an objective consistent with the collapsed VFE / DTCVAR bound (plain DTC optional by omitting the trace correction)
-- [ ] Kernel, noise, and inducing locations participate in a uniform parameters / gradients surface usable with the shared optimiser
-- [ ] Latent inputs can be included on that surface so a small unsupervised / GP-LVM-style fit is demonstrable
-- [ ] Numerical checks (finite differences and/or dense / Gram+chol parity on tiny \(N,M\)) support the teaching claims of correctness and relative stability
-- [ ] Lecture-facing material can show the factorisation story without requiring GPy for the core sparse path
+- [x] A teachable sparse variational GP exposes an objective consistent with the collapsed VFE / DTCVAR bound (plain DTC optional by omitting the trace correction)
+- [x] Kernel, noise, and inducing locations participate in a uniform parameters / gradients surface usable with the shared optimiser
+- [x] Latent inputs can be included on that surface so a small unsupervised / GP-LVM-style fit is demonstrable
+- [x] Numerical checks (finite differences and/or dense / Gram+chol parity on tiny \(N,M\)) support the teaching claims of correctness and relative stability
+- [x] Lecture-facing material can show the factorisation story without requiring GPy for the core sparse path
 
 ## Notes
 
@@ -52,3 +52,6 @@ Exact GP hyperparameter gradients on the shared optimiser surface remain under R
 
 ### 2026-11-18
 Requirement proposed alongside CIP-000C (LQ teaching sparse VFE path; builds on CIP-0007 GP surface).
+
+### 2026-11-18 (implementation)
+`SparseGP` + LQ helpers landed on the CIP-0007 surface. Status → **Implemented**. Mark **Validated** after review / CIP-000C close.
