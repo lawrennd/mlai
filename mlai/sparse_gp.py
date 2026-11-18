@@ -86,6 +86,8 @@ class SparseGP(ProbMapModel):
     :param kernel: Covariance function (:class:`~mlai.gaussian_processes.Kernel`)
     :param approximation: ``'vfe'`` (default) or ``'dtc'``
     :param latent_X: If True, rows of ``X`` join the shared parameter vector
+    :param optimize_Z: If False, inducing inputs ``Z`` stay fixed (excluded
+        from :attr:`parameters` / :attr:`gradients`)
     """
 
     def __init__(
@@ -97,6 +99,7 @@ class SparseGP(ProbMapModel):
         kernel,
         approximation='vfe',
         latent_X=False,
+        optimize_Z=True,
         jitter=1e-6,
     ):
         if approximation not in ('vfe', 'dtc'):
@@ -108,6 +111,7 @@ class SparseGP(ProbMapModel):
         self.kernel = kernel
         self.approximation = approximation
         self.latent_X = bool(latent_X)
+        self.optimize_Z = bool(optimize_Z)
         self.jitter = float(jitter)
         self._materialize_kernel_defaults()
         self.name = f'SparseGP_{approximation}_{kernel.function.__name__}'
@@ -211,22 +215,32 @@ class SparseGP(ProbMapModel):
         blocks = [('sigma2', 1)]
         for name in self._scalar_kernel_param_names():
             blocks.append((f'kernel:{name}', 1))
-        blocks.append(('Z', self.Z.size))
+        if self.optimize_Z:
+            blocks.append(('Z', self.Z.size))
         if self.latent_X:
             blocks.append(('X', self.X.size))
         return blocks
 
+    def _expected_parameter_size(self):
+        expected = 1 + len(self._scalar_kernel_param_names())
+        if self.optimize_Z:
+            expected += self.Z.size
+        if self.latent_X:
+            expected += self.X.size
+        return expected
+
     @property
     def parameters(self):
         """
-        Flat parameter vector for SGD/Adam.
+        Flat parameter vector for shared optimisers.
 
-        Layout: ``[log σ², log θ…, vec(Z), optional vec(X)]``.
+        Layout: ``[log σ², log θ…, optional vec(Z), optional vec(X)]``.
         """
         values = [np.log(self.sigma2)]
         for name in self._scalar_kernel_param_names():
             values.append(np.log(float(self.kernel.parameters[name])))
-        values.extend(self.Z.ravel().tolist())
+        if self.optimize_Z:
+            values.extend(self.Z.ravel().tolist())
         if self.latent_X:
             values.extend(self.X.ravel().tolist())
         return np.asarray(values, dtype=float)
@@ -234,9 +248,7 @@ class SparseGP(ProbMapModel):
     @parameters.setter
     def parameters(self, value):
         value = np.asarray(value, dtype=float).ravel()
-        expected = 1 + len(self._scalar_kernel_param_names()) + self.Z.size
-        if self.latent_X:
-            expected += self.X.size
+        expected = self._expected_parameter_size()
         if value.size != expected:
             raise ValueError(f'Expected {expected} parameters, got {value.size}')
         idx = 0
@@ -245,8 +257,9 @@ class SparseGP(ProbMapModel):
         for name in self._scalar_kernel_param_names():
             self.kernel.parameters[name] = float(np.exp(value[idx]))
             idx += 1
-        self.Z = value[idx:idx + self.Z.size].reshape(self.Z.shape).copy()
-        idx += self.Z.size
+        if self.optimize_Z:
+            self.Z = value[idx:idx + self.Z.size].reshape(self.Z.shape).copy()
+            idx += self.Z.size
         if self.latent_X:
             self.X = value[idx:idx + self.X.size].reshape(self.X.shape).copy()
         self._update_bound()
@@ -338,21 +351,22 @@ class SparseGP(ProbMapModel):
                 g += 0.5 * float(np.sum(ddiag)) / self.sigma2
             grads.append(g)
 
-        Z_grad = np.zeros_like(self.Z)
-        for i in range(self.Z.shape[0]):
-            for j in range(self.Z.shape[1]):
-                step = h * max(abs(self.Z[i, j]), 1.0)
-                self.Z[i, j] += step
-                Kmm_p, Kmn_p, _ = self._kernel_blocks()
-                self.Z[i, j] -= 2.0 * step
-                Kmm_m, Kmn_m, _ = self._kernel_blocks()
-                self.Z[i, j] += step
-                dKmm = (Kmm_p - Kmm_m) / (2.0 * step)
-                dKmn = (Kmn_p - Kmn_m) / (2.0 * step)
-                Z_grad[i, j] = float(
-                    np.sum(Kmm_bar * dKmm) + np.sum(Kmn_bar * dKmn)
-                )
-        grads.extend(Z_grad.ravel().tolist())
+        if self.optimize_Z:
+            Z_grad = np.zeros_like(self.Z)
+            for i in range(self.Z.shape[0]):
+                for j in range(self.Z.shape[1]):
+                    step = h * max(abs(self.Z[i, j]), 1.0)
+                    self.Z[i, j] += step
+                    Kmm_p, Kmn_p, _ = self._kernel_blocks()
+                    self.Z[i, j] -= 2.0 * step
+                    Kmm_m, Kmn_m, _ = self._kernel_blocks()
+                    self.Z[i, j] += step
+                    dKmm = (Kmm_p - Kmm_m) / (2.0 * step)
+                    dKmn = (Kmn_p - Kmn_m) / (2.0 * step)
+                    Z_grad[i, j] = float(
+                        np.sum(Kmm_bar * dKmm) + np.sum(Kmn_bar * dKmn)
+                    )
+            grads.extend(Z_grad.ravel().tolist())
 
         if self.latent_X:
             X_grad = np.zeros_like(self.X)

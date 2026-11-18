@@ -7,7 +7,7 @@ owner: Neil D. Lawrence
 priority: High
 related_cips:
 - "000E"
-status: Ready
+status: Completed
 tags:
 - backlog
 - features
@@ -29,15 +29,17 @@ Rewrite `_gp/includes/inducing-variables-demo.md` from GPy full + sparse regress
 
 ## Acceptance Criteria
 
-- [ ] Full GP baseline uses `mlai.GP` + SCG/L-BFGS
-- [ ] Sparse path uses `SparseGP` with explicit `Z`
-- [ ] Demo still shows constrained then unconstrained inducing optimisation
-- [ ] Log-likelihood / bound comparison retained in spirit
-- [ ] No GPy import in this include
+- [x] Full GP baseline uses `mlai.GP` + SCG/L-BFGS
+- [x] Sparse path uses `SparseGP` with explicit `Z`
+- [x] Demo still shows constrained then unconstrained inducing optimisation
+- [x] Log-likelihood / bound comparison retained in spirit
+- [x] No GPy import in this include
 
 ## Implementation Notes
 
 Primary classroom payoff of CIP-000C + CIP-000D. Included from `approximate-gps*.md`.
+
+`SparseGP` gained `optimize_Z` (default `True`) so the fixed-`Z` teaching path can exclude inducing inputs from `parameters` / `gradients`. Freeing `Z` rebuilds the model with `optimize_Z=True` and warm-started hypers.
 
 ## Related
 
@@ -47,3 +49,6 @@ Primary classroom payoff of CIP-000C + CIP-000D. Included from `approximate-gps*
 
 ### 2026-11-18
 Task created (Ready) with CIP-000E acceptance.
+
+### 2026-11-18 (later)
+Implemented `optimize_Z` on `SparseGP`, unit-tested, migrated `_gp/includes/inducing-variables-demo.md`, smoke-ran the demo flow. Status → Completed.

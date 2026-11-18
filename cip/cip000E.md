@@ -4,7 +4,7 @@ created: "2026-11-18"
 id: "000E"
 last_updated: "2026-11-18"
 owner: Neil D. Lawrence
-status: In Progress
+status: Implemented
 compressed: false
 related_requirements:
 - "0007"
@@ -34,7 +34,7 @@ title: Migrate GP teaching snippets from GPy to mlai
 - [x] Proposed - Initial idea documented
 - [x] Accepted - Approved, ready to start work
 - [x] In Progress - Actively being implemented
-- [ ] Implemented - Work complete, awaiting verification
+- [x] Implemented - Work complete, awaiting verification
 - [ ] Closed - Verified and complete
 - [ ] Rejected - Will not be implemented
 - [ ] Deferred - Postponed
@@ -89,7 +89,7 @@ flog = SCG().optimize(model, max_iters=100)
 yt_mean, yt_var = model.predict(xt)
 ```
 
-Sparse demo adds `Z` and `SparseGP(..., approximation='vfe')`, with the same optimiser API. Prefer **SCG** as the default teaching optimiser; mention L-BFGS where a quasi-Newton contrast is useful.
+Sparse demo adds `Z` and `SparseGP(..., approximation='vfe')`, with the same optimiser API. Prefer **SCG** as the default teaching optimiser; mention L-BFGS where a quasi-Newton contrast is useful. For the constrained-then-free inducing story, `optimize_Z=False` keeps `Z` out of the shared parameter vector; rebuild with `optimize_Z=True` (warm-started) when locations should move.
 
 ### Migration batches (snippets)
 
@@ -170,8 +170,8 @@ This is the primary classroom payoff of CIP-000C + CIP-000D.
 
 - [x] Phase 0: `model_output` / `model_sample` accept `mlai.GP` and `SparseGP`
 - [x] Batch A: exact GP regression snippets migrated
-- [ ] Batch B: `inducing-variables-demo.md` migrated
-- [ ] Smoke-check representative includes / builds
+- [x] Batch B: `SparseGP(optimize_Z=...)` + `inducing-variables-demo.md` migrated
+- [x] Smoke-check representative includes / builds (inducing demo script + sparse unit tests)
 - [ ] (Stretch) Batch follow-on only if explicitly accepted
 
 ## References
