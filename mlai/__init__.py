@@ -10,6 +10,7 @@ from . import neural_networks
 from . import utils
 from . import dimred
 from . import optimisation
+from . import parameters
 from . import hmc
 from . import experimental
 from . import data
@@ -57,6 +58,10 @@ from .dimred import (
     ppca_eig, ppca_svd, ppca_posterior, kruskal_stress,
 )
 from .optimisation import Optimiser, SGD, Adam, SCG, LBFGS, train_model
+from .parameters import (
+    POSITIVE, Positive, Param, ParamGroup,
+    format_param_table, format_param_table_html,
+)
 from .hmc import HamiltonianMonteCarlo, HMCResult, leapfrog, kinetic_energy
 
 try:
@@ -75,6 +80,7 @@ __all__ = [
     "utils",
     "dimred",
     "optimisation",
+    "parameters",
     "hmc",
     "experimental",
     "data",
@@ -186,6 +192,12 @@ __all__ = [
     "SCG",
     "LBFGS",
     "train_model",
+    "POSITIVE",
+    "Positive",
+    "Param",
+    "ParamGroup",
+    "format_param_table",
+    "format_param_table_html",
     "HamiltonianMonteCarlo",
     "HMCResult",
     "leapfrog",
