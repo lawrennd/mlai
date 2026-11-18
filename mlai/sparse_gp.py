@@ -88,6 +88,8 @@ class SparseGP(ProbMapModel):
     :param latent_X: If True, rows of ``X`` join the shared parameter vector
     :param optimize_Z: If False, inducing inputs ``Z`` stay fixed (excluded
         from :attr:`parameters` / :attr:`gradients`)
+    :param jitter: Diagonal jitter on ``K_{mm}`` (default ``1e-8``, matching
+        GPy ``VarDTC.const_jitter``)
     """
 
     def __init__(
@@ -100,7 +102,7 @@ class SparseGP(ProbMapModel):
         approximation='vfe',
         latent_X=False,
         optimize_Z=True,
-        jitter=1e-6,
+        jitter=1e-8,
     ):
         if approximation not in ('vfe', 'dtc'):
             raise ValueError("approximation must be 'vfe' or 'dtc'")

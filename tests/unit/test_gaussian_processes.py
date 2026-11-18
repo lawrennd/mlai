@@ -1099,8 +1099,8 @@ class TestGPUpdateInverse:
             lower_tri = np.tril(R, k=-1)
             np.testing.assert_allclose(lower_tri, 0, atol=1e-15)
             
-            # R^T R should equal K + sigma2*I
-            K_plus_noise = gp_chol.K + self.sigma2 * np.eye(3)
+            # R^T R should equal K + (sigma2 + jitter)*I
+            K_plus_noise = gp_chol.K + (self.sigma2 + gp_chol.jitter) * np.eye(3)
             reconstructed = R.T @ R
             np.testing.assert_allclose(reconstructed, K_plus_noise, rtol=1e-10)
             
@@ -1119,7 +1119,7 @@ class TestGPUpdateInverse:
             gp_chol.update_inverse()
             
             # Compute log determinant manually
-            K_plus_noise = gp_chol.K + self.sigma2 * np.eye(3)
+            K_plus_noise = gp_chol.K + (self.sigma2 + gp_chol.jitter) * np.eye(3)
             logdet_manual = np.log(np.linalg.det(K_plus_noise))
             logdet_cholesky = 2 * np.log(np.diag(gp_chol.R)).sum()
             
@@ -1509,7 +1509,7 @@ class TestGPSharedOptimizationSurface:
             self.gp.parameters = np.array([0.0, 0.0])
 
     def test_logdet_is_log_determinant(self):
-        Ky = self.gp.K + self.gp.sigma2 * np.eye(self.gp.K.shape[0])
+        Ky = self.gp.K + (self.gp.sigma2 + self.gp.jitter) * np.eye(self.gp.K.shape[0])
         expected = np.linalg.slogdet(Ky)[1]
         assert self.gp.logdetK == pytest.approx(expected)
 

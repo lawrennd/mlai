@@ -66,9 +66,12 @@ class GP(ProbMapModel):
     :type sigma2: float
     :param kernel: Covariance function
     :type kernel: function
+    :param jitter: Extra diagonal on ``K_y`` (default ``1e-8``, matching
+        GPy exact inference ``variance + 1e-8``)
     """
-    def __init__(self, X, y, sigma2, kernel):
+    def __init__(self, X, y, sigma2, kernel, jitter=1e-8):
         self.sigma2 = float(sigma2)
+        self.jitter = float(jitter)
         self.kernel = kernel
         self._materialize_kernel_defaults()
         self.K = kernel.K(X, X)
@@ -104,7 +107,7 @@ class GP(ProbMapModel):
         """
         Pre-compute the inverse covariance and related quantities.
         """
-        Ky = self.K + self.sigma2 * np.eye(self.K.shape[0])
+        Ky = self.K + (self.sigma2 + self.jitter) * np.eye(self.K.shape[0])
         self.Kinv = np.linalg.inv(Ky)
         # Store log|Ky| (slogdet), not det(Ky) — required for a correct NLL.
         self.logdetK = np.linalg.slogdet(Ky)[1]
@@ -287,7 +290,8 @@ def update_inverse(self):
     Update the inverse covariance in a numerically more stable manner
     """
     # Perform Cholesky decomposition on matrix (scipy returns upper triangular)
-    self.R = la.cholesky(self.K + self.sigma2*np.eye(self.K.shape[0]))
+    jitter = float(getattr(self, 'jitter', 1e-8))
+    self.R = la.cholesky(self.K + (self.sigma2 + jitter)*np.eye(self.K.shape[0]))
     # compute the log determinant from Cholesky decomposition
     self.logdetK = 2*np.log(np.diag(self.R)).sum()
     # compute y^\top K^{-1}y from Cholesky factor
