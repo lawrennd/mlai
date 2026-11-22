@@ -369,3 +369,62 @@ class HuberLoss(LossFunction):
         gradient = np.where(abs_error <= self.delta, error, self.delta * np.sign(error))
 
         return gradient / predictions.size
+
+
+class SoftmaxCrossEntropyLoss(LossFunction):
+    """
+    Softmax cross-entropy loss computed from unnormalised scores (logits).
+
+    This combines a softmax over the last axis with the cross-entropy loss.
+    Working with logits is numerically stable and gives the simple gradient
+
+        dL/dz = (softmax(z) - y) / N
+
+    where N is the number of predictions (all leading dimensions, e.g.
+    batch_size * seq_len for sequence models).
+
+    Mathematical formulation:
+    L = -(1/N) * Σ_n Σ_k y_nk log softmax(z_n)_k
+
+    Examples:
+        >>> loss = SoftmaxCrossEntropyLoss()
+        >>> logits = np.array([[2.0, 0.5], [0.1, 1.5]])
+        >>> targets = np.array([[1, 0], [0, 1]])
+        >>> loss.forward(logits, targets)
+    """
+    def __init__(self):
+        super().__init__()
+        self.name = "Softmax Cross Entropy"
+
+    @staticmethod
+    def _log_softmax(logits):
+        shifted = logits - np.max(logits, axis=-1, keepdims=True)
+        return shifted - np.log(np.sum(np.exp(shifted), axis=-1, keepdims=True))
+
+    def forward(self, predictions, targets):
+        """
+        Compute the softmax cross-entropy loss.
+
+        :param predictions: Logits, shape (..., n_classes)
+        :type predictions: numpy.ndarray
+        :param targets: One-hot (or probability) targets, same shape as predictions
+        :type targets: numpy.ndarray
+        :returns: Mean cross-entropy over all predictions
+        :rtype: float
+        """
+        n = predictions.size // predictions.shape[-1]
+        return -np.sum(targets * self._log_softmax(predictions)) / n
+
+    def gradient(self, predictions, targets):
+        """
+        Compute the gradient of the loss with respect to the logits.
+
+        :param predictions: Logits, shape (..., n_classes)
+        :type predictions: numpy.ndarray
+        :param targets: One-hot (or probability) targets, same shape as predictions
+        :type targets: numpy.ndarray
+        :returns: Gradient with respect to the logits
+        :rtype: numpy.ndarray
+        """
+        n = predictions.size // predictions.shape[-1]
+        return (np.exp(self._log_softmax(predictions)) - targets) / n

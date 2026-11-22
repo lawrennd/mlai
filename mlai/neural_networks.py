@@ -959,6 +959,46 @@ class Layer:
         """
         raise NotImplementedError("Subclasses must implement the parameters setter")
 
+    @property
+    def gradients(self):
+        """
+        Gradient of the loss with respect to the layer's parameters.
+
+        Layers with trainable parameters compute these during ``backward()``
+        and return them here as a 1D vector in the same order as
+        ``parameters``. Layers without parameters return an empty array.
+
+        :returns: 1D array of parameter gradients from the last backward pass
+        :rtype: numpy.ndarray
+        :raises ValueError: If the layer has parameters but ``backward()`` has not been called
+        """
+        grads = getattr(self, '_parameter_gradients', None)
+        if grads is not None:
+            return grads
+        if np.asarray(self.parameters).size == 0:
+            return np.array([])
+        raise ValueError("Call backward() before accessing gradients")
+
+
+def _unwrap_gradient(grad_output):
+    """Return the array inside a single-element gradient tuple."""
+    if isinstance(grad_output, tuple):
+        return grad_output[0]
+    return grad_output
+
+
+def _linear_parameter_gradients(layer_input, grad_z):
+    """
+    Weight and bias gradients for z = xW + b.
+
+    Works for inputs of shape (batch_size, input_size) and for sequence
+    inputs of shape (batch_size, seq_len, input_size): every leading
+    dimension is treated as a batch dimension and summed over.
+    """
+    x2 = layer_input.reshape(-1, layer_input.shape[-1])
+    g2 = grad_z.reshape(-1, grad_z.shape[-1])
+    return np.concatenate([(x2.T @ g2).flatten(), g2.sum(axis=0)])
+
 
 class LinearLayer(Layer):
     """
@@ -978,7 +1018,7 @@ class LinearLayer(Layer):
         self.input_size = input_size
         self.output_size = output_size
 
-        # Initialize weights using Xavier initialization
+        # He initialisation: variance 2 / fan_in
         self.W = np.random.normal(0, np.sqrt(2.0 / input_size), (input_size, output_size))
         self.b = np.random.normal(0, np.sqrt(2.0 / input_size), output_size)
 
@@ -986,22 +1026,30 @@ class LinearLayer(Layer):
         """
         Forward pass: linear transformation.
 
-        :param x: Input tensor of shape (batch_size, input_size)
+        :param x: Input tensor of shape (batch_size, input_size) or
+            (batch_size, seq_len, input_size)
         :type x: numpy.ndarray
-        :returns: Output tensor of shape (batch_size, output_size)
+        :returns: Output tensor of shape (..., output_size)
         :rtype: numpy.ndarray
         """
+        self.last_input = x
         return x @ self.W + self.b
 
     def backward(self, grad_output):
         """
         Backward pass: compute gradients.
 
-        :param grad_output: Gradient from next layer, shape (batch_size, output_size)
+        Stores dL/dW = x^T (dL/dy) and dL/db = sum(dL/dy) so they are
+        available from ``gradients``, and returns dL/dx = (dL/dy) W^T.
+
+        :param grad_output: Gradient from next layer, shape (..., output_size)
         :type grad_output: numpy.ndarray
-        :returns: Gradient with respect to input, shape (batch_size, input_size)
+        :returns: Gradient with respect to input, shape (..., input_size)
         :rtype: numpy.ndarray
         """
+        grad_output = _unwrap_gradient(grad_output)
+        if getattr(self, 'last_input', None) is not None:
+            self._parameter_gradients = _linear_parameter_gradients(self.last_input, grad_output)
         return grad_output @ self.W.T
 
     @property
@@ -1058,7 +1106,7 @@ class FullyConnectedLayer(Layer):
         self.output_size = output_size
         self.activation = activation
 
-        # Initialize weights using Xavier initialization
+        # He initialisation: variance 2 / fan_in
         self.W = np.random.normal(0, np.sqrt(2.0 / input_size), (input_size, output_size))
         self.b = np.random.normal(0, np.sqrt(2.0 / input_size), output_size)
 
@@ -1094,6 +1142,7 @@ class FullyConnectedLayer(Layer):
         """
         if self.last_input is None:
             raise ValueError("Must call forward before backward")
+        grad_output = _unwrap_gradient(grad_output)
 
         # Compute linear transformation for gradient computation
         z = self.last_input @ self.W + self.b
@@ -1105,6 +1154,9 @@ class FullyConnectedLayer(Layer):
         else:
             # For activations without gradient method, assume identity
             grad_z = grad_output
+
+        # Parameter gradients: dL/dW = x^T dL/dz, dL/db = sum(dL/dz)
+        self._parameter_gradients = _linear_parameter_gradients(self.last_input, grad_z)
 
         # Gradient with respect to input
         grad_input = grad_z @ self.W.T
@@ -1198,7 +1250,7 @@ class LayeredNeuralNetwork(Model):
         # Backpropagate through layers in reverse order
         for i, layer in enumerate(reversed(self.layers)):
             layer_idx = len(self.layers) - 1 - i
-            current_grad = layer.backward(current_grad)
+            current_grad = _unwrap_gradient(layer.backward(current_grad))
             gradients[f'layer_{layer_idx}'] = current_grad
 
         return gradients
@@ -1268,8 +1320,10 @@ class LayeredNeuralNetwork(Model):
         """
         Get gradients of the loss with respect to all parameters.
 
-        This property computes the gradients of the loss function with respect
-        to all trainable parameters using backpropagation through all layers.
+        This property runs backpropagation through all layers. Each layer
+        computes the gradient of the loss with respect to its own parameters
+        during ``backward()``; these are collected in the same order as
+        ``parameters``.
 
         Note: This requires that the network has been used in a forward pass
         and that the loss gradient has been set via set_output_gradient().
@@ -1282,67 +1336,8 @@ class LayeredNeuralNetwork(Model):
         if not hasattr(self, '_last_output_gradient'):
             raise ValueError("Network must be used in a forward pass with loss computation before accessing gradients")
 
-        # Compute gradients for each layer
-        gradients = []
-        current_grad = self._last_output_gradient
-
-        # Backpropagate through layers in reverse order and compute parameter gradients
-        for i, layer in enumerate(reversed(self.layers)):
-            layer_idx = len(self.layers) - 1 - i
-
-            # Get the input to this layer (stored during forward pass)
-            if layer_idx == 0:
-                layer_input = self.activations[0]  # Input to first layer
-            else:
-                layer_input = self.activations[layer_idx]  # Input to this layer
-
-            # Compute parameter gradients for this layer
-            layer_gradients = self._compute_layer_parameter_gradients(layer, layer_input, current_grad)
-            gradients.insert(0, layer_gradients)  # Insert at beginning to maintain order
-
-            # Propagate gradient backward through this layer
-            current_grad = layer.backward(current_grad)
-
-        return np.concatenate(gradients)
-
-    def _compute_layer_parameter_gradients(self, layer, layer_input, grad_output):
-        """
-        Compute parameter gradients for a specific layer.
-
-        This method handles different layer types and computes their parameter gradients.
-
-        :param layer: The layer to compute gradients for
-        :type layer: Layer
-        :param layer_input: Input to the layer
-        :type layer_input: numpy.ndarray
-        :param grad_output: Gradient from the next layer
-        :type grad_output: numpy.ndarray
-        :returns: Parameter gradients for the layer
-        :rtype: numpy.ndarray
-        """
-        if isinstance(layer, LinearLayer):
-            # For LinearLayer: y = xW + b
-            # dL/dW = x^T @ grad_output
-            # dL/db = sum(grad_output, axis=0)
-            weight_grad = layer_input.T @ grad_output
-            bias_grad = np.sum(grad_output, axis=0)
-            return np.concatenate([weight_grad.flatten(), bias_grad.flatten()])
-
-        elif isinstance(layer, FullyConnectedLayer):
-            # For FullyConnectedLayer: y = activation(xW + b)
-            # Need to compute gradients through the activation
-            z = layer_input @ layer.W + layer.b  # Pre-activation
-            activation_grad = layer.activation.gradient(z)
-            grad_z = grad_output * activation_grad
-
-            weight_grad = layer_input.T @ grad_z
-            bias_grad = np.sum(grad_z, axis=0)
-            return np.concatenate([weight_grad.flatten(), bias_grad.flatten()])
-
-        else:
-            # For other layer types, we need to implement specific gradient computation
-            # This is a placeholder - would need to implement for each layer type
-            raise NotImplementedError(f"Parameter gradient computation not implemented for {type(layer)}")
+        self.backward(self._last_output_gradient)
+        return np.concatenate([np.asarray(layer.gradients).flatten() for layer in self.layers])
 
 
 class MultiInputLayer(Layer):
@@ -1404,24 +1399,41 @@ class AttentionLayer(MultiInputLayer):
     Single-head attention layer supporting both self and cross attention.
 
     This layer implements the scaled dot-product attention mechanism
-    and can handle both self-attention (single input) and cross-attention
-    (multiple inputs) scenarios.
 
-    For multi-head attention, use MultiHeadAttentionLayer which composes
-    multiple AttentionLayer instances.
+        A = softmax(Q K^T / sqrt(d_k)),   output = A V W_o
 
-    :param d_model: Model dimension
+    with Q = X_q W_q, K = X_kv W_k and V = X_kv W_v. It can handle
+    self-attention (single input) and cross-attention (separate query and
+    key/value inputs).
+
+    For multi-head attention, use MultiHeadAttentionLayer, which composes
+    several AttentionLayer heads with ``output_projection=False`` and a
+    shared output projection.
+
+    :param d_model: Model (input and output) dimension
     :type d_model: int
-    :param dropout: Dropout rate for regularization
+    :param dropout: Dropout rate applied to the attention weights
     :type dropout: float, optional
-    :param activation: Activation function for attention weights
+    :param activation: Activation function for attention weights (default softmax).
+        A non-softmax activation f is applied element-wise and followed by a
+        softmax, i.e. A = softmax(f(scores)).
     :type activation: Activation, optional
+    :param d_k: Dimension of queries, keys and values (default ``d_model``)
+    :type d_k: int, optional
+    :param output_projection: Whether to apply the output projection W_o
+    :type output_projection: bool, optional
+    :param causal: If True, position t can only attend to positions <= t
+        (needed for next-token prediction)
+    :type causal: bool, optional
     """
 
-    def __init__(self, d_model, dropout=0.0, activation=None):
+    def __init__(self, d_model, dropout=0.0, activation=None, d_k=None,
+                 output_projection=True, causal=False):
         super().__init__()
         self.d_model = d_model
+        self.d_k = d_model if d_k is None else d_k
         self.dropout = dropout
+        self.causal = causal
 
         # Set up activation function (default to softmax for attention)
         if activation is None:
@@ -1429,20 +1441,32 @@ class AttentionLayer(MultiInputLayer):
         else:
             self.activation = activation
 
-        # Initialize weight matrices for Q, K, V transformations
-        # Using Xavier initialization for stability
-        self.W_q = np.random.normal(0, np.sqrt(2.0 / d_model), (d_model, d_model))
-        self.W_k = np.random.normal(0, np.sqrt(2.0 / d_model), (d_model, d_model))
-        self.W_v = np.random.normal(0, np.sqrt(2.0 / d_model), (d_model, d_model))
-        self.W_o = np.random.normal(0, np.sqrt(2.0 / d_model), (d_model, d_model))
+        # Weight matrices for Q, K, V projections, d_model -> d_k
+        # He initialisation: variance 2 / fan_in
+        std = np.sqrt(2.0 / d_model)
+        self.W_q = np.random.normal(0, std, (d_model, self.d_k))
+        self.W_k = np.random.normal(0, std, (d_model, self.d_k))
+        self.W_v = np.random.normal(0, std, (d_model, self.d_k))
+        if output_projection:
+            self.W_o = np.random.normal(0, np.sqrt(2.0 / self.d_k), (self.d_k, d_model))
+        else:
+            self.W_o = None
 
         # Scale factor for attention
-        self.scale = 1.0 / np.sqrt(d_model)
+        self.scale = 1.0 / np.sqrt(self.d_k)
 
         # Store for backward pass
         self.last_inputs = None
         self.last_output = None
         self.last_attention_weights = None
+        self._cache = None
+
+    def _uses_axis_activation(self, method):
+        return hasattr(self.activation, method) and 'axis' in getattr(self.activation, method).__code__.co_varnames
+
+    def _causal_mask(self, n_queries, n_keys):
+        """Boolean mask that is True where attention is *not* allowed."""
+        return np.triu(np.ones((n_queries, n_keys), dtype=bool), k=1)
 
     def forward(self, x, query_input=None, key_value_input=None):
         """
@@ -1453,213 +1477,188 @@ class AttentionLayer(MultiInputLayer):
         2. Cross-attention: forward(x, query_input=q, key_value_input=kv) - Q=q, K=V=kv
         3. Mixed: forward(x, key_value_input=kv) - Q=x, K=V=kv
 
-        :param x: Primary input tensor
+        :param x: Primary input tensor of shape (batch_size, seq_len, d_model)
         :type x: numpy.ndarray
         :param query_input: Optional separate query input (for cross-attention)
         :type query_input: numpy.ndarray, optional
         :param key_value_input: Optional separate key/value input (for cross-attention)
         :type key_value_input: numpy.ndarray, optional
-        :returns: Attention output
+        :returns: Attention output of shape (batch_size, seq_len, d_model),
+            or (batch_size, seq_len, d_k) if ``output_projection=False``
         :rtype: numpy.ndarray
         """
+        if query_input is not None and key_value_input is None:
+            raise ValueError("key_value_input must be provided when query_input is given")
+
         # Store inputs for backward pass
         self.last_inputs = (x, query_input, key_value_input)
 
-        # Determine Q, K, V based on inputs
-        if query_input is not None:
-            # Cross-attention: Q from query_input, K,V from key_value_input
-            if key_value_input is None:
-                raise ValueError("key_value_input must be provided when query_input is given")
-            Q = query_input @ self.W_q
-            K = key_value_input @ self.W_k
-            V = key_value_input @ self.W_v
+        q_source = query_input if query_input is not None else x
+        kv_source = key_value_input if key_value_input is not None else x
+
+        Q = q_source @ self.W_q
+        K = kv_source @ self.W_k
+        V = kv_source @ self.W_v
+
+        # Attention scores: Q K^T / sqrt(d_k)
+        scores = (Q @ K.transpose(0, 2, 1)) * self.scale
+        mask = self._causal_mask(scores.shape[-2], scores.shape[-1]) if self.causal else None
+
+        # Attention weights
+        if self._uses_axis_activation('forward'):
+            masked = np.where(mask, -np.inf, scores) if mask is not None else scores
+            weights = self.activation.forward(masked, axis=-1)
         else:
-            # Self-attention or mixed attention
-            if key_value_input is not None:
-                # Mixed attention: Q from x, K,V from key_value_input
-                Q = x @ self.W_q
-                K = key_value_input @ self.W_k
-                V = key_value_input @ self.W_v
-            else:
-                # Self-attention: Q, K, V from x
-                Q = x @ self.W_q
-                K = x @ self.W_k
-                V = x @ self.W_v
+            # Element-wise activation followed by softmax normalisation
+            activated = self.activation.forward(scores)
+            if mask is not None:
+                activated = np.where(mask, -np.inf, activated)
+            weights = self._softmax(activated, axis=-1)
 
-        # Compute attention scores: Q @ K^T / sqrt(d_k)
-        attention_scores = (Q @ K.transpose(0, 2, 1)) * self.scale
-
-        # Apply activation function to get attention weights
-        if hasattr(self.activation, 'forward') and 'axis' in self.activation.forward.__code__.co_varnames:
-            attention_weights = self.activation.forward(attention_scores, axis=-1)
-        else:
-            # For activations that don't support axis parameter, apply element-wise
-            attention_weights = self.activation.forward(attention_scores)
-            # Apply softmax normalisation if requested (default for attention mechanisms)
-            attention_weights = self._softmax(attention_weights, axis=-1)
-
-        # Apply dropout during training
+        # Dropout on the attention weights (inverted dropout)
         if self.dropout > 0:
-            dropout_mask = np.random.binomial(1, 1 - self.dropout, attention_weights.shape)
-            attention_weights = attention_weights * dropout_mask / (1 - self.dropout)
+            dropout_mask = np.random.binomial(1, 1 - self.dropout, weights.shape) / (1 - self.dropout)
+            dropped = weights * dropout_mask
+        else:
+            dropout_mask = None
+            dropped = weights
 
-        # Apply attention to values
-        output = attention_weights @ V
+        attended = dropped @ V
+        output = attended @ self.W_o if self.W_o is not None else attended
 
-        # Output projection
-        output = output @ self.W_o
-
-        # Store for backward pass
+        self._cache = dict(q_source=q_source, kv_source=kv_source, Q=Q, K=K, V=V,
+                           scores=scores, weights=weights, dropout_mask=dropout_mask,
+                           dropped=dropped, attended=attended)
         self.last_output = output
-        self.last_attention_weights = attention_weights
-
+        self.last_attention_weights = weights
         return output
 
     def backward(self, grad_output):
         """
         Backward pass implementing the attention gradient computation.
 
+        Computes the gradients with respect to the inputs (returned) and with
+        respect to W_q, W_k, W_v and W_o (available from ``gradients``).
+
         :param grad_output: Gradient from the next layer
         :type grad_output: numpy.ndarray
-        :returns: Tuple of gradients for each input
-        :rtype: tuple of numpy.ndarray
+        :returns: Tuple of input gradients: ``(grad_x,)`` for self-attention,
+            ``(grad_query, grad_key_value)`` for cross-attention and
+            ``(grad_x, grad_key_value)`` for mixed attention
+        :rtype: tuple
         """
-        if self.last_inputs is None:
+        if self._cache is None:
             raise ValueError("Must call forward before backward")
-
+        grad_output = _unwrap_gradient(grad_output)
+        c = self._cache
         x, query_input, key_value_input = self.last_inputs
 
-        # Recompute Q, K, V for gradient computation
-        if query_input is not None:
-            # Cross-attention case
-            if key_value_input is None:
-                raise ValueError("key_value_input must be provided when query_input is given")
-            Q = query_input @ self.W_q
-            K = key_value_input @ self.W_k
-            V = key_value_input @ self.W_v
+        # Output projection: output = attended W_o
+        if self.W_o is not None:
+            grad_W_o = np.einsum('bti,btj->ij', c['attended'], grad_output)
+            grad_attended = grad_output @ self.W_o.T
         else:
-            # Self-attention or mixed attention
-            if key_value_input is not None:
-                # Mixed attention: Q from x, K,V from key_value_input
-                Q = x @ self.W_q
-                K = key_value_input @ self.W_k
-                V = key_value_input @ self.W_v
-            else:
-                # Self-attention: Q, K, V from x
-                Q = x @ self.W_q
-                K = x @ self.W_k
-                V = x @ self.W_v
+            grad_attended = grad_output
 
-        # Gradient through output projection
-        grad_attention_output = grad_output @ self.W_o.T
+        # attended = dropped V
+        grad_dropped = grad_attended @ c['V'].transpose(0, 2, 1)
+        grad_V = c['dropped'].transpose(0, 2, 1) @ grad_attended
 
-        # Gradients for attention weights and values
-        grad_attention_weights = grad_attention_output @ V.transpose(0, 2, 1)
-        grad_V = self.last_attention_weights.transpose(0, 2, 1) @ grad_attention_output
+        # Dropout: dropped = weights * mask
+        grad_weights = grad_dropped * c['dropout_mask'] if c['dropout_mask'] is not None else grad_dropped
 
-        # Gradient through activation function
-        attention_scores = (Q @ K.transpose(0, 2, 1)) * self.scale
-
-        # Handle different activation function interfaces
-        if hasattr(self.activation, 'gradient') and 'axis' in self.activation.gradient.__code__.co_varnames:
-            grad_attention_scores = self.activation.gradient(attention_scores, grad_attention_weights, axis=-1)
+        # Softmax (and optional element-wise activation)
+        weights = c['weights']
+        grad_sum = np.sum(grad_weights * weights, axis=-1, keepdims=True)
+        grad_pre_softmax = weights * (grad_weights - grad_sum)
+        if self._uses_axis_activation('forward'):
+            grad_scores = grad_pre_softmax
         else:
-            # Use standard softmax gradient formula
-            grad_sum = np.sum(grad_attention_weights * self.last_attention_weights, axis=-1, keepdims=True)
-            grad_attention_scores = self.last_attention_weights * (grad_attention_weights - grad_sum)
+            grad_scores = grad_pre_softmax * self.activation.gradient(c['scores'])
 
-        # Gradients for Q and K
-        grad_Q = grad_attention_scores @ K
-        grad_K = grad_attention_scores.transpose(0, 2, 1) @ Q
+        # scores = Q K^T * scale
+        grad_Q = (grad_scores @ c['K']) * self.scale
+        grad_K = (grad_scores.transpose(0, 2, 1) @ c['Q']) * self.scale
 
-        # Scale gradients
-        grad_Q *= self.scale
-        grad_K *= self.scale
+        # Weight gradients: Q = X_q W_q, K = X_kv W_k, V = X_kv W_v
+        grads = [np.einsum('bti,btj->ij', c['q_source'], grad_Q),
+                 np.einsum('bti,btj->ij', c['kv_source'], grad_K),
+                 np.einsum('bti,btj->ij', c['kv_source'], grad_V)]
+        if self.W_o is not None:
+            grads.append(grad_W_o)
+        self._parameter_gradients = np.concatenate([g.flatten() for g in grads])
 
-        # Compute input gradients
+        # Input gradients
+        grad_from_q = grad_Q @ self.W_q.T
+        grad_from_kv = grad_K @ self.W_k.T + grad_V @ self.W_v.T
         if query_input is not None:
             # Cross-attention: separate gradients for query and key_value inputs
-            grad_query = grad_Q @ self.W_q.T
-            grad_key_value = (grad_K @ self.W_k.T + grad_V @ self.W_v.T)
-            return grad_query, grad_key_value
-        else:
-            if key_value_input is not None:
-                # Mixed attention: separate gradients for x and key_value_input
-                grad_x = grad_Q @ self.W_q.T  # Only Q comes from x
-                grad_key_value = (grad_K @ self.W_k.T + grad_V @ self.W_v.T)  # K,V from key_value_input
-                return grad_x, grad_key_value
-            else:
-                # Self-attention: single gradient for input (three-path chain rule)
-                grad_input = (grad_Q @ self.W_q.T + grad_K @ self.W_k.T + grad_V @ self.W_v.T)
-                return (grad_input,)
+            return grad_from_q, grad_from_kv
+        if key_value_input is not None:
+            # Mixed attention: only Q comes from x
+            return grad_from_q, grad_from_kv
+        # Self-attention: x appears in Q, K and V (three-path chain rule)
+        return (grad_from_q + grad_from_kv,)
 
     def _softmax(self, x, axis=-1):
         """Numerically stable softmax implementation."""
         exp_x = np.exp(x - np.max(x, axis=axis, keepdims=True))
         return exp_x / np.sum(exp_x, axis=axis, keepdims=True)
 
+    def _weight_matrices(self):
+        mats = [self.W_q, self.W_k, self.W_v]
+        if self.W_o is not None:
+            mats.append(self.W_o)
+        return mats
+
     @property
     def parameters(self):
         """
         Get all trainable parameters as a 1D vector.
 
-        Returns parameters in the order: [W_q, W_k, W_v, W_o]
+        Returns parameters in the order: [W_q, W_k, W_v, W_o] (W_o only if
+        the layer has an output projection).
 
         :returns: 1D array of all trainable parameters
         :rtype: numpy.ndarray
         """
-        return np.concatenate([
-            self.W_q.flatten(),
-            self.W_k.flatten(),
-            self.W_v.flatten(),
-            self.W_o.flatten()
-        ])
+        return np.concatenate([W.flatten() for W in self._weight_matrices()])
 
     @parameters.setter
     def parameters(self, value):
         """
         Set all trainable parameters from a 1D vector.
 
-        Updates parameters in the order: [W_q, W_k, W_v, W_o]
+        Updates parameters in the order: [W_q, W_k, W_v, W_o].
 
         :param value: 1D array of parameters to set
         :type value: numpy.ndarray
-
         :raises ValueError: If the parameter vector has incorrect length
         """
-        expected_length = self.W_q.size + self.W_k.size + self.W_v.size + self.W_o.size
+        mats = self._weight_matrices()
+        expected_length = sum(W.size for W in mats)
         if len(value) != expected_length:
             raise ValueError(f"Expected {expected_length} parameters, got {len(value)}")
-
-        # Unpack parameters in the same order as the getter
         start = 0
-
-        # W_q
-        w_q_size = self.W_q.size
-        self.W_q = value[start:start+w_q_size].reshape(self.W_q.shape)
-        start += w_q_size
-
-        # W_k
-        w_k_size = self.W_k.size
-        self.W_k = value[start:start+w_k_size].reshape(self.W_k.shape)
-        start += w_k_size
-
-        # W_v
-        w_v_size = self.W_v.size
-        self.W_v = value[start:start+w_v_size].reshape(self.W_v.shape)
-        start += w_v_size
-
-        # W_o
-        w_o_size = self.W_o.size
-        self.W_o = value[start:start+w_o_size].reshape(self.W_o.shape)
+        new = []
+        for W in mats:
+            new.append(value[start:start + W.size].reshape(W.shape))
+            start += W.size
+        self.W_q, self.W_k, self.W_v = new[:3]
+        if self.W_o is not None:
+            self.W_o = new[3]
 
 
 class MultiHeadAttentionLayer(Layer):
     """
     Multi-head attention layer built from multiple AttentionLayer instances.
 
-    This implements multi-head attention by creating multiple single-head
-    AttentionLayer instances and concatenating their outputs.
+    Each head projects the *full* d_model-dimensional input to its own
+    d_k = d_model / n_heads dimensional queries, keys and values, so every
+    head can attend using every input feature. The head outputs are
+    concatenated and combined with an output projection W_o:
+
+        MultiHead(X) = concat(head_1, ..., head_h) W_o
 
     Parameters
     ----------
@@ -1671,18 +1670,23 @@ class MultiHeadAttentionLayer(Layer):
         Dropout rate, by default 0.0
     activation : Activation, optional
         Activation function for attention weights
+    causal : bool, optional
+        If True, use causal (autoregressive) masking in every head
     """
 
-    def __init__(self, d_model, n_heads, dropout=0.0, activation=None):
+    def __init__(self, d_model, n_heads, dropout=0.0, activation=None, causal=False):
         super().__init__()
         assert d_model % n_heads == 0, "d_model must be divisible by n_heads"
 
         self.d_model = d_model
         self.n_heads = n_heads
         self.d_k = d_model // n_heads
+        self.causal = causal
 
-        # Create multiple single-head attention layers
-        self.attention_heads = [AttentionLayer(self.d_k, dropout=dropout, activation=activation) for _ in range(n_heads)]
+        # Each head maps d_model -> d_k and has no output projection of its own
+        self.attention_heads = [AttentionLayer(d_model, dropout=dropout, activation=activation,
+                                               d_k=self.d_k, output_projection=False, causal=causal)
+                                for _ in range(n_heads)]
 
         # Output projection to combine all heads
         self.W_o = np.random.normal(0, np.sqrt(2.0 / d_model), (d_model, d_model))
@@ -1691,12 +1695,18 @@ class MultiHeadAttentionLayer(Layer):
         self.last_inputs = None
         self.last_output = None
         self.last_head_outputs = None
+        self.last_concatenated = None
+
+    @property
+    def last_attention_weights(self):
+        """Attention weights from the last forward pass, shape (batch, n_heads, seq_len, seq_len)."""
+        if self.last_inputs is None:
+            return None
+        return np.stack([head.last_attention_weights for head in self.attention_heads], axis=1)
 
     def forward(self, x):
         """
-        Forward pass through multiple attention heads.
-
-        This implements self-attention where x becomes Q, K, V for all heads.
+        Forward pass through multiple attention heads (self-attention).
 
         Parameters
         ----------
@@ -1708,41 +1718,25 @@ class MultiHeadAttentionLayer(Layer):
         np.ndarray
             Multi-head attention output of shape (batch_size, seq_len, d_model)
         """
-        batch_size, seq_len, d_model = x.shape
-
-        # Store inputs for backward pass
         self.last_inputs = x
 
-        # Split input into multiple heads
-        # Reshape to (batch_size, seq_len, n_heads, d_k)
-        x_heads = x.reshape(batch_size, seq_len, self.n_heads, self.d_k)
+        # Every head sees the full input
+        head_outputs = [head.forward(x) for head in self.attention_heads]
 
-        # Transpose to (batch_size, n_heads, seq_len, d_k)
-        x_heads = x_heads.transpose(0, 2, 1, 3)
-
-        # Process each head
-        head_outputs = []
-
-        for i, attention_head in enumerate(self.attention_heads):
-            # Forward pass through each attention head (self-attention)
-            head_output = attention_head.forward(x_heads[:, i])
-            head_outputs.append(head_output)
-
-        # Concatenate all head outputs along the last dimension
         concatenated = np.concatenate(head_outputs, axis=-1)
-
-        # Apply output projection
         output = concatenated @ self.W_o
 
-        # Store for backward pass
         self.last_output = output
         self.last_head_outputs = head_outputs
-
+        self.last_concatenated = concatenated
         return output
 
     def backward(self, grad_output):
         """
         Backward pass through multiple attention heads.
+
+        Because x feeds every head, the input gradient is the *sum* of the
+        input gradients from each head.
 
         Parameters
         ----------
@@ -1751,42 +1745,24 @@ class MultiHeadAttentionLayer(Layer):
 
         Returns
         -------
-        np.ndarray
-            Gradient with respect to input
+        tuple
+            ``(grad_input,)``, the gradient with respect to the input
         """
         if self.last_inputs is None:
             raise ValueError("Must call forward before backward")
+        grad_output = _unwrap_gradient(grad_output)
 
-        x = self.last_inputs
-        batch_size, seq_len, d_model = x.shape
-
-        # Gradient through output projection
+        # Output projection
+        grad_W_o = np.einsum('bti,btj->ij', self.last_concatenated, grad_output)
         grad_concatenated = grad_output @ self.W_o.T
 
-        # Split gradient back to individual heads
-        grad_head_outputs = []
-        start = 0
-        for i in range(self.n_heads):
-            end = start + self.d_k
-            grad_head = grad_concatenated[:, :, start:end]
-            grad_head_outputs.append(grad_head)
-            start = end
+        grad_input = np.zeros_like(self.last_inputs)
+        for i, head in enumerate(self.attention_heads):
+            grad_head = grad_concatenated[..., i * self.d_k:(i + 1) * self.d_k]
+            grad_input = grad_input + head.backward(grad_head)[0]
 
-        # Backward pass through each attention head
-        grad_head_inputs = []
-        for i, attention_head in enumerate(self.attention_heads):
-            # Get gradient for this head
-            grad_head = grad_head_outputs[i]
-
-            # Backward pass through attention head
-            grad_head_input = attention_head.backward(grad_head)
-            grad_head_inputs.append(grad_head_input[0])  # Extract from tuple
-
-        # Concatenate gradients from all heads
-        grad_heads_concatenated = np.concatenate(grad_head_inputs, axis=-1)
-
-        # Reshape back to original input shape
-        grad_input = grad_heads_concatenated.reshape(batch_size, seq_len, d_model)
+        self._parameter_gradients = np.concatenate(
+            [head.gradients for head in self.attention_heads] + [grad_W_o.flatten()])
 
         return (grad_input,)
 
@@ -1802,15 +1778,8 @@ class MultiHeadAttentionLayer(Layer):
         np.ndarray
             1D array of all trainable parameters
         """
-        params = []
-
-        # Add parameters from all attention heads
-        for head in self.attention_heads:
-            params.append(head.parameters)
-
-        # Add output projection parameters
+        params = [head.parameters for head in self.attention_heads]
         params.append(self.W_o.flatten())
-
         return np.concatenate(params)
 
     @parameters.setter
@@ -1823,26 +1792,15 @@ class MultiHeadAttentionLayer(Layer):
         value : np.ndarray
             1D array of parameters to set
         """
-        expected_length = 0
-
-        # Calculate expected length from all attention heads
-        for head in self.attention_heads:
-            expected_length += len(head.parameters)
-
-        # Add output projection size
-        expected_length += self.W_o.size
-
+        expected_length = sum(len(head.parameters) for head in self.attention_heads) + self.W_o.size
         if len(value) != expected_length:
             raise ValueError(f"Expected {expected_length} parameters, got {len(value)}")
 
-        # Set parameters for all attention heads
         start = 0
         for head in self.attention_heads:
             head_size = len(head.parameters)
             head.parameters = value[start:start + head_size]
             start += head_size
-
-        # Set output projection parameters
         self.W_o = value[start:].reshape(self.W_o.shape)
 
 
@@ -2014,9 +1972,32 @@ class ConvolutionalLayer(Layer):
         self.last_output = None
         self.last_conv_output = None
 
+    def _pad(self, x):
+        """Zero-pad the two spatial dimensions."""
+        ph, pw = self.padding
+        return np.pad(x, ((0, 0), (0, 0), (ph, ph), (pw, pw)), mode='constant')
+
+    def _windows(self, x_padded):
+        """
+        All K_h x K_w patches of the padded input that the filters are applied to.
+
+        Returns an array of shape (batch, in_channels, out_height, out_width, K_h, K_w)
+        whose entry [b, k, h, w, i, j] is x_padded[b, k, h*S_h + i, w*S_w + j].
+        """
+        kh, kw = self.kernel_size
+        sh, sw = self.stride
+        windows = np.lib.stride_tricks.sliding_window_view(x_padded, (kh, kw), axis=(2, 3))
+        return windows[:, :, ::sh, ::sw]
+
     def forward(self, x):
         """
         Forward pass of the convolutional layer.
+
+        Computes, for every example b, output channel c and output position (h, w),
+
+            z[b, c, h, w] = sum_{k, i, j} x_pad[b, k, h*S + i, w*S + j] * F[c, k, i, j] + bias[c]
+
+        and then applies the activation function element-wise.
 
         Parameters
         ----------
@@ -2031,49 +2012,27 @@ class ConvolutionalLayer(Layer):
         # Store input for backward pass
         self.last_input = x
 
-        batch_size, input_channels, input_height, input_width = x.shape
-
-        # Add padding if specified
-        if self.padding[0] > 0 or self.padding[1] > 0:
-            x_padded = np.pad(x, ((0, 0), (0, 0), (self.padding[0], self.padding[0]),
-                                 (self.padding[1], self.padding[1])), mode='constant')
-        else:
-            x_padded = x
-
-        # Calculate output dimensions
-        out_height = (input_height + 2 * self.padding[0] - self.kernel_size[0]) // self.stride[0] + 1
-        out_width = (input_width + 2 * self.padding[1] - self.kernel_size[1]) // self.stride[1] + 1
-
-        # Initialize output
-        output = np.zeros((batch_size, self.output_channels, out_height, out_width))
-
-        # Perform convolution
-        for b in range(batch_size):
-            for out_c in range(self.output_channels):
-                for out_h in range(out_height):
-                    for out_w in range(out_width):
-                        # Calculate input region
-                        start_h = out_h * self.stride[0]
-                        start_w = out_w * self.stride[1]
-                        end_h = start_h + self.kernel_size[0]
-                        end_w = start_w + self.kernel_size[1]
-
-                        # Extract region and apply convolution
-                        region = x_padded[b, :, start_h:end_h, start_w:end_w]
-                        conv_sum = np.sum(region * self.filters[out_c]) + self.biases[out_c]
-                        output[b, out_c, out_h, out_w] = conv_sum
+        windows = self._windows(self._pad(x))
+        conv_output = np.einsum('bkhwij,ckij->bchw', windows, self.filters) \
+            + self.biases[None, :, None, None]
 
         # Apply activation function
-        self.last_conv_output = output.copy()
-        if hasattr(self.activation, 'forward'):
-            output = self.activation.forward(output)
-
+        self.last_conv_output = conv_output
+        output = self.activation.forward(conv_output) if hasattr(self.activation, 'forward') else conv_output
         self.last_output = output
         return output
 
     def backward(self, grad_output):
         """
         Backward pass of the convolutional layer.
+
+        Uses
+
+            dL/dF[c, k, i, j] = sum_{b, h, w} dL/dz[b, c, h, w] * x_pad[b, k, h*S + i, w*S + j]
+            dL/dbias[c]       = sum_{b, h, w} dL/dz[b, c, h, w]
+            dL/dx_pad[b, k, h*S + i, w*S + j] += sum_c dL/dz[b, c, h, w] * F[c, k, i, j]
+
+        The filter and bias gradients are stored and available from ``gradients``.
 
         Parameters
         ----------
@@ -2087,69 +2046,37 @@ class ConvolutionalLayer(Layer):
         """
         if self.last_input is None:
             raise ValueError("Must call forward before backward")
-
-        # Handle gradient from layered network (tuple format)
-        if isinstance(grad_output, tuple):
-            grad_output = grad_output[0]
+        grad_output = _unwrap_gradient(grad_output)
 
         # Gradient through activation function
         if hasattr(self.activation, 'gradient'):
-            activation_grad = self.activation.gradient(self.last_conv_output)
-            grad_conv = grad_output * activation_grad
+            grad_conv = grad_output * self.activation.gradient(self.last_conv_output)
         else:
             grad_conv = grad_output
 
-        # Initialize gradients
-        grad_filters = np.zeros_like(self.filters)
-        grad_biases = np.zeros_like(self.biases)
-        grad_input = np.zeros_like(self.last_input)
+        x_padded = self._pad(self.last_input)
+        windows = self._windows(x_padded)
 
-        batch_size, input_channels, input_height, input_width = self.last_input.shape
+        # Parameter gradients: the shared filter accumulates over every position and example
+        grad_filters = np.einsum('bchw,bkhwij->ckij', grad_conv, windows)
+        grad_biases = grad_conv.sum(axis=(0, 2, 3))
+        self._parameter_gradients = np.concatenate([grad_filters.flatten(), grad_biases.flatten()])
 
-        # Add padding to input for gradient computation
-        if self.padding[0] > 0 or self.padding[1] > 0:
-            grad_input_padded = np.pad(grad_input, ((0, 0), (0, 0), (self.padding[0], self.padding[0]),
-                                                   (self.padding[1], self.padding[1])), mode='constant')
-        else:
-            grad_input_padded = grad_input
+        # Input gradient: each filter element (i, j) sends gradient back to the
+        # input positions it was multiplied with
+        kh, kw = self.kernel_size
+        sh, sw = self.stride
+        out_h, out_w = grad_conv.shape[2], grad_conv.shape[3]
+        grad_padded = np.zeros_like(x_padded, dtype=float)
+        for i in range(kh):
+            for j in range(kw):
+                grad_padded[:, :, i:i + sh * out_h:sh, j:j + sw * out_w:sw] += \
+                    np.einsum('bchw,ck->bkhw', grad_conv, self.filters[:, :, i, j])
 
-        # Calculate output dimensions
-        out_height = (input_height + 2 * self.padding[0] - self.kernel_size[0]) // self.stride[0] + 1
-        out_width = (input_width + 2 * self.padding[1] - self.kernel_size[1]) // self.stride[1] + 1
-
-        # Compute gradients
-        for b in range(batch_size):
-            for out_c in range(self.output_channels):
-                for out_h in range(out_height):
-                    for out_w in range(out_width):
-                        # Calculate input region
-                        start_h = out_h * self.stride[0]
-                        start_w = out_w * self.stride[1]
-                        end_h = start_h + self.kernel_size[0]
-                        end_w = start_w + self.kernel_size[1]
-
-                        # Check bounds
-                        if (start_h >= 0 and end_h <= input_height and
-                            start_w >= 0 and end_w <= input_width):
-                            # Gradient for filters
-                            region = self.last_input[b, :, start_h:end_h, start_w:end_w]
-                            grad_filters[out_c] += grad_conv[b, out_c, out_h, out_w] * region
-
-                        # Gradient for biases
-                        grad_biases[out_c] += grad_conv[b, out_c, out_h, out_w]
-
-                        # Gradient for input
-                        if (start_h >= 0 and end_h <= input_height + 2 * self.padding[0] and
-                            start_w >= 0 and end_w <= input_width + 2 * self.padding[1]):
-                            grad_input_padded[b, :, start_h:end_h, start_w:end_w] += \
-                                grad_conv[b, out_c, out_h, out_w] * self.filters[out_c]
-
-        # Remove padding from input gradient
-        if self.padding[0] > 0 or self.padding[1] > 0:
-            grad_input = grad_input_padded[:, :, self.padding[0]:-self.padding[0],
-                                          self.padding[1]:-self.padding[1]]
-        else:
-            grad_input = grad_input_padded
+        # Remove padding (explicit end indices so zero padding in one dimension works)
+        ph, pw = self.padding
+        height, width = self.last_input.shape[2], self.last_input.shape[3]
+        grad_input = grad_padded[:, :, ph:ph + height, pw:pw + width]
 
         return (grad_input,)
 
@@ -2242,35 +2169,22 @@ class MaxPoolingLayer(Layer):
         # Store input for backward pass
         self.last_input = x
 
-        batch_size, channels, input_height, input_width = x.shape
+        ph, pw = self.pool_size
+        sh, sw = self.stride
 
-        # Calculate output dimensions
-        out_height = (input_height - self.pool_size[0]) // self.stride[0] + 1
-        out_width = (input_width - self.pool_size[1]) // self.stride[1] + 1
+        # Every pooling region: shape (batch, channels, out_height, out_width, ph, pw)
+        windows = np.lib.stride_tricks.sliding_window_view(x, (ph, pw), axis=(2, 3))[:, :, ::sh, ::sw]
+        flat = windows.reshape(windows.shape[:4] + (ph * pw,))
 
-        # Initialize output and max indices
-        output = np.zeros((batch_size, channels, out_height, out_width))
-        self.max_indices = np.zeros((batch_size, channels, out_height, out_width, 2), dtype=int)
+        # Position of the maximum within each region (first one in case of ties)
+        arg = np.argmax(flat, axis=-1)
+        output = np.take_along_axis(flat, arg[..., None], axis=-1)[..., 0]
 
-        # Perform max pooling
-        for b in range(batch_size):
-            for c in range(channels):
-                for out_h in range(out_height):
-                    for out_w in range(out_width):
-                        # Calculate input region
-                        start_h = out_h * self.stride[0]
-                        start_w = out_w * self.stride[1]
-                        end_h = start_h + self.pool_size[0]
-                        end_w = start_w + self.pool_size[1]
-
-                        # Extract region and find maximum
-                        region = x[b, c, start_h:end_h, start_w:end_w]
-                        max_val = np.max(region)
-                        output[b, c, out_h, out_w] = max_val
-
-                        # Store indices of maximum value
-                        max_idx = np.unravel_index(np.argmax(region), region.shape)
-                        self.max_indices[b, c, out_h, out_w] = [start_h + max_idx[0], start_w + max_idx[1]]
+        # Convert to input coordinates for the backward pass
+        out_height, out_width = output.shape[2], output.shape[3]
+        rows = np.arange(out_height)[:, None] * sh + arg // pw
+        cols = np.arange(out_width)[None, :] * sw + arg % pw
+        self.max_indices = np.stack([rows, cols], axis=-1)
 
         self.last_output = output
         return output
@@ -2278,6 +2192,10 @@ class MaxPoolingLayer(Layer):
     def backward(self, grad_output):
         """
         Backward pass of the max pooling layer.
+
+        Each output gradient is routed to the input position that achieved the
+        maximum in its pooling region; all other positions receive zero. If
+        pooling regions overlap, gradients arriving at the same position are summed.
 
         Parameters
         ----------
@@ -2291,27 +2209,13 @@ class MaxPoolingLayer(Layer):
         """
         if self.last_input is None:
             raise ValueError("Must call forward before backward")
+        grad_output = _unwrap_gradient(grad_output)
 
-        # Handle gradient from layered network (tuple format)
-        if isinstance(grad_output, tuple):
-            grad_output = grad_output[0]
-
-        # Initialize gradient for input
-        grad_input = np.zeros_like(self.last_input)
-
-        batch_size, channels, input_height, input_width = self.last_input.shape
-        out_height, out_width = grad_output.shape[2], grad_output.shape[3]
-
-        # Distribute gradients to maximum positions
-        for b in range(batch_size):
-            for c in range(channels):
-                for out_h in range(out_height):
-                    for out_w in range(out_width):
-                        # Get the position of the maximum value
-                        max_h, max_w = self.max_indices[b, c, out_h, out_w]
-
-                        # Add gradient to the maximum position
-                        grad_input[b, c, max_h, max_w] += grad_output[b, c, out_h, out_w]
+        grad_input = np.zeros_like(self.last_input, dtype=float)
+        batch_size, channels, out_height, out_width = grad_output.shape
+        b_idx = np.arange(batch_size)[:, None, None, None]
+        c_idx = np.arange(channels)[None, :, None, None]
+        np.add.at(grad_input, (b_idx, c_idx, self.max_indices[..., 0], self.max_indices[..., 1]), grad_output)
 
         return (grad_input,)
 
@@ -2413,6 +2317,7 @@ class FlattenLayer(Layer):
             raise ValueError("Must call forward before backward")
 
         # Reshape gradient back to original shape
+        grad_output = _unwrap_gradient(grad_output)
         return (grad_output.reshape(self.original_shape),)
 
     @property

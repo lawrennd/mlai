@@ -40,7 +40,7 @@ from .neural_networks import (
 )
 from .loss import (
     LossFunction, MeanSquaredError, MeanAbsoluteError, HuberLoss,
-    BinaryCrossEntropyLoss, CrossEntropyLoss,
+    BinaryCrossEntropyLoss, CrossEntropyLoss, SoftmaxCrossEntropyLoss,
 )
 from .experimental import SimpleDropoutNeuralNetwork, NonparametricDropoutNeuralNetwork
 from .gaussian_processes import (
@@ -146,6 +146,7 @@ __all__ = [
     "HuberLoss",
     "BinaryCrossEntropyLoss",
     "CrossEntropyLoss",
+    "SoftmaxCrossEntropyLoss",
     "SimpleDropoutNeuralNetwork",
     "NonparametricDropoutNeuralNetwork",
     "GP",
