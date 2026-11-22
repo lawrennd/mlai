@@ -1663,12 +1663,22 @@ class AttentionLayer(MultiInputLayer):
 
         # Softmax (and optional element-wise activation)
         weights = c['weights']
-        grad_sum = np.sum(grad_weights * weights, axis=-1, keepdims=True)
-        grad_pre_softmax = weights * (grad_weights - grad_sum)
-        if self._uses_axis_activation('forward'):
-            grad_scores = grad_pre_softmax
+        if self._uses_axis_activation('forward') and not isinstance(self.activation, SoftmaxActivation):
+            # A row-wise normalising activation other than softmax must supply
+            # its own vector-Jacobian product gradient(x, grad_output, axis)
+            if not self._uses_axis_activation('gradient'):
+                raise NotImplementedError(
+                    f"{type(self.activation).__name__} has no gradient(x, grad_output, axis) method")
+            masked = np.where(self._causal_mask(*c['scores'].shape[-2:]), -np.inf, c['scores']) \
+                if self.causal else c['scores']
+            grad_scores = self.activation.gradient(masked, grad_weights, axis=-1)
         else:
-            grad_scores = grad_pre_softmax * self.activation.gradient(c['scores'])
+            grad_sum = np.sum(grad_weights * weights, axis=-1, keepdims=True)
+            grad_pre_softmax = weights * (grad_weights - grad_sum)
+            if self._uses_axis_activation('forward'):
+                grad_scores = grad_pre_softmax
+            else:
+                grad_scores = grad_pre_softmax * self.activation.gradient(c['scores'])
 
         # scores = Q K^T * scale
         grad_Q = (grad_scores @ c['K']) * self.scale

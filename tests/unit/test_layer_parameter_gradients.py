@@ -137,6 +137,17 @@ class TestAttentionLayer:
     def test_elementwise_activation_before_softmax(self):
         _check_layer(AttentionLayer(4, activation=SoftReLUActivation()), np.random.randn(2, 3, 4))
 
+    def test_normalising_activation_without_gradient_raises(self):
+        class SumNormalise:
+            def forward(self, x, axis=-1):
+                e = np.exp(x)
+                return e / e.sum(axis=axis, keepdims=True)
+
+        layer = AttentionLayer(4, activation=SumNormalise())
+        out = layer.forward(np.random.randn(1, 3, 4))
+        with pytest.raises(NotImplementedError):
+            layer.backward(np.ones_like(out))
+
     def test_dropout(self):
         layer = AttentionLayer(4, dropout=0.5)
         _check_layer(layer, np.random.randn(2, 3, 4), seed=7)
