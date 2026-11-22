@@ -34,13 +34,13 @@ from .neural_networks import (
     init_perceptron, update_perceptron,
     relu_activation, sigmoid_activation, linear_activation, soft_relu_activation,
     Activation, LinearActivation, ReLUActivation, SigmoidActivation, SoftReLUActivation,
-    Layer, LinearLayer, FullyConnectedLayer, MultiInputLayer,
+    Layer, LinearLayer, FullyConnectedLayer, MultiInputLayer, ResidualLayer,
     AttentionLayer, MultiHeadAttentionLayer, PositionalEncodingLayer,
     ConvolutionalLayer, MaxPoolingLayer, FlattenLayer,
 )
 from .loss import (
     LossFunction, MeanSquaredError, MeanAbsoluteError, HuberLoss,
-    BinaryCrossEntropyLoss, CrossEntropyLoss,
+    BinaryCrossEntropyLoss, CrossEntropyLoss, SoftmaxCrossEntropyLoss,
 )
 from .experimental import SimpleDropoutNeuralNetwork, NonparametricDropoutNeuralNetwork
 from .gaussian_processes import (
@@ -140,12 +140,14 @@ __all__ = [
     "ConvolutionalLayer",
     "MaxPoolingLayer",
     "FlattenLayer",
+    "ResidualLayer",
     "LossFunction",
     "MeanSquaredError",
     "MeanAbsoluteError",
     "HuberLoss",
     "BinaryCrossEntropyLoss",
     "CrossEntropyLoss",
+    "SoftmaxCrossEntropyLoss",
     "SimpleDropoutNeuralNetwork",
     "NonparametricDropoutNeuralNetwork",
     "GP",

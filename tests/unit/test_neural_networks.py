@@ -2207,16 +2207,13 @@ class TestAttentionLayerGradients(unittest.TestCase):
         # Numerical gradient for W_q
         numerical_grad_W = finite_difference_gradient(weight_func, attention.W_q.flatten())
         
-        # Analytical gradient for W_q
+        # Analytical gradient for W_q (first block of the parameter gradients)
         output = attention.forward(x)
         grad_output = np.ones_like(output)
-        gradients = attention.backward(grad_output)
-        
-        # For weight gradients, we need to compute them manually since the layer
-        # doesn't return weight gradients directly. We'll test that the forward/backward
-        # passes work correctly and that the gradients are finite.
-        self.assertTrue(np.all(np.isfinite(gradients[0])))
-        self.assertTrue(np.all(np.isfinite(grad_output)))
+        attention.backward(grad_output)
+        analytical_grad_W = attention.gradients[:attention.W_q.size]
+
+        self.assertTrue(verify_gradient_implementation(analytical_grad_W, numerical_grad_W, rtol=1e-4))
     
     def test_attention_layer_three_path_chain_rule(self):
         """Test that the three-path chain rule is implemented correctly in attention."""
@@ -2467,9 +2464,11 @@ class TestMultiHeadAttentionLayerGradients(unittest.TestCase):
         self.assertEqual(len(mha.attention_heads), 2)
         self.assertEqual(mha.d_k, 4)  # 8 // 2 = 4
         
-        # Test that each head has the right dimension
+        # Each head projects the full d_model input to d_k dimensions
         for head in mha.attention_heads:
-            self.assertEqual(head.d_model, 4)  # Each head works on d_k dimension
+            self.assertEqual(head.d_model, 8)
+            self.assertEqual(head.d_k, 4)
+            self.assertEqual(head.W_q.shape, (8, 4))
 
 
 class TestPositionalEncodingLayerGradients(unittest.TestCase):
