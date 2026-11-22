@@ -54,7 +54,7 @@ class TestLossFunctions(unittest.TestCase):
         analytical_grad = huber_loss.gradient(y_pred, y_true).flatten()
         self.assertTrue(verify_gradient_implementation(analytical_grad, numerical_grad))
         
-        # Test Binary Cross Entropy
+        # Test Binary Cross Entropy (single output column)
         bce_loss = BinaryCrossEntropyLoss()
         y_pred_bce = np.array([[0.8], [0.3], [0.9]])
         y_true_bce = np.array([[1.0], [0.0], [1.0]])
@@ -64,6 +64,18 @@ class TestLossFunctions(unittest.TestCase):
         
         numerical_grad = finite_difference_gradient(bce_func, y_pred_bce.flatten())
         analytical_grad = bce_loss.gradient(y_pred_bce, y_true_bce).flatten()
+        self.assertTrue(verify_gradient_implementation(analytical_grad, numerical_grad))
+
+        # Multi-column BCE: forward uses np.mean over all elements, so the
+        # gradient must divide by predictions.size (not just n_samples).
+        y_pred_bce_multi = np.array([[0.8, 0.2], [0.3, 0.7], [0.9, 0.4]])
+        y_true_bce_multi = np.array([[1.0, 0.0], [0.0, 1.0], [1.0, 0.0]])
+
+        def bce_multi_func(pred):
+            return bce_loss.forward(pred.reshape(y_pred_bce_multi.shape), y_true_bce_multi)
+
+        numerical_grad = finite_difference_gradient(bce_multi_func, y_pred_bce_multi.flatten())
+        analytical_grad = bce_loss.gradient(y_pred_bce_multi, y_true_bce_multi).flatten()
         self.assertTrue(verify_gradient_implementation(analytical_grad, numerical_grad))
         
         # Test Cross Entropy
@@ -77,6 +89,31 @@ class TestLossFunctions(unittest.TestCase):
         numerical_grad = finite_difference_gradient(ce_func, y_pred_ce.flatten())
         analytical_grad = ce_loss.gradient(y_pred_ce, y_true_ce).flatten()
         self.assertTrue(verify_gradient_implementation(analytical_grad, numerical_grad))
+
+
+class TestActivationNumericalStability(unittest.TestCase):
+    """Test activation functions at extreme input values."""
+
+    def test_sigmoid_and_soft_relu_large_inputs(self):
+        from mlai import SigmoidActivation, SoftReLUActivation
+
+        x = np.array([-1000.0, -100.0, 0.0, 100.0, 1000.0])
+        sigmoid = SigmoidActivation()
+        soft_relu = SoftReLUActivation()
+
+        s = sigmoid.forward(x)
+        self.assertTrue(np.all(np.isfinite(s)))
+        self.assertAlmostEqual(s[0], 0.0)
+        self.assertAlmostEqual(s[-1], 1.0)
+
+        sr = soft_relu.forward(x)
+        self.assertTrue(np.all(np.isfinite(sr)))
+        # softplus(x) ≈ x for large positive x; ≈ 0 for large negative x
+        self.assertAlmostEqual(sr[0], 0.0, places=10)
+        self.assertAlmostEqual(sr[-1], 1000.0, places=6)
+
+        self.assertTrue(np.all(np.isfinite(sigmoid.gradient(x))))
+        self.assertTrue(np.all(np.isfinite(soft_relu.gradient(x))))
 
 
 if __name__ == '__main__':

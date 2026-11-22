@@ -512,12 +512,20 @@ class SigmoidActivation(Activation):
         """
         Forward pass: sigmoid activation.
 
+        Numerically stable for large positive or negative inputs.
+
         :param x: Input array
         :type x: numpy.ndarray
         :returns: Sigmoid activated array
         :rtype: numpy.ndarray
         """
-        return 1. / (1. + np.exp(-x))
+        x = np.asarray(x, dtype=float)
+        out = np.empty_like(x)
+        pos = x >= 0
+        out[pos] = 1. / (1. + np.exp(-x[pos]))
+        exp_x = np.exp(x[~pos])
+        out[~pos] = exp_x / (1. + exp_x)
+        return out
 
     def gradient(self, x):
         """
@@ -543,12 +551,14 @@ class SoftReLUActivation(Activation):
         """
         Forward pass: soft ReLU activation.
 
+        Uses logaddexp for numerical stability at large positive inputs.
+
         :param x: Input array
         :type x: numpy.ndarray
         :returns: Soft ReLU activated array
         :rtype: numpy.ndarray
         """
-        return np.log(1. + np.exp(x))
+        return np.logaddexp(0., x)
 
     def gradient(self, x):
         """
@@ -559,7 +569,7 @@ class SoftReLUActivation(Activation):
         :returns: Gradient array (sigmoid of input)
         :rtype: numpy.ndarray
         """
-        return 1. / (1. + np.exp(-x))
+        return SigmoidActivation().forward(x)
 
 class NeuralNetwork(Model):
     """
@@ -618,11 +628,11 @@ class NeuralNetwork(Model):
         This method implements the chain rule for computing gradients of the
         loss function with respect to all weight matrices and biases in the network.
 
-        Mathematical formulation:
-        For layer ℓ and weight matrix W_{ℓ-k}, the gradient is:
-        d f_ℓ / d w_{ℓ-k} = [∏_{i=0}^{k-1} W_{ℓ-i} Φ'_{ℓ-i-1}] φ_{ℓ-k-1}^T ⊗ I_{d_{ℓ-k}}
-
-        where Φ' is the derivative matrix of the activation function.
+        The lecture notes use column-vector layout (z = W φ) and Kronecker
+        products. This implementation uses the transposed row-vector layout
+        (z = φ @ W + b). Under that convention the Kronecker term
+        φ^T ⊗ I collapses to an outer product of the layer input and the
+        backpropagated delta, which is what we compute below.
 
         :param output_gradient: Gradient of the loss with respect to the output
         :type output_gradient: numpy.ndarray
@@ -641,28 +651,15 @@ class NeuralNetwork(Model):
             # Get the activation derivative for this layer
             activation_derivative = self.activations[i].gradient(self.z[i+1])
 
-            # Compute gradient with respect to weights
-            # dL/dW_i = (dL/da_i) * (da_i/dz_i) * (dz_i/dW_i)
-            # where dz_i/dW_i = a_{i-1}^T
-            if i == 0:
-                # For first layer, use input
-                input_to_layer = self.a[0]
-            else:
-                input_to_layer = self.a[i]
+            # Layer input: a[0] is the network input; a[i] is the previous
+            # layer activation for i > 0.
+            input_to_layer = self.a[i]
 
-            # Weight gradient: delta * activation_derivative * input^T
-            # delta is (batch_size, output_size), activation_derivative is (batch_size, output_size)
-            # input_to_layer is (batch_size, input_size)
-            # We need: (batch_size, output_size) * (batch_size, output_size) * (batch_size, input_size)^T
-            # = (output_size, input_size) for each sample, then sum over batch
-            # Weight matrix W_i has shape (input_size, output_size)
-            # So gradient should have shape (input_size, output_size)
+            # Weight gradient via outer product (row-vector layout):
+            # for each batch item, outer(input, delta * φ'(z)).
+            # Weight matrix W_i has shape (input_size, output_size).
             weight_grad = np.zeros((self.weights[i].shape[0], self.weights[i].shape[1]))
             for b in range(delta.shape[0]):
-                # delta[b] * activation_derivative[b] is (output_size,)
-                # input_to_layer[b] is (input_size,)
-                # outer product gives (output_size, input_size)
-                # But we need (input_size, output_size) to match weight matrix
                 weight_grad += np.outer(input_to_layer[b], delta[b] * activation_derivative[b])
             weight_gradients.insert(0, weight_grad)
 
@@ -686,10 +683,12 @@ class NeuralNetwork(Model):
 
     def compute_gradient_for_layer(self, layer_idx, output_gradient):
         """
-        Compute gradient for a specific layer using the chain rule formula.
+        Compute gradient for a specific layer using the chain rule.
 
-        This implements the mathematical formula you derived:
-        d f_ℓ / d w_{ℓ-k} = [∏_{i=0}^{k-1} W_{ℓ-i} Φ'_{ℓ-i-1}] φ_{ℓ-k-1}^T ⊗ I_{d_{ℓ-k}}
+        Equivalent to the lecture Kronecker formula under the row-vector
+        layout used by this class (z = φ @ W + b): the Kronecker term
+        collapses to an outer product of the layer input and the
+        backpropagated delta.
 
         :param layer_idx: Index of the layer to compute gradient for
         :type layer_idx: int
@@ -716,21 +715,12 @@ class NeuralNetwork(Model):
         # Get activation derivative for target layer
         activation_derivative = self.activations[layer_idx].gradient(self.z[layer_idx+1])
 
-        # Get input to target layer
-        if layer_idx == 0:
-            input_to_layer = self.a[0]
-        else:
-            input_to_layer = self.a[layer_idx]
+        # Layer input (a[0] is network input; a[layer_idx] is previous activation)
+        input_to_layer = self.a[layer_idx]
 
-        # Compute final gradient using outer product
-        # This implements: φ_{ℓ-k-1}^T ⊗ I_{d_{ℓ-k}} part of the formula
-        # Sum over batch dimension
+        # Outer product of layer input and delta (row-vector layout)
         final_gradient = np.zeros((self.weights[layer_idx].shape[0], self.weights[layer_idx].shape[1]))
         for b in range(gradient.shape[0]):
-            # gradient[b] * activation_derivative[b] is (output_size,)
-            # input_to_layer[b] is (input_size,)
-            # outer product gives (output_size, input_size)
-            # But we need (input_size, output_size) to match weight matrix
             final_gradient += np.outer(input_to_layer[b], gradient[b] * activation_derivative[b])
 
         return final_gradient
