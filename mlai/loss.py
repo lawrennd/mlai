@@ -132,9 +132,10 @@ class CrossEntropyLoss(LossFunction):
     probabilities and true class labels.
 
     Mathematical formulation:
-    CE = -Σ y_true * log(y_pred)
+    CE = -(1/N) Σ_n Σ_k y_true_{nk} log(y_pred_{nk})
 
-    The gradient is: dCE/dy_pred = -y_true / y_pred
+    The gradient is: dCE/dy_pred = -y_true / (N * y_pred)
+    where N is the number of samples (predictions.shape[0]).
 
     Examples:
         >>> loss = CrossEntropyLoss()
@@ -193,9 +194,11 @@ class BinaryCrossEntropyLoss(LossFunction):
     where the output is a single probability value.
 
     Mathematical formulation:
-    BCE = -[y_true * log(y_pred) + (1 - y_true) * log(1 - y_pred)]
+    BCE = -mean[y_true * log(y_pred) + (1 - y_true) * log(1 - y_pred)]
+    where the mean is over all elements of the prediction array.
 
-    The gradient is: dBCE/dy_pred = -(y_true / y_pred - (1 - y_true) / (1 - y_pred))
+    The gradient is:
+    dBCE/dy_pred = -(y_true / y_pred - (1 - y_true) / (1 - y_pred)) / predictions.size
 
     Examples:
         >>> loss = BinaryCrossEntropyLoss()
@@ -219,9 +222,9 @@ class BinaryCrossEntropyLoss(LossFunction):
         """
         Compute the binary cross-entropy loss.
 
-        :param predictions: Model predictions (probabilities), shape (n_samples, 1)
+        :param predictions: Model predictions (probabilities), shape (n_samples, n_outputs)
         :type predictions: numpy.ndarray
-        :param targets: True target values (0 or 1), shape (n_samples, 1)
+        :param targets: True target values (0 or 1), shape (n_samples, n_outputs)
         :type targets: numpy.ndarray
         :returns: Binary cross-entropy loss
         :rtype: float
@@ -234,16 +237,17 @@ class BinaryCrossEntropyLoss(LossFunction):
         """
         Compute the gradient of binary cross-entropy with respect to predictions.
 
-        :param predictions: Model predictions (probabilities), shape (n_samples, 1)
+        :param predictions: Model predictions (probabilities), shape (n_samples, n_outputs)
         :type predictions: numpy.ndarray
-        :param targets: True target values (0 or 1), shape (n_samples, 1)
+        :param targets: True target values (0 or 1), shape (n_samples, n_outputs)
         :type targets: numpy.ndarray
         :returns: Gradient of binary cross-entropy with respect to predictions
         :rtype: numpy.ndarray
         """
         # Clip predictions to prevent division by zero
         predictions = np.clip(predictions, self.epsilon, 1.0 - self.epsilon)
-        return -(targets / predictions - (1 - targets) / (1 - predictions)) / predictions.shape[0]
+        # Divide by predictions.size to match np.mean in forward (all elements)
+        return -(targets / predictions - (1 - targets) / (1 - predictions)) / predictions.size
 
 
 class MeanAbsoluteError(LossFunction):
