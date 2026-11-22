@@ -13,7 +13,7 @@ import pytest
 from mlai.neural_networks import (
     LinearLayer, FullyConnectedLayer, ConvolutionalLayer, MaxPoolingLayer,
     FlattenLayer, AttentionLayer, MultiHeadAttentionLayer, PositionalEncodingLayer,
-    LayeredNeuralNetwork, ReLUActivation, SigmoidActivation, SoftReLUActivation,
+    LayeredNeuralNetwork, ResidualLayer, ReLUActivation, SigmoidActivation, SoftReLUActivation,
 )
 from mlai.loss import MeanSquaredError, SoftmaxCrossEntropyLoss
 
@@ -196,6 +196,22 @@ class TestMultiHeadAttentionLayer:
         assert mha.last_attention_weights.shape == (3, 2, 5, 5)
 
 
+class TestResidualLayer:
+    def test_single_layer(self):
+        _check_layer(ResidualLayer(LinearLayer(4, 4)), np.random.randn(5, 4))
+
+    def test_feed_forward_block(self):
+        block = ResidualLayer([FullyConnectedLayer(4, 6, SigmoidActivation()), LinearLayer(6, 4)])
+        _check_layer(block, np.random.randn(2, 3, 4))
+
+    def test_attention_block(self):
+        _check_layer(ResidualLayer(MultiHeadAttentionLayer(4, 2, causal=True)), np.random.randn(2, 3, 4))
+
+    def test_shape_mismatch_raises(self):
+        with pytest.raises(ValueError):
+            ResidualLayer(LinearLayer(4, 3)).forward(np.random.randn(2, 4))
+
+
 class TestLayeredNeuralNetworkGradients:
     def _check_network(self, network, x, y, loss):
         p0 = network.parameters.copy()
@@ -228,6 +244,20 @@ class TestLayeredNeuralNetworkGradients:
             LinearLayer(vocab, d_model),           # embedding of one-hot tokens
             PositionalEncodingLayer(d_model),
             MultiHeadAttentionLayer(d_model, 2, causal=True),
+            LinearLayer(d_model, vocab),
+        ])
+        tokens = np.random.randint(vocab, size=(2, seq_len))
+        x = np.eye(vocab)[tokens]
+        y = np.eye(vocab)[np.roll(tokens, -1, axis=1)]
+        self._check_network(network, x, y, SoftmaxCrossEntropyLoss())
+
+    def test_transformer_block_with_residuals(self):
+        vocab, d_model, seq_len = 5, 4, 3
+        network = LayeredNeuralNetwork([
+            LinearLayer(vocab, d_model),
+            PositionalEncodingLayer(d_model),
+            ResidualLayer(MultiHeadAttentionLayer(d_model, 2, causal=True)),
+            ResidualLayer([FullyConnectedLayer(d_model, 6, SoftReLUActivation()), LinearLayer(6, d_model)]),
             LinearLayer(d_model, vocab),
         ])
         tokens = np.random.randint(vocab, size=(2, seq_len))

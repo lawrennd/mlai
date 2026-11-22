@@ -34,7 +34,7 @@ from .neural_networks import (
     init_perceptron, update_perceptron,
     relu_activation, sigmoid_activation, linear_activation, soft_relu_activation,
     Activation, LinearActivation, ReLUActivation, SigmoidActivation, SoftReLUActivation,
-    Layer, LinearLayer, FullyConnectedLayer, MultiInputLayer,
+    Layer, LinearLayer, FullyConnectedLayer, MultiInputLayer, ResidualLayer,
     AttentionLayer, MultiHeadAttentionLayer, PositionalEncodingLayer,
     ConvolutionalLayer, MaxPoolingLayer, FlattenLayer,
 )
@@ -140,6 +140,7 @@ __all__ = [
     "ConvolutionalLayer",
     "MaxPoolingLayer",
     "FlattenLayer",
+    "ResidualLayer",
     "LossFunction",
     "MeanSquaredError",
     "MeanAbsoluteError",

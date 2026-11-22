@@ -1196,6 +1196,100 @@ class FullyConnectedLayer(Layer):
         self.b = value[w_size:].reshape(self.b.shape)
 
 
+class ResidualLayer(Layer):
+    """
+    Residual (skip) connection around a sequence of layers.
+
+    Computes y = x + f(x), where f is the composition of the wrapped layers.
+    Because x reaches the output through two paths, the input gradient is
+    the sum of the two:
+
+        dL/dx = dL/dy + (dL/dy backpropagated through f)
+
+    Residual connections are used around the attention and feed-forward
+    sub-layers of a transformer block.
+
+    :param layers: A layer, or a list of layers applied in order, forming f
+    :type layers: Layer or list[Layer]
+    """
+
+    def __init__(self, layers):
+        super().__init__()
+        self.layers = list(layers) if isinstance(layers, (list, tuple)) else [layers]
+        if not self.layers:
+            raise ValueError("At least one layer must be provided")
+
+    def forward(self, x):
+        """
+        Forward pass: y = x + f(x).
+
+        :param x: Input tensor
+        :type x: numpy.ndarray
+        :returns: Output tensor with the same shape as x
+        :rtype: numpy.ndarray
+        """
+        h = x
+        for layer in self.layers:
+            h = layer.forward(h)
+        if h.shape != x.shape:
+            raise ValueError(f"Residual branch output shape {h.shape} does not match input shape {x.shape}")
+        return x + h
+
+    def backward(self, grad_output):
+        """
+        Backward pass: sum of the skip path and the branch path.
+
+        :param grad_output: Gradient from the next layer
+        :type grad_output: numpy.ndarray
+        :returns: Gradient with respect to input
+        :rtype: tuple
+        """
+        grad_output = _unwrap_gradient(grad_output)
+        grad = grad_output
+        for layer in reversed(self.layers):
+            grad = _unwrap_gradient(layer.backward(grad))
+        return (grad_output + grad,)
+
+    @property
+    def parameters(self):
+        """
+        All trainable parameters of the wrapped layers as a 1D vector.
+
+        :returns: 1D array of parameters
+        :rtype: numpy.ndarray
+        """
+        return np.concatenate([np.asarray(layer.parameters).flatten() for layer in self.layers])
+
+    @parameters.setter
+    def parameters(self, value):
+        """
+        Set all trainable parameters of the wrapped layers from a 1D vector.
+
+        :param value: 1D array of parameters
+        :type value: numpy.ndarray
+        :raises ValueError: If the parameter vector has incorrect length
+        """
+        expected_length = sum(np.asarray(layer.parameters).size for layer in self.layers)
+        if len(value) != expected_length:
+            raise ValueError(f"Expected {expected_length} parameters, got {len(value)}")
+        start = 0
+        for layer in self.layers:
+            size = np.asarray(layer.parameters).size
+            if size:
+                layer.parameters = value[start:start + size]
+            start += size
+
+    @property
+    def gradients(self):
+        """
+        Parameter gradients of the wrapped layers from the last backward pass.
+
+        :returns: 1D array of gradients in the same order as ``parameters``
+        :rtype: numpy.ndarray
+        """
+        return np.concatenate([np.asarray(layer.gradients).flatten() for layer in self.layers])
+
+
 class LayeredNeuralNetwork(Model):
     """
     Neural network composed of Layer objects.
